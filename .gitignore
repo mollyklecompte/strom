@@ -6,6 +6,7 @@
 
 # User-specific stuff:
 **/.idea #let's just remove the workspace files
+.idea/
 .idea/**/workspace.xml
 **/.idea/workspace.xml
 .idea/**/tasks.xml
