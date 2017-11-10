@@ -50,6 +50,10 @@ class TestDStream(unittest.TestCase):
         self.dstream._add_event(fake_event_name, fake_event)
         self.assertEqual(fake_event, self.dstream["event_rules"][fake_event_name])
 
+        old_version = self.dstream["version"]
+        self.dstream._publish_version()
+        self.assertEqual(old_version+1, self.dstream["version"])
+
     def test_define(self):
         storage_rules = {"store":"yes"}
         ingestion_rules = {"frequency":"Not too fast, you don't want to upset your tummy"}

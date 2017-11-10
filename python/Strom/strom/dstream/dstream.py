@@ -52,6 +52,10 @@ class DStream(dict):
         """Add rules for event definition to our storage"""
         self["event_rules"][event_name] = event_dict
 
+    def _publish_version(self):
+        """Increment version number"""
+        self["version"] += 1
+
     def define_dstream(self, storage_rules, ingestion_rules, measure_list, field_names, user_id_names,
                       tag_list, filter_list, dparam_rule_list, event_list):
         """Inputs:
