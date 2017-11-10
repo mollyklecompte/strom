@@ -28,6 +28,30 @@ class TestDStream(unittest.TestCase):
         self.dstream._add_user_id(uid_name)
         self.assertTrue(uid_name in self.dstream["user_ids"].keys())
 
+        tag_name = "Really good sensor"
+        self.dstream._add_tag(tag_name)
+        self.assertEqual(tag_name, self.dstream["tags"][0])
+
+        fk = "key to the city"
+        self.dstream._add_fk(fk)
+        self.assertEqual(fk, self.dstream["foreign_keys"][0])
+
+        fake_filter = {"func_name":"Make all values 0"}
+        self.dstream._add_filter(fake_filter)
+        self.assertEqual(fake_filter, self.dstream["filters"][0])
+
+        fake_dparam = {"measure":"viscosity", "drule":"max of mins"}
+        self.dstream._add_derived_param(fake_dparam)
+        self.assertEqual(fake_dparam, self.dstream["dparam_rules"][0])
+
+        fake_event_name = "My birthday"
+        fake_event = {"param":"viscocity", "threshold":"too viscous"}
+        self.dstream._add_event(fake_event_name, fake_event)
+        self.assertEqual(fake_event, self.dstream["event_rules"][fake_event_name])
+
+
+
+
 
 
 

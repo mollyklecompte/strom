@@ -33,7 +33,7 @@ class DStream(dict):
         self["tags"].append(tag)
 
     def _add_fk(self, foreign_key):
-        self["foreign_keys"].appen(foreign_key)
+        self["foreign_keys"].append(foreign_key)
 
     def _add_filter(self, filter_dict):
         """Add filter to our storage.
@@ -43,7 +43,7 @@ class DStream(dict):
     def _add_derived_param(self, dparam_dict):
         """Add dparam_dict to our dparam_rules
         dparam_dict: dict of the parameters needed to create the derived parameter"""
-        self["dparam_reles"].append(dparam_dict)
+        self["dparam_rules"].append(dparam_dict)
 
     def _add_event(self, event_name, event_dict):
         """Add rules for event definition to our storage"""
