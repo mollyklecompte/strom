@@ -77,11 +77,11 @@ class DStream(dict):
         for uid in user_id_names:
             self._add_user_id(uid)
 
-        for tag in tag_list:
-            self._add_tag(tag)
-
+        self["tags"].extend(tag_list)
         self["filters"].extend(filter_list)
         self["dparam_rules"].extend(dparam_rule_list)
 
         for event_name, event_rules in event_list:
             self._add_event(event_name, event_rules)
+
+        self["version"] += 1

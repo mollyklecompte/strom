@@ -50,10 +50,40 @@ class TestDStream(unittest.TestCase):
         self.dstream._add_event(fake_event_name, fake_event)
         self.assertEqual(fake_event, self.dstream["event_rules"][fake_event_name])
 
+    def test_define(self):
+        storage_rules = {"store":"yes"}
+        ingestion_rules = {"frequency":"Not too fast, you don't want to upset your tummy"}
+        measure_list = [("viscosity","float"),("location","float"),("height","inches")]
+        field_names = ["low", "lie", "athenry"]
+        user_ids = ["Number1","112358"]
+        tag = ["Stop making sesnors", "Sixth sensor"]
+        filter_list = [{"func_name":"Make all values 0"}, {"func_name":"delete the data"}]
+        dparam_list = [{"measure":"viscosity", "drule":"max of mins"},
+                       {"measure":"softness", "drule":"return max floof"}]
+        event_list = [("My birthday", {"param":"viscosity", "threshold":"too viscous"})]
 
+        self.dstream.define_dstream(storage_rules, ingestion_rules, measure_list, field_names,
+                                    user_ids, tag, filter_list, dparam_list, event_list)
 
+        self.assertEqual(storage_rules, self.dstream["storage_rules"])
+        self.assertEqual(ingestion_rules, self.dstream["ingest_rules"])
 
+        self.assertTrue("viscosity" in self.dstream["measures"].keys())
+        self.assertEqual(self.dstream["measures"]["viscosity"]["dtype"], "float")
 
+        self.assertEqual(len(self.dstream["fields"].keys()), 3)
+        self.assertTrue("low" in self.dstream["fields"].keys())
+
+        self.assertEqual(len(self.dstream["user_ids"].keys()), 2)
+        self.assertTrue("Number1" in self.dstream["user_ids"].keys())
+
+        self.assertEqual(len(self.dstream["tags"]), 2)
+
+        self.assertEqual(len(self.dstream["filters"]), 2)
+        self.assertEqual(len(self.dstream["dparam_rules"]), 2)
+        self.assertTrue("My birthday" in self.dstream["event_rules"])
+
+        self.assertEqual(self.dstream["version"], 1)
 
 
 if __name__ == "__main__":
