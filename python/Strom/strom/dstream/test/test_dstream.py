@@ -1,5 +1,6 @@
 import unittest
-from dstream.dstream import DStream
+
+from Strom.strom import DStream
 
 
 class TestDStream(unittest.TestCase):
