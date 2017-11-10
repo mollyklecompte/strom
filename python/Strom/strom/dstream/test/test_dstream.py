@@ -8,9 +8,9 @@ class TestDStream(unittest.TestCase):
         self.dstream = DStream()
 
     def test_init(self):
-        init_keys = ['device_id', 'version', 'stream_token', 'timestamp',
-                     'measures', 'fields', 'user_ids', 'tags', 'foreign_keys',
-                     'filters', 'dparam_rules', 'event_rules']
+        init_keys = ['device_id', 'version', 'stream_token', 'storage_rules', 'ingest_rules',
+                     'engine_rules', 'timestamp', 'measures', 'fields', 'user_ids', 'tags',
+                     'foreign_keys', 'filters', 'dparam_rules', 'event_rules']
         self.assertIsInstance(self.dstream, DStream)
         self.assertEqual(init_keys, list(self.dstream.keys()))
 
@@ -35,7 +35,7 @@ class TestDStream(unittest.TestCase):
 
         fk = "key to the city"
         self.dstream._add_fk(fk)
-        self.assertEqual(fk, self.dstream["foreign_keys"][0])
+        self.assertTrue(fk in self.dstream["foreign_keys"].keys())
 
         fake_filter = {"func_name":"Make all values 0"}
         self.dstream._add_filter(fake_filter)
@@ -46,7 +46,7 @@ class TestDStream(unittest.TestCase):
         self.assertEqual(fake_dparam, self.dstream["dparam_rules"][0])
 
         fake_event_name = "My birthday"
-        fake_event = {"param":"viscocity", "threshold":"too viscous"}
+        fake_event = {"param":"viscosity", "threshold":"too viscous"}
         self.dstream._add_event(fake_event_name, fake_event)
         self.assertEqual(fake_event, self.dstream["event_rules"][fake_event_name])
 

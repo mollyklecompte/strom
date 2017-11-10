@@ -8,12 +8,15 @@ class DStream(dict):
         self["device_id"] = None
         self["version"] = 0
         self["stream_token"] = None
+        self["storage_rules"] = {}
+        self["ingest_rules"] = {}
+        self["engine_rules"] = {}
         self["timestamp"] = None
         self["measures"] = {}
         self["fields"] = {}
         self["user_ids"] = {}
         self["tags"] = []
-        self["foreign_keys"] = []
+        self["foreign_keys"] = {}
         self["filters"] = []
         self["dparam_rules"] = []
         self["event_rules"] = {}
@@ -33,7 +36,7 @@ class DStream(dict):
         self["tags"].append(tag)
 
     def _add_fk(self, foreign_key):
-        self["foreign_keys"].append(foreign_key)
+        self["foreign_keys"][foreign_key] = {}
 
     def _add_filter(self, filter_dict):
         """Add filter to our storage.
@@ -48,3 +51,37 @@ class DStream(dict):
     def _add_event(self, event_name, event_dict):
         """Add rules for event definition to our storage"""
         self["event_rules"][event_name] = event_dict
+
+    def define_dstream(self, storage_rules, ingestion_rules, measure_list, field_names, user_id_names,
+                      tag_list, filter_list, dparam_rule_list, event_list):
+        """Inputs:
+        storage_rules: dict containing storage rules
+        ingestion_rules: dict containing ingestion rules
+        measure_list: list of tuples: (measure_name, dtype) for each measure supplied to the stream
+        field_names: list of field names
+        user_id_names: list of user_id names
+        tag_list: list of tags
+        filter_list: list of filter rules which are dicts
+        dparam_rule_list: list of dparam_rules, which are dicts
+        event_list: list of tuples: (event_name, event_rules)
+        """
+
+        self["storage_rules"] = storage_rules
+        self["ingest_rules"] = ingestion_rules
+        for measure_name, dtype in measure_list:
+            self._add_measure(measure_name, dtype)
+
+        for field in field_names:
+            self._add_field(field)
+
+        for uid in user_id_names:
+            self._add_user_id(uid)
+
+        for tag in tag_list:
+            self._add_tag(tag)
+
+        self["filters"].extend(filter_list)
+        self["dparam_rules"].extend(dparam_rule_list)
+
+        for event_name, event_rules in event_list:
+            self._add_event(event_name, event_rules)
