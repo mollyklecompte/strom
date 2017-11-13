@@ -1,4 +1,6 @@
 """Base class for dstream"""
+import uuid
+
 __version__  = "0.1"
 __author__ = "David <david@tura.io>"
 
@@ -7,7 +9,7 @@ class DStream(dict):
     def __init__(self):
         self["device_id"] = None
         self["version"] = 0
-        self["stream_token"] = None
+        self["stream_token"] = uuid.uuid1()
         self["storage_rules"] = {}
         self["ingest_rules"] = {}
         self["engine_rules"] = {}
