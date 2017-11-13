@@ -1,5 +1,5 @@
 import unittest
-
+import uuid
 from Strom.strom.dstream.dstream import DStream
 
 
@@ -15,6 +15,8 @@ class TestDStream(unittest.TestCase):
         self.assertEqual(init_keys, list(self.dstream.keys()))
 
     def test_add_methods(self):
+        self.assertIsInstance(self.dstream["stream_token"], uuid.UUID)
+
         m_name = "viscosity"
         m_dtype = "float"
         self.dstream._add_measure(m_name, m_dtype)
