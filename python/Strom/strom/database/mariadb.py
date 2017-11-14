@@ -20,17 +20,6 @@ class SQL_Connection:
         self.cursor = self.mariadb_connection.cursor()
         self.pool_name = self.mariadb_connection.pool_name
 
-    def _create_connection_pool(self):
-        # explicit connection pool creation:
-        dbconfig = {
-            "database": "test",
-            "user": "root",
-            "password": "123",
-            "host": "172.17.0.2"
-        }
-
-        cnx_pool = mariadb.pooling.MySQLConnectionPool(pool_name = "my_pool", pool_size = 5, **dbconfig)
-
     def _create_metadata_table(self):
         table = ("CREATE TABLE template_metadata ("
             "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
