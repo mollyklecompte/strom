@@ -1,4 +1,4 @@
-"""Class for applying filters to single parameters"""
+"""Class for applying filters to single measures"""
 import numpy as np
 from abc import ABCMeta, abstractmethod
 from scipy.signal import butter, filtfilt
