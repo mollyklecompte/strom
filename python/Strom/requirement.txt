@@ -1,0 +1,14 @@
+###### Requirements without Version Specifiers ######
+#
+numpy
+scipy
+#
+###### Requirements with Version Specifiers ######
+#
+#
+###### Refer to other requirements files ######
+#
+#
+###### A particular file ######
+#
+#
