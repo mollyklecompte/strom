@@ -8,15 +8,17 @@ class TestDStream(unittest.TestCase):
         self.dstream = DStream()
 
     def test_init(self):
-        init_keys = ['device_id', 'version', 'stream_token', 'storage_rules', 'ingest_rules',
-                     'engine_rules', 'timestamp', 'measures', 'fields', 'user_ids', 'tags',
-                     'foreign_keys', 'filters', 'dparam_rules', 'event_rules']
-        self.assertIsInstance(self.dstream, DStream)
+        init_keys = ['device_id', 'version', 'stream_token', 'sources', 'storage_rules',
+                     'ingest_rules', 'engine_rules', 'timestamp', 'measures', 'fields',
+                     'user_ids', 'tags', 'foreign_keys', 'filters', 'dparam_rules', 'event_rules']
         self.assertEqual(init_keys, list(self.dstream.keys()))
 
     def test_add_methods(self):
         self.assertIsInstance(self.dstream["stream_token"], uuid.UUID)
 
+        source = {"kafka":"On the shore"}
+        self.dstream._add_source("kafka", "On the shore")
+        self.assertEqual(self.dstream["sources"], source)
         m_name = "viscosity"
         m_dtype = "float"
         self.dstream._add_measure(m_name, m_dtype)
@@ -59,6 +61,7 @@ class TestDStream(unittest.TestCase):
     def test_define(self):
         storage_rules = {"store":"yes"}
         ingestion_rules = {"frequency":"Not too fast, you don't want to upset your tummy"}
+        source = {"kafka":"On the shore"}
         measure_list = [("viscosity","float"),("location","float"),("height","inches")]
         field_names = ["low", "lie", "athenry"]
         user_ids = ["Number1","112358"]
@@ -68,7 +71,7 @@ class TestDStream(unittest.TestCase):
                        {"measure":"softness", "drule":"return max floof"}]
         event_list = [("My birthday", {"param":"viscosity", "threshold":"too viscous"})]
 
-        self.dstream.define_dstream(storage_rules, ingestion_rules, measure_list, field_names,
+        self.dstream.define_dstream(storage_rules, ingestion_rules, source, measure_list, field_names,
                                     user_ids, tag, filter_list, dparam_list, event_list)
 
         self.assertEqual(storage_rules, self.dstream["storage_rules"])
