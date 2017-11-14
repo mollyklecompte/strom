@@ -18,12 +18,16 @@ class Transformer(object):
         for key, value in measure_dict.items():
             self.add_measure(key, value)
 
+    @abstractmethod
     def load_params(self, params):
         """Method for setting the parameters of the transformation"""
-        self.params = params
+        raise NotImplementedError("subclass must implement this abstract method.")
 
-    def get_defaults(self):
-        return self.params
+    @abstractmethod
+    def get_params(self):
+        """Method to return transformer's default parameters"""
+        raise NotImplementedError("subclass must implement this abstract method.")
+
 
     @abstractmethod
     def transform_data(self):
