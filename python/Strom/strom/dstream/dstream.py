@@ -26,7 +26,11 @@ class DStream(dict):
 
 
     def _add_source(self, source_name, source_location):
-        """Adds source_location to our dict of sources under source_name"""
+        """Adds source_location to our dict of sources under source_name
+        source_location: dict with key(s):
+            type: file or kafka
+            if type == kafka, we also have
+            topic: kafka topic name"""
         self["sources"][source_name] = source_location
 
     def _add_measure(self, measure_name, dtype):
