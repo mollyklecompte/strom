@@ -8,7 +8,7 @@ class TestDStream(unittest.TestCase):
         self.dstream = DStream()
 
     def test_init(self):
-        init_keys = ['device_id', 'version', 'stream_token', 'source', 'storage_rules',
+        init_keys = ['device_id', 'version', 'stream_token', 'sources', 'storage_rules',
                      'ingest_rules', 'engine_rules', 'timestamp', 'measures', 'fields',
                      'user_ids', 'tags', 'foreign_keys', 'filters', 'dparam_rules', 'event_rules']
         self.assertEqual(init_keys, list(self.dstream.keys()))
@@ -16,6 +16,9 @@ class TestDStream(unittest.TestCase):
     def test_add_methods(self):
         self.assertIsInstance(self.dstream["stream_token"], uuid.UUID)
 
+        source = {"kafka":"On the shore"}
+        self.dstream._add_source("kafka", "On the shore")
+        self.assertEqual(self.dstream["sources"], source)
         m_name = "viscosity"
         m_dtype = "float"
         self.dstream._add_measure(m_name, m_dtype)

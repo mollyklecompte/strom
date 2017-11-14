@@ -10,7 +10,7 @@ class DStream(dict):
         self["device_id"] = None
         self["version"] = 0
         self["stream_token"] = uuid.uuid1()
-        self["source"] = {}
+        self["sources"] = {}
         self["storage_rules"] = {}
         self["ingest_rules"] = {}
         self["engine_rules"] = {}
@@ -27,7 +27,7 @@ class DStream(dict):
 
     def _add_source(self, source_name, source_location):
         """Adds source_location to our dict of sources under source_name"""
-        self["source"][source_name] = source_location
+        self["sources"][source_name] = source_location
 
     def _add_measure(self, measure_name, dtype):
         """Creates entry in measures dict for new measure"""
@@ -80,7 +80,7 @@ class DStream(dict):
         self["storage_rules"] = storage_rules
         self["ingest_rules"] = ingestion_rules
         for key in source_dict.keys():
-            self["source"][key] = source_dict[key]
+            self._add_source(key, source_dict[key])
 
         for measure_name, dtype in measure_list:
             self._add_measure(measure_name, dtype)
