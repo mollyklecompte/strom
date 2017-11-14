@@ -27,27 +27,6 @@ def _create_metadata_table():
     else:
         print("OK")
 
-# TABLES['template-metadata'] = (
-#     "CREATE TABLE `template-metadata` ("
-#     "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
-#     "  `device_id` date NOT NULL,"
-#     "  `version` int(10) NOT NULL,"
-#     "  PRIMARY KEY (`unique_id`)"
-#     ") ENGINE=InnoDB")
-
-# # Create tables by iterating over all the items in the TABLES Python dictionary
-# for name, ddl in TABLES.items():
-#     try:
-#         print("Creating table {}: ".format(name), end='')
-#         cursor.execute(ddl)
-#     except mariadb.Error as err:
-#         if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-#             print("already exists.")
-#         else:
-#             print(err.msg)
-#     else:
-#         print("OK")
-
 def _insert_row(device_id, stream_token, version):
     # There doesn't seem to be a way to use parameter placeholders for
     # table names; it can only be used to insert column values.
@@ -66,20 +45,6 @@ def _insert_row(device_id, stream_token, version):
         print(err.msg)
     else:
         print("OK")
-
-# # Test inserting a row into the employees table
-# add_employee = ("INSERT INTO employees "
-#                "(first_name, last_name, hire_date, gender, birth_date) "
-#                "VALUES (%s, %s, %s, %s, %s)")
-#
-# tomorrow = datetime.now().date() + timedelta(days=1)
-#
-# data_employee = ('Geert', 'Vanderkelen', tomorrow, 'M', date(1977, 6, 14))
-#
-# cursor.execute(add_employee, data_employee)
-#
-# # Commit data to the database
-# mariadb_connection.commit()
 
 def main():
     # _connect_to_database()
