@@ -97,6 +97,19 @@ class SQL_Connection:
         else:
             print("OK")
 
+    def _select_all_from_metadata_table(self):
+        query = ("SELECT * FROM template_metadata")
+        try:
+            print("Returning all data from template_metadata table")
+            self.cursor.execute(query)
+            # view data in cursor object
+            for (unique_id, device_id, stream_token, version) in self.cursor:
+                print("uid: {}, device: {}, stream: {}, version: {}".format(unique_id, device_id, stream_token, version))
+        except mariadb.Error as err:
+            print(err.msg)
+        else:
+            print("OK")
+
 def main():
     # _connect_to_database()
     # _create_metadata_table()
@@ -113,5 +126,6 @@ def main():
     sql._retrieve_by_device_id(12)
     sql._retrieve_by_id(1)
     sql._retrieve_by_stream_token(11)
+    sql._select_all_from_metadata_table()
 
-main()
+# main()
