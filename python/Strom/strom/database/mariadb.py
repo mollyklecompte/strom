@@ -22,6 +22,7 @@ class SQL_Connection:
 
     def _close_connection(self):
         # close pooled connection and return it to the connection pool as an available connection
+        print("Closing connection")
         self.mariadb_connection.close()
 
     def _create_metadata_table(self):
@@ -116,22 +117,3 @@ class SQL_Connection:
             print(err.msg)
         else:
             print("OK")
-
-# def main():
-    # _connect_to_database()
-    # _create_metadata_table()
-    # _insert_row(12, 13, 1.0)
-    # _insert_row(10, 11, 1.1)
-    # _retrieve_by_device_id(12)
-    # _retrieve_by_id(1)
-    # _retrieve_by_stream_token(11)
-    # sql = SQL_Connection()
-    # print(sql.pool_name)
-    # sql._create_metadata_table()
-    # sql._insert_row(12, 13, 1.0)
-    # sql._insert_row(10, 11, 1.1)
-    # sql._retrieve_by_device_id(12)
-    # sql._retrieve_by_id(1)
-    # sql._retrieve_by_stream_token(11)
-    # sql._select_all_from_metadata_table()
-# main()
