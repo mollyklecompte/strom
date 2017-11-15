@@ -14,7 +14,7 @@ class SQL_Connection:
             "host": '172.17.0.2',
             "database": 'test'
         }
-        self.mariadb_connection = mariadb.connect(pool_name = "my_pool", pool_size = 5, **dbconfig)
+        self.mariadb_connection = mariadb.connect(pool_name = "my_pool", pool_size = 10, **dbconfig)
         # self.mariadb_connection = mariadb.connect(user='root', password='123', host='172.17.0.2', database='test')
         # Create a cursor object to execute SQL commands
         self.cursor = self.mariadb_connection.cursor()
@@ -66,6 +66,7 @@ class SQL_Connection:
             # view data in cursor object
             for (unique_id, device_id, stream_token, version) in self.cursor:
                 print("uid: {}, device: {}, stream: {}, version: {}".format(unique_id, device_id, stream_token, version))
+                return [unique_id, device_id, stream_token, version]
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -79,6 +80,7 @@ class SQL_Connection:
             # view data in cursor object
             for (unique_id, device_id, stream_token, version) in self.cursor:
                 print("uid: {}, device: {}, stream: {}, version: {}".format(unique_id, device_id, stream_token, version))
+                return [unique_id, device_id, stream_token, version]
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -92,6 +94,7 @@ class SQL_Connection:
             # view data in cursor object
             for (unique_id, device_id, stream_token, version) in self.cursor:
                 print("uid: {}, device: {}, stream: {}, version: {}".format(unique_id, device_id, stream_token, version))
+                return [unique_id, device_id, stream_token, version]
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -110,7 +113,7 @@ class SQL_Connection:
         else:
             print("OK")
 
-def main():
+# def main():
     # _connect_to_database()
     # _create_metadata_table()
     # _insert_row(12, 13, 1.0)
@@ -118,14 +121,13 @@ def main():
     # _retrieve_by_device_id(12)
     # _retrieve_by_id(1)
     # _retrieve_by_stream_token(11)
-    sql = SQL_Connection()
-    print(sql.pool_name)
-    sql._create_metadata_table()
-    sql._insert_row(12, 13, 1.0)
-    sql._insert_row(10, 11, 1.1)
-    sql._retrieve_by_device_id(12)
-    sql._retrieve_by_id(1)
-    sql._retrieve_by_stream_token(11)
-    sql._select_all_from_metadata_table()
-
+    # sql = SQL_Connection()
+    # print(sql.pool_name)
+    # sql._create_metadata_table()
+    # sql._insert_row(12, 13, 1.0)
+    # sql._insert_row(10, 11, 1.1)
+    # sql._retrieve_by_device_id(12)
+    # sql._retrieve_by_id(1)
+    # sql._retrieve_by_stream_token(11)
+    # sql._select_all_from_metadata_table()
 # main()
