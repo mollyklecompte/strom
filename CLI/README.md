@@ -2,4 +2,4 @@
   * ``` cd strom/CLI/ ```
     * ``` pip install (dot) ```
 ### Run:
-  * ``` cli --help ```
+  * ``` dstream --help ```
