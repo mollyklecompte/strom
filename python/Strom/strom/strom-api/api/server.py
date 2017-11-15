@@ -25,10 +25,10 @@ def define():
     if args['source']:
         typ = args['type']
         src = args['source']
-        print(typ)# NOTE: TEMP
-        print(src)# NOTE: TEMP
         if typ == 'file':
-            ds.load_from_json(src)
+            json_src = json.loads(src)
+            ds.load_from_json(json_src)
+            print(ds.keys())
         return '', 202
     else:
         return 'Missing Data...', 400
