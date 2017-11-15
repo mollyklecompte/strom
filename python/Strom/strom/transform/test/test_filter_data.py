@@ -1,5 +1,6 @@
 import unittest
-from Strom.strom.transform.filter_data import Filter, butter_lowpass
+import numpy as np
+from Strom.strom.transform.filter_data import Filter, ButterLowpass, WindowAverage
 
 
 class TestFilter(unittest.TestCase):
@@ -18,7 +19,7 @@ class TestFilter(unittest.TestCase):
 
 class TestButter(unittest.TestCase):
     def setUp(self):
-        self.butter = butter_lowpass()
+        self.butter = ButterLowpass()
 
     def test_defaults(self):
         self.assertEqual(self.butter.get_params(), {"order":3, "nyquist":0.05})
@@ -30,6 +31,24 @@ class TestButter(unittest.TestCase):
         self.assertIsInstance(buttered_data, dict)
         self.assertIn("viscosity", buttered_data)
         self.assertEqual(len(measure["viscosity"]["val"]), buttered_data["viscosity"].shape[0])
+
+class TestWindow(unittest.TestCase):
+    def setUp(self):
+        self.wa = WindowAverage()
+
+    def test_window(self):
+        test_data_len = 200
+        test_data = np.random.randint(0,15,(test_data_len,))
+        test_measure = {"viscosity":{"val":test_data, "dtype":"int"}}
+        self.wa.load_measures(test_measure)
+        for test_window in range(1, int(np.floor(test_data_len/2))):
+            params = {"func_params":{"window_len":test_window}}
+            self.wa.load_params(params)
+            windowed_data = self.wa.transform_data()
+            self.assertIsInstance(windowed_data, dict)
+            self.assertIn("viscosity", windowed_data)
+            self.assertEqual(len(test_measure["viscosity"]["val"]), windowed_data["viscosity"].shape[0], "window len "+str(test_window))
+
 
 if __name__ == "__main__":
     unittest.main()

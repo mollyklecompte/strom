@@ -5,6 +5,16 @@ from scipy.signal import butter, filtfilt
 from .transform import Transformer
 
 
+def window_data(in_array, window_len):
+    w_data = np.convolve(in_array, np.ones(window_len), "valid") / window_len
+    # Dealing with the special case for endpoints of in_array
+    ends_divisor = np.arange(1, window_len, 2)
+    start = np.cumsum(in_array[:window_len - 1])[::2] / ends_divisor
+    stop = (np.cumsum(in_array[:-window_len:-1])[::2] / ends_divisor)[::-1]
+    if in_array.shape[0] - w_data.shape[0] - start.shape[0] < stop.shape[0]:
+        stop = stop[1:]
+    return np.concatenate((start, w_data, stop))
+
 class Filter(Transformer):
     __metaclass__ = ABCMeta
 
@@ -24,7 +34,7 @@ class Filter(Transformer):
         """Method to apply the transformation and return the transformed data"""
         raise NotImplementedError("subclass must implement this abstract method.")
 
-class butter_lowpass(Filter):
+class ButterLowpass(Filter):
     """Class to apply a Butterworth lowpass filter to data"""
     def __init__(self):
         super().__init__()
@@ -37,3 +47,18 @@ class butter_lowpass(Filter):
             buttered_data[key] = filtfilt(b, a, np.array(self.data[key]["val"]))
 
         return buttered_data
+
+class WindowAverage(Filter):
+    """Class for windowed average to smooth data"""
+    def __init__(self):
+        super().__init__()
+        self.params["func_params"] = {"window_len": 2}
+
+    def transform_data(self):
+        windowed_data = {}
+        for key in self.data.keys():
+            windowed_data[key] = window_data(np.array(self.data[key]["val"]),
+                                                  self.params["func_params"]["window_len"])
+
+
+        return windowed_data
