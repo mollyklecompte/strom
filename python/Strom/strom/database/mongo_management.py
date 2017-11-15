@@ -21,7 +21,7 @@ class MongoManager(object):
         self.temp_collection = self.db[self.temp_coll_name]
         self.derived_coll_name = config['derived_coll']
         self.derived_collection = self.db[self.derived_coll_name]
-        self.event_coll_name = config['events_coll']
+        self.event_coll_name = config['event_coll']
         self.event_collection = self.db[self.event_coll_name]
 
     def _insert(self, dstream, dtype):
