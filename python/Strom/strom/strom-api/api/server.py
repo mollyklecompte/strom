@@ -23,8 +23,9 @@ def define():
     """ Route for defining DStream. """
     if request.method == 'POST':
         args = parser.parse_args()
-        print(args)
-        return ''
+        if args['source']:
+            print(args)
+            return ''
     else:
         return '', 400
 
