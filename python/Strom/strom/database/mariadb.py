@@ -25,12 +25,17 @@ class SQL_Connection:
         print("Closing connection")
         self.mariadb_connection.close()
 
+    # ***** Metadata Table and Methods *****
+
     def _create_metadata_table(self):
         table = ("CREATE TABLE template_metadata ("
             "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
-            "  `device_id` int(10) NOT NULL,"
+            "  `stream_name` varchar(20) NOT NULL,"
             "  `stream_token` int(10) NOT NULL,"
             "  `version` float(10, 2) NOT NULL,"
+            "  `template_id` varchar(20),"
+            "  `derived_id` varchar(30),"
+            "  `events_id` varchar(30),"
             "  PRIMARY KEY (`unique_id`)"
             ") ENGINE=InnoDB")
         try:
@@ -44,14 +49,14 @@ class SQL_Connection:
         else:
             print("OK")
 
-    def _insert_row(self, device_id, stream_token, version):
+    def _insert_row(self, stream_name, stream_token, version):
         # There doesn't seem to be a way to use parameter placeholders for
         # table names; it can only be used to insert column values.
         add_row = ("INSERT INTO template_metadata "
-        "(device_id, stream_token, version) "
+        "(stream_name, stream_token, version) "
         "VALUES (%s, %s, %s)")
 
-        row_columns = (device_id, stream_token, version)
+        row_columns = (stream_name, stream_token, version)
 
         try:
             print("Inserting row")
@@ -63,15 +68,15 @@ class SQL_Connection:
         else:
             print("OK")
 
-    def _retrieve_by_device_id(self, device_id):
-        query = ('SELECT * FROM template_metadata WHERE device_id = %s')
+    def _retrieve_by_stream_name(self, stream_name):
+        query = ('SELECT * FROM template_metadata WHERE stream_name = %s')
         try:
-            print("Querying by device id")
-            self.cursor.execute(query, [device_id])
+            print("Querying by stream name")
+            self.cursor.execute(query, [stream_name])
             # view data in cursor object
-            for (unique_id, device_id, stream_token, version) in self.cursor:
-                print("uid: {}, device: {}, stream: {}, version: {}".format(unique_id, device_id, stream_token, version))
-                return [unique_id, device_id, stream_token, version]
+            for (unique_id, stream_name, stream_token, version, template_id, derived_id, events_id) in self.cursor:
+                print("uid: {}, name: {}, stream: {}, version: {}, template id: {}, derived id: {}, events id: {}".format(unique_id, stream_name, stream_token, version, template_id, derived_id, events_id))
+                return [unique_id, stream_name, stream_token, version, template_id, derived_id, events_id]
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -83,9 +88,9 @@ class SQL_Connection:
             print("Querying by unique id")
             self.cursor.execute(query, [unique_id])
             # view data in cursor object
-            for (unique_id, device_id, stream_token, version) in self.cursor:
-                print("uid: {}, device: {}, stream: {}, version: {}".format(unique_id, device_id, stream_token, version))
-                return [unique_id, device_id, stream_token, version]
+            for (unique_id, stream_name, stream_token, version, template_id, derived_id, events_id) in self.cursor:
+                print("uid: {}, name: {}, stream: {}, version: {}, template id: {}, derived id: {}, events id: {}".format(unique_id, stream_name, stream_token, version, template_id, derived_id, events_id))
+                return [unique_id, stream_name, stream_token, version, template_id, derived_id, events_id]
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -97,9 +102,9 @@ class SQL_Connection:
             print("Querying by stream token")
             self.cursor.execute(query, [stream_token])
             # view data in cursor object
-            for (unique_id, device_id, stream_token, version) in self.cursor:
-                print("uid: {}, device: {}, stream: {}, version: {}".format(unique_id, device_id, stream_token, version))
-                return [unique_id, device_id, stream_token, version]
+            for (unique_id, stream_name, stream_token, version, template_id, derived_id, events_id) in self.cursor:
+                print("uid: {}, name: {}, stream: {}, version: {}, template id: {}, derived id: {}, events id: {}".format(unique_id, stream_name, stream_token, version, template_id, derived_id, events_id))
+                return [unique_id, stream_name, stream_token, version, template_id, derived_id, events_id]
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -111,9 +116,54 @@ class SQL_Connection:
             print("Returning all data from template_metadata table")
             self.cursor.execute(query)
             # view data in cursor object
-            for (unique_id, device_id, stream_token, version) in self.cursor:
-                print("uid: {}, device: {}, stream: {}, version: {}".format(unique_id, device_id, stream_token, version))
+            for (unique_id, stream_name, stream_token, version, template_id, derived_id, events_id) in self.cursor:
+                print("uid: {}, name: {}, stream: {}, version: {}, template id: {}, derived id: {}, events id: {}".format(unique_id, stream_name, stream_token, version, template_id, derived_id, events_id))
         except mariadb.Error as err:
             print(err.msg)
         else:
             print("OK")
+
+
+# ***** Stream Token Table and Methods *****
+
+    def _create_stream_lookup_table(self, dstream):
+        table = ("CREATE TABLE template_metadata ("
+            "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
+            "  `stream_name` varchar(20) NOT NULL,"
+            "  `stream_token` int(10) NOT NULL,"
+            "  `version` float(10, 2) NOT NULL,"
+            "  `template_id` varchar(20),"
+            "  `derived_id` varchar(30),"
+            "  `events_id` varchar(30),"
+            "  PRIMARY KEY (`unique_id`)"
+            ") ENGINE=InnoDB")
+        try:
+            print("Creating table")
+            self.cursor.execute(table)
+        except mariadb.Error as err:
+            if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
+                print("already exists")
+            else:
+                print(err.msg)
+        else:
+            print("OK")
+
+# def main():
+#     #  _connect_to_database()
+#     #  _create_metadata_table()
+#     #  _insert_row("stream_one", 13, 1.0)
+#     #  _insert_row("stream_two", 11, 1.1)
+#     #  _retrieve_by_stream_name("stream_one")
+#     #  _retrieve_by_id(1)
+#     #  _retrieve_by_stream_token(11)
+#
+#      sql = SQL_Connection()
+#      print(sql.pool_name)
+#      sql._create_metadata_table()
+#      sql._insert_row("stream_one", 13, 1.0)
+#      sql._insert_row("stream_two", 11, 1.1)
+#      sql._retrieve_by_stream_name("stream_one")
+#      sql._retrieve_by_id(1)
+#      sql._retrieve_by_stream_token(11)
+#      sql._select_all_from_metadata_table()
+# main()
