@@ -1,0 +1,1 @@
+{"stream_name": "driver_data", "version": 0, "stream_token": null, "timestamp": null, "measures": {"location": {"val": null, "dtype": "float"}}, "fields": {"region-code": {}}, "user_ids": {"driver-id": {}, "id": {}}, "tags": {}, "foreign_keys": [], "filters": [], "dparam_rules": [], "event_rules": {}}
