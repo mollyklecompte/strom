@@ -18,7 +18,7 @@ def prnt_ver(ctx, param, value):
 @click.group()
 @click.option('--version', '--v', 'version', is_flag=True, callback=prnt_ver, expose_value=False, is_eager=True, help="Current version")
 def dstream():
-    """ Command group for all DStream methods. """
+    """ Command group for all DStream methods. Entrypoint"""
     pass
 
 @click.command()
@@ -36,7 +36,7 @@ def init():
     """ Initialize DStream object. Returns stream_token. """
     click.echo(click.style("Creating DStream.....\n", fg='magenta'))
     try:
-        ret = requests.get('http://127.0.0.1:5000/')#NOTE TEMP
+        ret = requests.get('http://127.0.0.1:5000/init')
     except:
         click.echo(click.style("Connection Refused!...\n", fg='red', reverse=True))
     else:
@@ -45,17 +45,30 @@ def init():
 
 @click.command()
 @click.option('--source', prompt=True, type=click.Choice(['kafka', 'file']), help="Specify source of data")
-@click.option('--file', '--f', 'files', multiple=True, type=click.File('r'), help="Files with data to upload")
-@click.option('--kafka-topic', default=None, help="Specify kafka topic")
-def define(source, files, kafka_topic):
+@click.option('--file', 'f', type=click.File('r'), help="File with data to upload")
+@click.option('--topic', default=None, help="Specify kafka topic")
+def define(source, f, topic):
     """ Define source of DStream. """
     if source == 'kafka':
-        click.echo(kafka_topic)
+        click.echo(click.style("Adding Kafka topic...\n", fg='cyan'))
+        try:
+            ret = requests.post('http://127.0.0.1:5000/define', data={'type':'kafka', 'source':topic})
+        except:
+            click.echo(click.style("Connection Refused!...\n", fg='red', reverse=True))
+        else:
+            click.echo(click.style(str(ret.status_code), fg='yellow'))
     else:
-        for i in files:
-            click.echo(i.read())
+        click.echo(click.style("Adding source...\n", fg='cyan'))
+        data = f.read()
+        try:
+            ret = requests.post('http://127.0.0.1:5000/define', data={'type':'file', 'source':data})
+        except:
+            click.echo(click.style("Connection Refused!...\n", fg='red', reverse=True))
+        else:
+            click.echo(click.style(str(ret.status_code), fg='yellow'))
+
 
 # d-stream group
+dstream.add_command(welcome)
 dstream.add_command(init)
 dstream.add_command(define)
-dstream.add_command(welcome)
