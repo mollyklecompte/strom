@@ -134,13 +134,14 @@ class SQL_Connection:
             # create a column for that measure
         for measure in dstream['measures']:
             # measure dstream['measures'][measure]['dtype']
-            measure_columns += "  ` +" measure "` " + dstream['measures'][measure]['dtype'] + ","
+            measure_columns += "  `" + measure"` " + dstream['measures'][measure]['dtype'] + " NOT NULL,"
 
         uid_columns = ""
         # for each item in the uids dictionary
             # create a column for that uid
         for uid in dstream['user_ids']:
             # uid dstream['user_ids'][uid]
+
 
         # for each item in the filters dictionary
             # create a column for that filter
