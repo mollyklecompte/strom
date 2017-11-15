@@ -127,19 +127,41 @@ class SQL_Connection:
 # ***** Stream Token Table and Methods *****
 
     def _create_stream_lookup_table(self, dstream):
-        table = ("CREATE TABLE template_metadata ("
+        # take in a dstream python object
+
+        measure_columns = ""
+        # for each item in the measures dictionary
+            # create a column for that measure
+        for measure in dstream['measures']:
+            # measure dstream['measures'][measure]['dtype']
+            measure_columns += "  ` +" measure "` " + dstream['measures'][measure]['dtype'] + ","
+
+        uid_columns = ""
+        # for each item in the uids dictionary
+            # create a column for that uid
+        for uid in dstream['user_ids']:
+            # uid dstream['user_ids'][uid]
+
+        # for each item in the filters dictionary
+            # create a column for that filter
+        for filt in dstream['filters']:
+            # create a column filt for that filter
+
+        table = ("CREATE TABLE %s ("
             "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
-            "  `stream_name` varchar(20) NOT NULL,"
-            "  `stream_token` int(10) NOT NULL,"
             "  `version` float(10, 2) NOT NULL,"
-            "  `template_id` varchar(20),"
-            "  `derived_id` varchar(30),"
-            "  `events_id` varchar(30),"
+            "  `time_stamp` date NOT NULL,"
+            "  `filters` varchar(50),"
+            "  `tags` varchar(50),"
+            "  `fields` varchar(50),"
             "  PRIMARY KEY (`unique_id`)"
             ") ENGINE=InnoDB")
+
+        dstream_particulars = (dstream['stream_token'])
+
         try:
             print("Creating table")
-            self.cursor.execute(table)
+            self.cursor.execute(table, dstream_particulars)
         except mariadb.Error as err:
             if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
                 print("already exists")
