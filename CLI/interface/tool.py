@@ -18,7 +18,7 @@ def prnt_ver(ctx, param, value):
 @click.group()
 @click.option('--version', '--v', 'version', is_flag=True, callback=prnt_ver, expose_value=False, is_eager=True, help="Current version")
 def dstream():
-    """ Command group for all DStream methods. Entrypoint"""
+    """ Entrypoint. Command group for all DStream methods. """
     pass
 
 @click.command()
@@ -57,6 +57,8 @@ def define(source, f, topic):
             click.echo(click.style("Connection Refused!...\n", fg='red', reverse=True))
         else:
             click.echo(click.style(str(ret.status_code), fg='yellow'))
+            click.echo(click.style(ret.text, fg='yellow'))
+
     else:
         click.echo(click.style("Adding source...\n", fg='cyan'))
         data = f.read()
@@ -66,6 +68,7 @@ def define(source, f, topic):
             click.echo(click.style("Connection Refused!...\n", fg='red', reverse=True))
         else:
             click.echo(click.style(str(ret.status_code), fg='yellow'))
+            click.echo(click.style(ret.text, fg='yellow'))
 
 
 # d-stream group

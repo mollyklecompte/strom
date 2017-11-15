@@ -13,7 +13,7 @@ parser = reqparse.RequestParser()
 parser.add_argument('type')
 parser.add_argument('source')
 
-ds = DStream()
+ds = DStream()# NOTE: TEMP
 
 def init():
     """ Route for initializing DStream object. """
@@ -24,8 +24,13 @@ def define():
     if request.method == 'POST':
         args = parser.parse_args()
         if args['source']:
-            print(args)
+            typ = args['type']
+            src = args['source']
+            print(typ)
+            print(src)
             return ''
+        else:
+            return 'Missing Data...', 400
     else:
         return '', 400
 
