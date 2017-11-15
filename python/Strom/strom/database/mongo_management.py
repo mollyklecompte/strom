@@ -9,7 +9,7 @@ __version__  = "0.1"
 __author__ = "Molly <molly@tura.io>"
 
 # temporary config
-config = {'mongo_host' : '172.17.0.2', 'mongo_port' : '27017', 'template_coll' : 'template_directory', 'db' : 'strom'}
+config = {'mongo_host' : '172.17.0.2', 'mongo_port' : 27017, 'template_coll' : 'template_directory', 'db' : 'strom'}
 
 
 class MongoManager(object):
@@ -28,11 +28,15 @@ class MongoManager(object):
         if inserted.acknowledged is True:
             return inserted.inserted_id
         else:
-            pass
+            raise ValueError('Template insert failed.')
 
     def _get_template(self, token):
         template = self.temp_collection.find_one({"_id": token})
 
-        return template
+        if template is not None:
+            return template
+
+        else:
+            raise ValueError('Template with id ' + token + ' does not exist.')
 
 
