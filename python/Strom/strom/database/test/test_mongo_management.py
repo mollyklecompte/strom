@@ -14,16 +14,16 @@ class TestMongoManager(unittest.TestCase):
 
         self.assertEqual(inserted_id, queried['stream_token'])
 
-    def test_get_template(self):
-        inserted_id = self.manager._insert_template(self.dstream)
-        token = str(self.dstream['stream_token'])
-        queried = self.manager._get_template(token)
+    #def test_get_template(self):
+     #   inserted_id = self.manager._insert_template(self.dstream)
+     #   token = str(self.dstream['E' + 'stream_token'])
+     #   queried = self.manager._get_template(token)
 
-        print(token)
-        print(inserted_id)
-        print(queried['stream_token'])
+     #   print(token)
+     #   print(inserted_id)
+     #   print(queried['stream_token'])
 
-        self.assertEqual(queried['stream_token'], self.dstream['stream_token'])
+    #    self.assertEqual(queried['stream_token'], self.dstream['stream_token'])
 
 
 if __name__ == "__main__":
