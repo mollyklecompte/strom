@@ -7,22 +7,25 @@ class TestMongoManager(unittest.TestCase):
     def setUp(self):
         self.manager = MongoManager()
         self.dstream = DStream()
+        self.dstream["device_id"] = 'Chad'
 
-    def test_insert_template(self):
-        inserted_id = self.manager._insert_template(self.dstream)
-        queried = self.manager._get_template(self.dstream['stream_token'])
+    def test_insert(self):
+        inserted_id = self.manager._insert(self.dstream, 'template')
+        queried = self.manager._get_by_id(inserted_id, 'template')
 
-        self.assertEqual(inserted_id, queried['stream_token'])
+        inserted_id2 = self.manager._insert(self.dstream, 'derived')
+        queried2 = self.manager._get_by_id(inserted_id2, 'derived')
 
-    def test_get_template(self):
-        inserted_id = self.manager._insert_template(self.dstream)
-        queried = self.manager._get_template(inserted_id)
+        inserted_id3 = self.manager._insert(self.dstream, 'event')
+        queried3 = self.manager._get_by_id(inserted_id3, 'event')
 
+        self.assertEqual("Chad", queried["device_id"])
+        self.assertEqual("Chad", queried2["device_id"])
+        self.assertEqual("Chad", queried3["device_id"])
 
-        print(inserted_id)
-        print(queried['stream_token'])
-
-        self.assertEqual(queried['stream_token'], self.dstream['stream_token'])
+        self.assertEqual(inserted_id, queried["_id"])
+        self.assertEqual(inserted_id2, queried2["_id"])
+        self.assertEqual(inserted_id3, queried3["_id"])
 
 
 if __name__ == "__main__":
