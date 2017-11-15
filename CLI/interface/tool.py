@@ -26,7 +26,7 @@ def welcome():
     """ Usage instructions for first-time users. """
     cprint(figlet_format("Strom CLI", font='small'), 'yellow')
     click.echo(click.style("Initialize a DStream object using 'dstream init'...", fg='magenta'))
-    click.echo(click.style("Save your dstream_token in a safe place!", fg='magenta'))
+    click.echo(click.style("Save your dstream_token in a safe place!", fg='magenta', underline=True))
     click.echo(click.style("Define source of data(kafka stream or file upload) with 'dstream define --source'...", fg='cyan'))
     click.echo(click.style("If source is a file: specify file with '--file'.", fg='cyan'))
     click.echo(click.style("If source is a kafka stream: specify topic with '--kafka-topic'.", fg='cyan'))
