@@ -25,14 +25,21 @@ def define():
     if args['source']:
         typ = args['type']
         src = args['source']
-        print(typ)
-        print(src)
+        print(typ)# NOTE: TEMP
+        print(src)# NOTE: TEMP
+        if typ == 'file':
+            ds.load_from_json(src)
         return '', 202
     else:
         return 'Missing Data...', 400
 
+def modify():
+    """ Route for adding or modifying DStream fields. """
+    pass
+
 app.add_url_rule('/init', 'init', init, methods=['GET'])
 app.add_url_rule('/define', 'define', define, methods=['POST'])
+app.add_url_rule('/modify', 'modify', modify, methods=['GET', 'POST'])
 
 def start():
     """ Entrypoint """
