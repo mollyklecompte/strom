@@ -1,0 +1,5 @@
+click
+requests
+termcolor
+pyfiglet
+setuptools
