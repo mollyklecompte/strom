@@ -128,22 +128,22 @@ class SQL_Connection:
 
 
 
-def main():
-    #  _connect_to_database()
-    #  _create_metadata_table()
-    #  _insert_row("stream_one", 13, 1.0)
-    #  _insert_row("stream_two", 11, 1.1)
-    #  _retrieve_by_stream_name("stream_one")
-    #  _retrieve_by_id(1)
-    #  _retrieve_by_stream_token(11)
-
-     sql = SQL_Connection()
-     print(sql.pool_name)
-     sql._create_metadata_table()
-     sql._insert_row("stream_one", 13, 1.0)
-     sql._insert_row("stream_two", 11, 1.1)
-     sql._retrieve_by_stream_name("stream_one")
-     sql._retrieve_by_id(1)
-     sql._retrieve_by_stream_token(11)
-     sql._select_all_from_metadata_table()
-main()
+# def main():
+#     #  _connect_to_database()
+#     #  _create_metadata_table()
+#     #  _insert_row("stream_one", 13, 1.0)
+#     #  _insert_row("stream_two", 11, 1.1)
+#     #  _retrieve_by_stream_name("stream_one")
+#     #  _retrieve_by_id(1)
+#     #  _retrieve_by_stream_token(11)
+#
+#      sql = SQL_Connection()
+#      print(sql.pool_name)
+#      sql._create_metadata_table()
+#      sql._insert_row("stream_one", 13, 1.0)
+#      sql._insert_row("stream_two", 11, 1.1)
+#      sql._retrieve_by_stream_name("stream_one")
+#      sql._retrieve_by_id(1)
+#      sql._retrieve_by_stream_token(11)
+#      sql._select_all_from_metadata_table()
+# main()
