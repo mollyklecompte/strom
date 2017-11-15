@@ -20,6 +20,10 @@ class SQL_Connection:
         self.cursor = self.mariadb_connection.cursor()
         self.pool_name = self.mariadb_connection.pool_name
 
+    def _close_connection(self):
+        # close pooled connection and return it to the connection pool as an available connection
+        self.mariadb_connection.close()
+
     def _create_metadata_table(self):
         table = ("CREATE TABLE template_metadata ("
             "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"

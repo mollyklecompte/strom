@@ -40,5 +40,8 @@ class TestSQL_Connection(unittest.TestCase):
     def test_select_all_from_metadata_table(self):
         self.assertIsNone(self.cnx._select_all_from_metadata_table())
 
+    def test_close_connection(self):
+        self.assertIsNone(self.cnx._close_connection())
+
 if __name__ == "__main__":
     unittest.main()
