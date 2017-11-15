@@ -10,7 +10,7 @@ class TestMongoManager(unittest.TestCase):
 
     def test_insert_template(self):
         inserted_id = self.manager._insert_template(self.dstream)
-        queried = self.manager._get_template(self.dstream['stream-token'])
+        queried = self.manager._get_template(self.dstream['stream_token'])
         print(inserted_id)
         print(queried['stream_token'])
 
