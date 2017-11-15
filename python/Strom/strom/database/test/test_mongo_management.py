@@ -11,13 +11,17 @@ class TestMongoManager(unittest.TestCase):
     def test_insert_template(self):
         inserted_id = self.manager._insert_template(self.dstream)
         queried = self.manager._get_template(self.dstream['stream_token'])
-        print(inserted_id)
-        print(queried['stream_token'])
 
         self.assertEqual(inserted_id, queried['stream_token'])
 
     def test_get_template(self):
-        queried = self.manager._get_template(self.dstream)
+        inserted_id = self.manager._insert_template(self.dstream)
+        token = str(self.dstream['stream_token'])
+        queried = self.manager._get_template(token)
+
+        print(token)
+        print(inserted_id)
+        print(queried['stream_token'])
 
         self.assertEqual(queried['stream_token'], self.dstream['stream_token'])
 
