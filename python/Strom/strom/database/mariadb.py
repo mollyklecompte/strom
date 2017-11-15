@@ -126,7 +126,27 @@ class SQL_Connection:
 
 # ***** Stream Token Table and Methods *****
 
-
+    def _create_stream_lookup_table(self, dstream):
+        table = ("CREATE TABLE template_metadata ("
+            "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
+            "  `stream_name` varchar(20) NOT NULL,"
+            "  `stream_token` int(10) NOT NULL,"
+            "  `version` float(10, 2) NOT NULL,"
+            "  `template_id` varchar(20),"
+            "  `derived_id` varchar(30),"
+            "  `events_id` varchar(30),"
+            "  PRIMARY KEY (`unique_id`)"
+            ") ENGINE=InnoDB")
+        try:
+            print("Creating table")
+            self.cursor.execute(table)
+        except mariadb.Error as err:
+            if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
+                print("already exists")
+            else:
+                print(err.msg)
+        else:
+            print("OK")
 
 # def main():
 #     #  _connect_to_database()
