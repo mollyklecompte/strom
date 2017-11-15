@@ -143,22 +143,26 @@ class SQL_Connection:
             # uid dstream['user_ids'][uid]
             uid_columns += "  `" + uid + "` varchar(50) NOT NULL,"
 
+        filter_columns = ""
         # for each item in the filters dictionary
             # create a column for that filter
         for filt in dstream['filters']:
             # create a column filt for that filter
+            filter_columns += "  `" + filt + "` varchar(50) NOT NULL,"
 
         table = ("CREATE TABLE %s ("
             "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
             "  `version` float(10, 2) NOT NULL,"
             "  `time_stamp` date NOT NULL,"
-            "  `filters` varchar(50),"
+            "%s"
+            "%s"
+            "%s"
             "  `tags` varchar(50),"
             "  `fields` varchar(50),"
             "  PRIMARY KEY (`unique_id`)"
             ") ENGINE=InnoDB")
 
-        dstream_particulars = (dstream['stream_token'])
+        dstream_particulars = (dstream['stream_token'], measure_columns, uid_columns, filter_columns)
 
         try:
             print("Creating table")
