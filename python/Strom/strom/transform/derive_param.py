@@ -9,7 +9,7 @@ def window_data(in_array, window_len):
     r = np.arange(1, window_len - 1, 2)  # Dealing with the special case for endpoints of in_array
     start = np.cumsum(in_array[:window_len - 1])[::2] / r
     stop = (np.cumsum(in_array[:-window_len:-1])[::2] / r)[::-1]
-    return w_data, np.concatenate((start, w_data, stop))
+    return np.concatenate((start, w_data, stop))
 
 
 class DeriveParam(Transformer):
@@ -50,4 +50,4 @@ class DeriveSlope(DeriveParam):
         if window_len > 1:
             dx = window_data(dx, window_len)
             dy = window_data(dy, window_len)
-
+        return dy/dx
