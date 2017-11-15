@@ -17,7 +17,7 @@ class TestMongoManager(unittest.TestCase):
         self.assertEqual(inserted_id, queried['stream_token'])
 
     def test_get_template(self):
-        queried = self.manager._get_template(self.dstream['stream-token'])
+        queried = self.manager._get_template(self.dstream['stream_token'])
 
         self.assertEqual(queried['stream_token'], self.dstream['stream_token'])
 
