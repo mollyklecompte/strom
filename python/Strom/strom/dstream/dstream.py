@@ -7,7 +7,7 @@ __author__ = "David <david@tura.io>"
 
 class DStream(dict):
     def __init__(self):
-        self["device_id"] = None
+        self["stream_name"] = None
         self["version"] = 0
         self["stream_token"] = uuid.uuid1()
         self["sources"] = {}
@@ -18,7 +18,7 @@ class DStream(dict):
         self["measures"] = {}
         self["fields"] = {}
         self["user_ids"] = {}
-        self["tags"] = []
+        self["tags"] = {}
         self["foreign_keys"] = {}
         self["filters"] = []
         self["dparam_rules"] = []
@@ -43,8 +43,8 @@ class DStream(dict):
     def _add_user_id(self, id_name):
         self["user_ids"][id_name] = {}
 
-    def _add_tag(self, tag):
-        self["tags"].append(tag)
+    def _add_tag(self, tag_name):
+        self["tags"][tag_name] = {}
 
     def _add_fk(self, foreign_key):
         self["foreign_keys"][foreign_key] = {}
@@ -95,7 +95,9 @@ class DStream(dict):
         for uid in user_id_names:
             self._add_user_id(uid)
 
-        self["tags"].extend(tag_list)
+        for tag_name in tag_list:
+            self._add_tag(tag_name)
+
         self["filters"].extend(filter_list)
         self["dparam_rules"].extend(dparam_rule_list)
 
