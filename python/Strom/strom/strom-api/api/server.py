@@ -21,21 +21,18 @@ def init():
 
 def define():
     """ Route for defining DStream. """
-    if request.method == 'POST':
-        args = parser.parse_args()
-        if args['source']:
-            typ = args['type']
-            src = args['source']
-            print(typ)
-            print(src)
-            return ''
-        else:
-            return 'Missing Data...', 400
+    args = parser.parse_args()
+    if args['source']:
+        typ = args['type']
+        src = args['source']
+        print(typ)
+        print(src)
+        return '', 202
     else:
-        return '', 400
+        return 'Missing Data...', 400
 
 app.add_url_rule('/init', 'init', init, methods=['GET'])
-app.add_url_rule('/define', 'define', define, methods=['GET', 'POST'])
+app.add_url_rule('/define', 'define', define, methods=['POST'])
 
 def start():
     """ Entrypoint """
