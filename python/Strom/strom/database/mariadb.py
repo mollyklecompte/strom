@@ -139,21 +139,30 @@ class SQL_Connection:
             # create a column for that measure
         for measure in dstream['measures']:
             # measure dstream['measures'][measure]['dtype']
-            measure_columns += "  `" + measure + "` " + dstream['measures'][measure]['dtype'] + " NOT NULL,"
+            measure_columns += "  `" + measure + "` " + dstream['measures'][measure]['dtype'] + ","
+            # measure_columns += "  `%s` %s,  " % (measure, dstream['measures'][measure]['dtype'])
+        print("***MEASURE COLUMNS****", measure_columns)
 
         uid_columns = ""
         # for each item in the uids dictionary
             # create a column for that uid
         for uid in dstream['user_ids']:
             # uid dstream['user_ids'][uid]
-            uid_columns += "  `" + uid + "` varchar(50) NOT NULL,"
+            uid_columns += "  `" + uid + "` varchar(50),"
+        print("***UID COLUMNS***", uid_columns)
 
-        filter_columns = ""
-        # for each item in the filters dictionary
-            # create a column for that filter
-        for filt in dstream['filters']:
-            # create a column filt for that filter
-            filter_columns += "  `" + filt + "` varchar(50) NOT NULL,"
+        # filter_columns = ""
+        # # for each item in the filters dictionary
+        #     # create a column for that filter
+        # for filt in dstream['filters']:
+        #     # create a column filt for that filter
+        #     # filter_columns += "  `" + filt + "` varchar(50),"
+        #     print(filt)
+
+        # parse stream_token to stringify and replace hyphens with underscores
+        stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
+        # print("***STREAM TOKEN WITH UNDERSCORES***", stringified_stream_token_uuid)
+        # stringified_stream_token_uuid = "stream_token_standin"
 
         table = ("CREATE TABLE %s ("
             "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
@@ -161,17 +170,19 @@ class SQL_Connection:
             "  `time_stamp` float(10, 2) NOT NULL,"
             "%s"
             "%s"
-            "%s"
+            # "%s"
             "  `tags` varchar(50),"
             "  `fields` varchar(50),"
             "  PRIMARY KEY (`unique_id`)"
-            ") ENGINE=InnoDB")
+            ") ENGINE=InnoDB" % (stringified_stream_token_uuid, measure_columns, uid_columns))
 
-        dstream_particulars = (dstream['stream_token'], measure_columns, uid_columns, filter_columns)
+        # CREATE TABLE test_lookup (`unique_id` int(10) NOT NULL AUTO_INCREMENT, `version` float(10, 2) NOT NULL, `time_stamp` float(10, 2) NOT NULL, `m_3` float(10, 2), `m_2` int(10), `m_1` varchar(10), `uid_1` varchar(50), `uid_2` varchar(50), `uid_3` varchar(50), `tags` varchar(50), PRIMARY KEY(`unique_id`));
+
+        dstream_particulars = (measure_columns, uid_columns)
 
         try:
             print("Creating table")
-            self.cursor.execute(table, dstream_particulars)
+            self.cursor.execute(table)
         except mariadb.Error as err:
             if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
                 print("already exists")
@@ -222,7 +233,7 @@ single_dstream = {
 #     'device_id': None,
 #     'version': 0,
 #     'fields': {},
-#     'stream_token': UUID('2c16caea-caf4-11e7-ab05-0242eb7ab33c'),
+#     'stream_token': UUID('2c16caea_caf4_11e7_ab05_0242eb7ab33c'),
 #     'sources': {},
 #     'measures': {},
 #     'event_rules': {},
@@ -233,66 +244,54 @@ single_dstream = {
 def main():
     sql = SQL_Connection()
     print(sql.pool_name)
-    #  sql._create_metadata_table()
-    #  sql._insert_row("stream_one", 13, 1.0)
-    #  sql._insert_row("stream_two", 11, 1.1)
-    #  sql._retrieve_by_stream_name("stream_one")
-    #  sql._retrieve_by_id(1)
-    #  sql._retrieve_by_stream_token(11)
-    #  sql._select_all_from_metadata_table()
+    # sql._create_metadata_table()
+    # sql._insert_row("stream_one", 13, 1.0)
+    # sql._insert_row("stream_two", 11, 1.1)
+    # sql._retrieve_by_stream_name("stream_one")
+    # sql._retrieve_by_id(1)
+    # sql._retrieve_by_stream_token(11)
+    # sql._select_all_from_metadata_table()
+
+
 
     dstream = DStream()
     print("***DSTREAM INITIALIZED***:", dstream)
 
-        #  def _add_measure(self, measure_name, dtype):
-        #      """Creates entry in measures dict for new measure"""
-        #      self["measures"][measure_name] = {"val":None, "dtype":dtype}
-
     dstream._add_measure("m_2", "int(10)")
     dstream._add_measure("m_1", "varchar(10)")
     dstream._add_measure("m_3", "float(10, 2)")
-    #
-    #
-    #     #  def _add_field(self, field_name):
-    #     #      self["fields"][field_name] = {}
-    #
+
     dstream._add_field("field_1")
     dstream._add_field("field_2")
     dstream._add_field("field_3")
-    #
-    #
-    #     #  def _add_user_id(self, id_name):
-    #     #      self["user_ids"][id_name] = {}
-    #
+
     dstream._add_user_id("uid_1")
     dstream._add_user_id("uid_2")
     dstream._add_user_id("uid_3")
-    #
-    #
-    #     #  def _add_tag(self, tag):
-    #     #      self["tags"].append(tag)
-    #
+
     dstream._add_tag("first tag")
     dstream._add_tag("second tag")
-    #
-    #
-    #     #  def _add_filter(self, filter_dict):
-    #     #      """Add filter to our storage.
-    #     #       filter_dict: dict of parameters for filter class object"""
-    #     #      self["filters"].append(filter_dict)
-    #
-    filter_dict = {
-        "filter_1": "first filter",
-        "filter_2": "second filter",
+
+    filter_dict_1 = {
+        "filter_1": "first filter"
+    }
+    filter_dict_2 = {
+        "filter_2": "second filter"
+    }
+    filter_dict_3 = {
         "filter_3": "third filter"
     }
-    dstream._add_filter(filter_dict)
-    #
-    #     #  def _publish_version(self):
-    #     #      """Increment version number"""
-    #     #      self["version"] += 1
-    #
-    #
+    dstream._add_filter(filter_dict_1)
+    dstream._add_filter(filter_dict_2)
+    dstream._add_filter(filter_dict_3)
+
+        #  def _publish_version(self):
+        #      """Increment version number"""
+        #      self["version"] += 1
+
+
     print("***DSTREAM WITH LOOKUP TABLE FIELDS***:", dstream)
+
+    sql._create_stream_lookup_table(dstream)
 
 main()
