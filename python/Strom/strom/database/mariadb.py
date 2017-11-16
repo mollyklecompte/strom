@@ -1,5 +1,8 @@
 """MySQL Database Connector Class"""
 
+__version__  = "0.1"
+__author__ = "Justine <justine@tura.io>"
+
 #!/usr/bin/python
 import mysql.connector as mariadb
 from mysql.connector import errorcode
