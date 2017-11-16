@@ -1,14 +1,14 @@
 import unittest
-from Strom.strom.dstream.filter import Filter
+from Strom.strom.dstream.filter_rules import FilterRules
 
 
-class TestFilter(unittest.TestCase):
+class TestFilterRules(unittest.TestCase):
     def setUp(self):
-        self.filter = Filter()
+        self.filter = FilterRules()
         print(self.filter)
 
     def test_init(self):
-        self.assertIsInstance(self.filter, Filter)
+        self.assertIsInstance(self.filter, FilterRules)
         init_keys = ["dtype", "filter_name", "func_params"]
         for item in init_keys:
             self.assertIn(item, self.filter.keys())
