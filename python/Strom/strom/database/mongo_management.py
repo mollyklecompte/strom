@@ -9,7 +9,7 @@ __version__  = "0.1"
 __author__ = "Molly <molly@tura.io>"
 
 # temporary config
-config = {'mongo_host' : '10.156.86.156', 'mongo_port' : 27017, 'template_coll' : 'templates', 'derived_coll' : 'derived_params', 'event_coll' : 'events', 'db' : 'strom'}
+config = {'mongo_host' : '172.17.0.3', 'mongo_port' : 27017, 'template_coll' : 'templates', 'derived_coll' : 'derived_params', 'event_coll' : 'events', 'db' : 'strom'}
 
 
 class MongoManager(object):
