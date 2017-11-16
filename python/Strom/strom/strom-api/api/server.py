@@ -24,19 +24,19 @@ def define():
     args = parser.parse_args()# eg.{'type':'file', 'content':data}
     if args['content']:
         typ = args['type']# file or kafka
-        data = args['content']# kafka topic name or template
-        ds._add_source('foo', typ)# name: dict with type: val, topic: null
+        cont = args['content']# kafka topic name or template
+        if typ == 'kafka':
+            ds._add_source('foo', {'type':typ, 'topic':cont})
+        else:
+            ds._add_source('foo', {'type': typ, 'topic':None})
+        print(ds['sources'])
+        ds.load_from_json(cont)
         return '', 202
     else:
         return 'Missing Data...', 400
 
-def modify():
-    """ Route for adding or modifying DStream. """
-    pass
-
 app.add_url_rule('/init', 'init', init, methods=['GET'])
 app.add_url_rule('/define', 'define', define, methods=['POST'])
-app.add_url_rule('/modify', 'modify', modify, methods=['GET', 'POST'])
 
 def start():
     """ Entrypoint """
