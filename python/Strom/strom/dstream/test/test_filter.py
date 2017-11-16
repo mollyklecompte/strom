@@ -9,7 +9,7 @@ class TestFilter(unittest.TestCase):
 
     def test_init(self):
         self.assertIsInstance(self.filter, Filter)
-        init_keys = ["dtype", "func_param_name"]
+        init_keys = ["dtype", "filter_name", "func_params"]
         for item in init_keys:
             self.assertIn(item, self.filter.keys())
 
@@ -18,10 +18,15 @@ class TestFilter(unittest.TestCase):
         self.filter._set_dtype(dtype)
         self.assertEqual(self.filter["dtype"], dtype)
 
-    def test_set_func_param_name(self):
-        func_param_name = "func_param_name_1"
-        self.filter._set_func_param_name(func_param_name)
-        self.assertEqual(self.filter["func_param_name"], func_param_name)
+    def test_set_filter_name(self):
+        filter_name = "filter_name_1"
+        self.filter._set_filter_name(filter_name)
+        self.assertEqual(self.filter["filter_name"], filter_name)
+
+    def test_set_func_params(self):
+        func_param = "func_param_1"
+        self.filter._set_func_params(func_param)
+        self.assertEqual(self.filter["func_params"], func_param)
 
 if __name__ == "__main__":
     unittest.main()
