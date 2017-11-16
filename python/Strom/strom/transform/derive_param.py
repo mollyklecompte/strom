@@ -31,7 +31,7 @@ class DeriveSlope(DeriveParam):
         self.params["func_params"] = {"window":1}
         self.params["measure_rules"] ={"rise_measure":"measure y values (or rise in rise/run calculation of slope)",
                                        "run_measure":"measure containing x values (or run in rise/run calculation of slope)",
-                                       "output_name":"name of returned param"}
+                                       "output_name":"name of returned measure"}
 
     def transform_data(self):
         window_len = self.params["func_params"]["window"]
@@ -51,7 +51,7 @@ class DeriveChange(DeriveParam):
     def __init__(self):
         super().__init__()
         self.params["func_params"] = {"window":1}
-        self.params["measure_rules"] ={"target_measure":"measure_name", "output_name":"name of returned param"}
+        self.params["measure_rules"] ={"target_measure":"measure_name", "output_name":"name of returned measure"}
 
     def transform_data(self):
         window_len = self.params["func_params"]["window"]
@@ -60,3 +60,40 @@ class DeriveChange(DeriveParam):
             diffed_data = window_data(diffed_data, window_len)
 
         return {self.params["measure_rules"]["output_name"]:diffed_data}
+
+class DeriveDistance(DeriveParam):
+    def __init__(self):
+        super().__init__()
+        self.params["func_params"] = {"window":1, "distance_func": "euclidean"}
+        self.params["supported_distances"] = ["euclidean", "great_circle"]
+        self.param["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
+    @staticmethod
+    def euclidean_dist(position_array):
+        return np.sum(np.diff(position_array, axis=0)**2, axis=1)
+    @staticmethod
+    def great_circle(position_array, units="mi"):
+        diff_array = np.diff(position_array, axis=0)
+        dlat = diff_array[:,0]
+        dlon = diff_array[:,1]
+        inner_val = np.sin(dlat/2.0)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2.0)**2
+        outer_val = 2*np.arcsin(np.sqrt(inner_val))
+        if units == "mi":
+            earth_diameter = 3959
+        elif units = "km":
+            earth_diameter = 6371
+
+        return outer_val*earth_diameter
+
+
+    def transform_data(self):
+        window_len = self.params["func_params"]["window"]
+        position_array = np.array(self.data[self.params["measure_rules"]["saptial_measure"]["val"]])
+        if self.params["func_params"]["distance_func"}] == "euclidean":
+            dist_array = self.euclidean_dist(position_array)
+        elif self.params["func_params"]["distance_func"}] == "great_circle":
+            dist_array = self.great_circle(position_array)
+
+        if window_len > 1:
+            dist_array = window_data(dist_array, window_len)
+
+        return {self.params["measure_rules"]["output_name"]:dist_array}
