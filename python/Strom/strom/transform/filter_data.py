@@ -40,11 +40,15 @@ class ButterLowpass(Filter):
         super().__init__()
         self.params["func_params"] ={"order":3, "nyquist":0.05}
 
+    @staticmethod
+    def butter_data(data_array, order, nyquist):
+        b, a = butter(order, nyquist)
+        return filtfilt(b, a, data_array)
+
     def transform_data(self):
-        b, a = butter(self.params["func_params"]["order"], self.params["func_params"]["nyquist"])
         buttered_data = {}
         for key in self.data.keys():
-            buttered_data[key] = filtfilt(b, a, np.array(self.data[key]["val"]))
+            buttered_data[key] = self.butter_data(np.array(self.data[key]["val"]), self.params["func_params"]["order"], self.params["func_params"]["nyquist"])
 
         return buttered_data
 

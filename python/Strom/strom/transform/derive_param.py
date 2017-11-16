@@ -32,19 +32,22 @@ class DeriveSlope(DeriveParam):
         self.params["measure_rules"] ={"rise_measure":"measure y values (or rise in rise/run calculation of slope)",
                                        "run_measure":"measure containing x values (or run in rise/run calculation of slope)",
                                        "output_name":"name of returned measure"}
+    @staticmethod
+    def sloper(rise_array, run_array, window_len):
+        dx = np.diff(run_array)
+        dy = np.diff(rise_array)
+
+        if window_len > 1:
+            sloped = window_data(dy / dx, window_len)
+        else:
+            sloped = dy / dx
+        return sloped
 
     def transform_data(self):
         window_len = self.params["func_params"]["window"]
         xrun = np.array(self.data[self.params["measure_rules"]["run_measure"]]["val"])
         yrise = np.array(self.data[self.params["measure_rules"]["rise_measure"]]["val"])
-        dx = np.diff(xrun)
-        dy = np.diff(yrise)
-
-
-        if window_len > 1:
-            sloped =  window_data(dy/dx, window_len)
-        else:
-            sloped = dy/dx
+        sloped = self.sloper(yrise, xrun, window_len)
         return {self.params["measure_rules"]["output_name"]:sloped}
 
 class DeriveChange(DeriveParam):
@@ -53,12 +56,17 @@ class DeriveChange(DeriveParam):
         self.params["func_params"] = {"window":1}
         self.params["measure_rules"] ={"target_measure":"measure_name", "output_name":"name of returned measure"}
 
-    def transform_data(self):
-        window_len = self.params["func_params"]["window"]
-        diffed_data = np.diff(np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"]))
+    @staticmethod
+    def diff_data(data_array, window_len):
+        diffed_data = np.diff(data_array)
         if window_len > 1:
             diffed_data = window_data(diffed_data, window_len)
+        return diffed_data
 
+    def transform_data(self):
+        window_len = self.params["func_params"]["window"]
+        target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"])
+        diffed_data = self.diff_data(target_array, window_len)
         return {self.params["measure_rules"]["output_name"]:diffed_data}
 
 class DeriveDistance(DeriveParam):
@@ -67,9 +75,14 @@ class DeriveDistance(DeriveParam):
         self.params["func_params"] = {"window":1, "distance_func": "euclidean"}
         self.params["supported_distances"] = ["euclidean", "great_circle"]
         self.param["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
+
     @staticmethod
     def euclidean_dist(position_array):
-        return np.sum(np.diff(position_array, axis=0)**2, axis=1)
+        euclid_array = np.sum(np.diff(position_array, axis=0)**2, axis=1)
+        if window_len > 1:
+            euclid_array = window_data(euclid_array, window_len)
+        return  euclid_array
+
     @staticmethod
     def great_circle(position_array, units="mi"):
         diff_array = np.diff(position_array, axis=0)
@@ -79,21 +92,21 @@ class DeriveDistance(DeriveParam):
         outer_val = 2*np.arcsin(np.sqrt(inner_val))
         if units == "mi":
             earth_diameter = 3959
-        elif units = "km":
+        elif units == "km":
             earth_diameter = 6371
 
-        return outer_val*earth_diameter
+        great_dist = outer_val*earth_diameter
+        if window_len > 1:
+            great_dist = window_data(great_dist, window_len)
+        return great_dist
 
 
     def transform_data(self):
         window_len = self.params["func_params"]["window"]
         position_array = np.array(self.data[self.params["measure_rules"]["saptial_measure"]["val"]])
-        if self.params["func_params"]["distance_func"}] == "euclidean":
-            dist_array = self.euclidean_dist(position_array)
-        elif self.params["func_params"]["distance_func"}] == "great_circle":
-            dist_array = self.great_circle(position_array)
-
-        if window_len > 1:
-            dist_array = window_data(dist_array, window_len)
+        if self.params["func_params"]["distance_func"] == "euclidean":
+            dist_array = self.euclidean_dist(position_array, window_len)
+        elif self.params["func_params"]["distance_func"] == "great_circle":
+            dist_array = self.great_circle(position_array, window_len)
 
         return {self.params["measure_rules"]["output_name"]:dist_array}
