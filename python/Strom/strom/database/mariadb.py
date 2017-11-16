@@ -152,13 +152,14 @@ class SQL_Connection:
             uid_columns += "  `" + uid + "` varchar(50),"
         print("***UID COLUMNS***", uid_columns)
 
-        # filter_columns = ""
-        # # for each item in the filters dictionary
-        #     # create a column for that filter
-        # for filt in dstream['filters']:
-        #     # create a column filt for that filter
-        #     # filter_columns += "  `" + filt + "` varchar(50),"
-        #     print(filt)
+        filter_columns = ""
+        # for each item in the filters dictionary
+            # create a column for that filter
+        for filt in dstream['filters']:
+            # create a column filt for that filter
+            # filter_columns += "  `" + filt["filter_name"] + "` varchar(50),"
+            filter_columns += "  `" + filt["filter_name"] + "` " + filt['dtype'] + ","
+            # print(filt)
 
         # parse stream_token to stringify and replace hyphens with underscores
         stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
@@ -171,15 +172,15 @@ class SQL_Connection:
             "  `time_stamp` float(10, 2) NOT NULL,"
             "%s"
             "%s"
-            # "%s"
+            "%s"
             "  `tags` varchar(50),"
             "  `fields` varchar(50),"
             "  PRIMARY KEY (`unique_id`)"
-            ") ENGINE=InnoDB" % (stringified_stream_token_uuid, measure_columns, uid_columns))
+            ") ENGINE=InnoDB" % (stringified_stream_token_uuid, measure_columns, uid_columns, filter_columns))
 
         # CREATE TABLE test_lookup (`unique_id` int(10) NOT NULL AUTO_INCREMENT, `version` float(10, 2) NOT NULL, `time_stamp` float(10, 2) NOT NULL, `m_3` float(10, 2), `m_2` int(10), `m_1` varchar(10), `uid_1` varchar(50), `uid_2` varchar(50), `uid_3` varchar(50), `tags` varchar(50), PRIMARY KEY(`unique_id`));
 
-        dstream_particulars = (measure_columns, uid_columns)
+        dstream_particulars = (measure_columns, uid_columns, filter_columns)
 
         try:
             print("Creating table")
@@ -279,14 +280,10 @@ def main():
     dstream._add_filter({"func_params":{}, "filter_name": "smoothing", "dtype":"float"})
     dstream._add_filter({"func_params":{}, "filter_name": "low_pass", "dtype":"float"})
 
-        #  def _publish_version(self):
-        #      """Increment version number"""
-        #      self["version"] += 1
-
 
 
     print("***DSTREAM WITH LOOKUP TABLE FIELDS***:", dstream)
 
-    # sql._create_stream_lookup_table(dstream)
+    sql._create_stream_lookup_table(dstream)
 
 main()
