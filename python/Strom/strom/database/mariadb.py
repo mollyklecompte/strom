@@ -6,6 +6,8 @@ __author__ = "Justine <justine@tura.io>"
 #!/usr/bin/python
 import mysql.connector as mariadb
 from mysql.connector import errorcode
+# relative path works when running mariadb.py as a module
+from ..dstream.dstream import DStream
 
 class SQL_Connection:
     def __init__(self):
@@ -194,22 +196,103 @@ class SQL_Connection:
             print("OK")
 
 
-# def main():
-#     #  _connect_to_database()
-#     #  _create_metadata_table()
-#     #  _insert_row("stream_one", 13, 1.0)
-#     #  _insert_row("stream_two", 11, 1.1)
-#     #  _retrieve_by_stream_name("stream_one")
-#     #  _retrieve_by_id(1)
-#     #  _retrieve_by_stream_token(11)
-#
-#      sql = SQL_Connection()
-#      print(sql.pool_name)
-#      sql._create_metadata_table()
-#      sql._insert_row("stream_one", 13, 1.0)
-#      sql._insert_row("stream_two", 11, 1.1)
-#      sql._retrieve_by_stream_name("stream_one")
-#      sql._retrieve_by_id(1)
-#      sql._retrieve_by_stream_token(11)
-#      sql._select_all_from_metadata_table()
-# main()
+single_dstream = {
+    "stream_name": "driver_data",
+    "version": 0,
+    "stream_token": "test_token",
+    "timestamp": 1510603538107,
+    "measures": {"location": {"val": [-122.69081962885704, 45.52110054870811], "dtype": "float"}},
+    "fields": {"region-code": "PDX"},
+    "user_ids": {"driver-id": "Molly Mora", "id": 0},
+    "tags": {},
+    "foreign_keys": [],
+    "filters": [],
+    "dparam_rules": [],
+    "event_rules": {}
+}
+
+# initial_dstream = {
+#     'storage_rules': {},
+#     'tags': [],
+#     'filters': [],
+#     'timestamp': None,
+#     'engine_rules': {},
+#     'user_ids': {},
+#     'foreign_keys': {},
+#     'device_id': None,
+#     'version': 0,
+#     'fields': {},
+#     'stream_token': UUID('2c16caea-caf4-11e7-ab05-0242eb7ab33c'),
+#     'sources': {},
+#     'measures': {},
+#     'event_rules': {},
+#     'dparam_rules': [],
+#     'ingest_rules': {}
+# }
+
+def main():
+    sql = SQL_Connection()
+    print(sql.pool_name)
+    #  sql._create_metadata_table()
+    #  sql._insert_row("stream_one", 13, 1.0)
+    #  sql._insert_row("stream_two", 11, 1.1)
+    #  sql._retrieve_by_stream_name("stream_one")
+    #  sql._retrieve_by_id(1)
+    #  sql._retrieve_by_stream_token(11)
+    #  sql._select_all_from_metadata_table()
+
+    dstream = DStream()
+    print("***DSTREAM INITIALIZED***:", dstream)
+
+        #  def _add_measure(self, measure_name, dtype):
+        #      """Creates entry in measures dict for new measure"""
+        #      self["measures"][measure_name] = {"val":None, "dtype":dtype}
+
+    dstream._add_measure("m_2", "int(10)")
+    dstream._add_measure("m_1", "varchar(10)")
+    dstream._add_measure("m_3", "float(10, 2)")
+    #
+    #
+    #     #  def _add_field(self, field_name):
+    #     #      self["fields"][field_name] = {}
+    #
+    dstream._add_field("field_1")
+    dstream._add_field("field_2")
+    dstream._add_field("field_3")
+    #
+    #
+    #     #  def _add_user_id(self, id_name):
+    #     #      self["user_ids"][id_name] = {}
+    #
+    dstream._add_user_id("uid_1")
+    dstream._add_user_id("uid_2")
+    dstream._add_user_id("uid_3")
+    #
+    #
+    #     #  def _add_tag(self, tag):
+    #     #      self["tags"].append(tag)
+    #
+    dstream._add_tag("first tag")
+    dstream._add_tag("second tag")
+    #
+    #
+    #     #  def _add_filter(self, filter_dict):
+    #     #      """Add filter to our storage.
+    #     #       filter_dict: dict of parameters for filter class object"""
+    #     #      self["filters"].append(filter_dict)
+    #
+    filter_dict = {
+        "filter_1": "first filter",
+        "filter_2": "second filter",
+        "filter_3": "third filter"
+    }
+    dstream._add_filter(filter_dict)
+    #
+    #     #  def _publish_version(self):
+    #     #      """Increment version number"""
+    #     #      self["version"] += 1
+    #
+    #
+    print("***DSTREAM WITH LOOKUP TABLE FIELDS***:", dstream)
+
+main()
