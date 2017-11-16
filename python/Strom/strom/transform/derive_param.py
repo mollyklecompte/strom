@@ -74,7 +74,7 @@ class DeriveDistance(DeriveParam):
         super().__init__()
         self.params["func_params"] = {"window":1, "distance_func": "euclidean"}
         self.params["supported_distances"] = ["euclidean", "great_circle"]
-        self.param["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
+        self.params["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
 
     @staticmethod
     def euclidean_dist(position_array):

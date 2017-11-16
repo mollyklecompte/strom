@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from Strom.strom.transform.derive_param import DeriveParam, DeriveSlope, DeriveChange
+from Strom.strom.transform.derive_param import DeriveParam, DeriveSlope, DeriveChange, DeriveDistance
 
 
 class TestDeriveParam(unittest.TestCase):
@@ -45,6 +45,18 @@ class TestDeriveSlope(unittest.TestCase):
     def test_transform_data(self):
         sloped_data = self.ds.transform_data()
         self.assertIn("viscous_slope", sloped_data)
+
+class TestDeriveDistance(unittest.TestCase):
+    def setUp(self):
+        self.dd = DeriveDistance()
+        params = {}
+        params["func_params"] = {"window": 1, "distance_func": "euclidean"}
+        params["measure_rules"] = {"spatial_measure": "grid_loc",
+                                  "output_name": "eu_dist"}
+        self.dd.load_params(params)
+        grid_data = [(0,0), (4,0), (4, 2), (1, 2), (0, 2), (0, 0), (0, 0)]
+        test_measure = {"grid_loc":{"val": grid_data, "dtype": "tuples"}}
+
 
 
 
