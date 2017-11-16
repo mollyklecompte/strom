@@ -8,6 +8,7 @@ import mysql.connector as mariadb
 from mysql.connector import errorcode
 # relative path works when running mariadb.py as a module
 from ..dstream.dstream import DStream
+from ..dstream.filter_rules import FilterRules
 
 class SQL_Connection:
     def __init__(self):
@@ -272,26 +273,20 @@ def main():
     dstream._add_tag("first tag")
     dstream._add_tag("second tag")
 
-    filter_dict_1 = {
-        "filter_1": "first filter"
-    }
-    filter_dict_2 = {
-        "filter_2": "second filter"
-    }
-    filter_dict_3 = {
-        "filter_3": "third filter"
-    }
-    dstream._add_filter(filter_dict_1)
-    dstream._add_filter(filter_dict_2)
-    dstream._add_filter(filter_dict_3)
+    filter_dict_1 = {"func_params":{}, "filter_name": "smoothing", "dtype":"float"}
+    filter_dict_2 = {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}
+
+    dstream._add_filter({"func_params":{}, "filter_name": "smoothing", "dtype":"float"})
+    dstream._add_filter({"func_params":{}, "filter_name": "low_pass", "dtype":"float"})
 
         #  def _publish_version(self):
         #      """Increment version number"""
         #      self["version"] += 1
 
 
+
     print("***DSTREAM WITH LOOKUP TABLE FIELDS***:", dstream)
 
-    sql._create_stream_lookup_table(dstream)
+    # sql._create_stream_lookup_table(dstream)
 
 main()
