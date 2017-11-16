@@ -156,7 +156,7 @@ class SQL_Connection:
         table = ("CREATE TABLE %s ("
             "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
             "  `version` float(10, 2) NOT NULL,"
-            "  `time_stamp` date NOT NULL,"
+            "  `time_stamp` float(10, 2) NOT NULL,"
             "%s"
             "%s"
             "%s"
@@ -177,6 +177,22 @@ class SQL_Connection:
                 print(err.msg)
         else:
             print("OK")
+
+    def _retrieve_by_timestamp_range(self, dstream, start, end):
+        query = ("SELECT * FROM %s WHERE time_stamp BETWEEN %s AND %s")
+        dstream_particulars = (dstream['stream_token'], start, end)
+        try:
+            print("Returning all records within timestamp range")
+            self.cursor.execute(query, dstream_particulars)
+            # view data in cursor object
+            for (unique_id, version, tags, fields) in self.cursor:
+                print("uid: {}, version: {}, tags: {}, fields: {}".format(unique_id, version, tags, fields))
+                return [unique_id, version, tags, fields]
+        except mariadb.Error as err:
+            print(err.msg)
+        else:
+            print("OK")
+
 
 # def main():
 #     #  _connect_to_database()
