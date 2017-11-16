@@ -45,14 +45,14 @@ def init():
 
 @click.command()
 @click.option('--source', prompt=True, type=click.Choice(['kafka', 'file']), help="Specify source of data")
-@click.option('--file', 'f', type=click.File('r'), help="File with data to upload")
+@click.option('--file', 'f', type=click.File('r'), help="Template file to upload")
 @click.option('--topic', default=None, help="Specify kafka topic")
 def define(source, f, topic):
     """ Define source of DStream. """
     if source == 'kafka':
         click.echo(click.style("Adding Kafka topic...\n", fg='cyan'))
         try:
-            ret = requests.post('http://127.0.0.1:5000/define', data={'type':'kafka', 'source':topic})
+            ret = requests.post('http://127.0.0.1:5000/define', data={'type':'kafka', 'content':topic})
         except:
             click.echo(click.style("Connection Refused!...\n", fg='red', reverse=True))
         else:
@@ -60,10 +60,10 @@ def define(source, f, topic):
             click.echo(click.style(ret.text, fg='yellow'))
 
     else:
-        click.echo(click.style("Adding source...\n", fg='cyan'))
+        click.echo(click.style("Adding template...\n", fg='cyan'))
         data = f.read()
         try:
-            ret = requests.post('http://127.0.0.1:5000/define', data={'type':'file', 'source':data})
+            ret = requests.post('http://127.0.0.1:5000/define', data={'type':'file', 'content':data})
         except:
             click.echo(click.style("Connection Refused!...\n", fg='red', reverse=True))
         else:

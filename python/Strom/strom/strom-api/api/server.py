@@ -11,7 +11,7 @@ app = Flask(__name__.split('.')[0])
 
 parser = reqparse.RequestParser()
 parser.add_argument('type')
-parser.add_argument('source')
+parser.add_argument('content')
 
 ds = DStream()# NOTE: TEMP
 
@@ -21,20 +21,17 @@ def init():
 
 def define():
     """ Route for defining DStream. """
-    args = parser.parse_args()
-    if args['source']:
-        typ = args['type']
-        src = args['source']
-        if typ == 'file':
-            json_src = json.loads(src)
-            ds.load_from_json(json_src)
-            print(ds.keys())
+    args = parser.parse_args()# eg.{'type':'file', 'content':data}
+    if args['content']:
+        typ = args['type']# file or kafka
+        data = args['content']# kafka topic name or template
+        ds._add_source('foo', typ)# name: dict with type: val, topic: null
         return '', 202
     else:
         return 'Missing Data...', 400
 
 def modify():
-    """ Route for adding or modifying DStream fields. """
+    """ Route for adding or modifying DStream. """
     pass
 
 app.add_url_rule('/init', 'init', init, methods=['GET'])
