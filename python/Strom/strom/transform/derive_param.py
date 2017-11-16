@@ -2,14 +2,7 @@
 import numpy as np
 from abc import ABCMeta, abstractmethod
 from .transform import Transformer
-
-
-def window_data(in_array, window_len):
-    w_data = np.convolve(in_array, np.ones(window_len), "valid") / window_len
-    r = np.arange(1, window_len - 1, 2)  # Dealing with the special case for endpoints of in_array
-    start = np.cumsum(in_array[:window_len - 1])[::2] / r
-    stop = (np.cumsum(in_array[:-window_len:-1])[::2] / r)[::-1]
-    return np.concatenate((start, w_data, stop))
+from .filter_data import window_data
 
 
 class DeriveParam(Transformer):
@@ -37,17 +30,33 @@ class DeriveSlope(DeriveParam):
         super().__init__()
         self.params["func_params"] = {"window":1}
         self.params["measure_rules"] ={"rise_measure":"measure y values (or rise in rise/run calculation of slope)",
-                                       "run_measure":"measure containing x values (or run in rise/run calculation of slope)"}
+                                       "run_measure":"measure containing x values (or run in rise/run calculation of slope)",
+                                       "output_name":"name of returned param"}
 
     def transform_data(self):
         window_len = self.params["func_params"]["window"]
-        yrise = np.array(self.data[self.params["measure_rules"]["rise_measure"]]["val"])
         xrun = np.array(self.data[self.params["measure_rules"]["run_measure"]]["val"])
+        yrise = np.array(self.data[self.params["measure_rules"]["rise_measure"]]["val"])
         dx = np.diff(xrun)
         dy = np.diff(yrise)
 
 
         if window_len > 1:
-            dx = window_data(dx, window_len)
-            dy = window_data(dy, window_len)
-        return dy/dx
+            sloped =  window_data(dy/dx, window_len)
+        else:
+            sloped = dy/dx
+        return {self.params["measure_rules"]["output_name"]:sloped}
+
+class DeriveChange(DeriveParam):
+    def __init__(self):
+        super().__init__()
+        self.params["func_params"] = {"window":1}
+        self.params["measure_rules"] ={"target_measure":"measure_name", "output_name":"name of returned param"}
+
+    def transform_data(self):
+        window_len = self.params["func_params"]["window"]
+        diffed_data = np.diff(np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"]))
+        if window_len > 1:
+            diffed_data = window_data(diffed_data, window_len)
+
+        return {self.params["measure_rules"]["output_name"]:diffed_data}
