@@ -11,7 +11,7 @@ app = Flask(__name__.split('.')[0])
 
 parser = reqparse.RequestParser()
 parser.add_argument('template')
-parser.add_argument('file')
+parser.add_argument('data')
 
 ds = DStream()# NOTE: TEMP
 
@@ -25,9 +25,9 @@ def define():
 def load():
     """ Route to collect tokenized data. """
     args = parser.parse_args()
-    data = args['file']
+    data = args['data']
     print(data)
-    return '', 200
+    return 'Success.', 200
 
 app.add_url_rule('/api/define', 'define', define, methods=['POST'])
 app.add_url_rule('/api/load', 'load', load, methods=['POST'])

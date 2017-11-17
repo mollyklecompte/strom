@@ -26,5 +26,4 @@ for in_json in data_log:
     out_list.append(copy.deepcopy(out_json))
 print(len(out_list))
 
-json.dump(json.dumps(out_list),open("demo_data_log.txt", "w"))
-
+json.dump(out_list, open("demo_data_log.txt", "w"))

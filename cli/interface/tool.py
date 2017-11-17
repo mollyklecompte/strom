@@ -22,7 +22,6 @@ def dstream():
 @click.command()
 @click.option('-template', '-t', 'template', prompt=True, type=click.File('r'), help="Template file to initialize DStream")
 def define(template):
-    """ Send DStream template and set stream_token in template. """
     data = template.read()
     click.secho("Sending template file...\n", fg='white')
     try:
@@ -46,21 +45,29 @@ def define(template):
         click.secho("New template stored as 'tokenized_template.txt'.")
 
 @click.command()
-@click.option('-file', '-f', 'f', prompt=True, type=click.File('r'), help="Data file to upload")
+@click.option('-filepath', '-f', 'f', prompt=True, type=click.Path(exists=True), help="Filepath of data file to upload")
 @click.option('-token', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
 def load(f, token):
-    """ Send data file and tokenized template. """
-    data = f.read()
+    click.secho("Tokenizing data fields of {} with...".format(click.format_filename(f)), fg='white')
     cert = token.read()
-    click.secho("Sending file with token...", fg='white')
-    #NOTE: load token into data file
+    json_data = json.load(open(f))
+    json_cert = json.loads(cert)
     try:
-        requests.post(url + "/api/load", data={'file':data})
+        token = json_cert['stream_token']
     except:
-        click.secho("Connection Refused!...\n", fg='red', reverse=True)
+        click.secho("Token not found in provided template...", fg='red', reverse=True)
     else:
-        click.secho(str(ret.status_code), fg='yellow')
-        click.secho(ret.text, fg='yellow')
+        click.secho(token, fg='white')
+        for obj in json_data:
+            obj['stream_token'] = token
+        click.secho("Sending tokenized data...\n", fg='white')
+        try:
+            ret = requests.post(url + '/api/load', data={'data':json.dumps(json_data)})
+        except:
+            click.secho("Connection Refused!...\n", fg='red', reverse=True)
+        else:
+            click.secho(str(ret.status_code), fg='yellow')
+            click.secho(ret.text, fg='yellow')
 
 # d-stream group
 dstream.add_command(define)
