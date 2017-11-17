@@ -46,3 +46,5 @@ class BStream(DStream):
 
     def _aggregate_ts(self):
         self["timestamp"] = [s["timestamp"] for s in self.dstreams]
+
+
