@@ -77,17 +77,21 @@ class DeriveDistance(DeriveParam):
         self.params["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
 
     @staticmethod
-    def euclidean_dist(position_array):
-        euclid_array = np.sum(np.diff(position_array, axis=0)**2, axis=1)
+    def euclidean_dist(position_array, window_len):
+        euclid_array = np.sqrt(np.sum(np.diff(position_array, axis=0)**2, axis=1))
         if window_len > 1:
             euclid_array = window_data(euclid_array, window_len)
         return  euclid_array
 
     @staticmethod
-    def great_circle(position_array, units="mi"):
-        diff_array = np.diff(position_array, axis=0)
-        dlat = diff_array[:,0]
-        dlon = diff_array[:,1]
+    def great_circle(position_array, window_len, units="mi"):
+        lat1 = position_array[:-1, 0]
+        lat2 = position_array[1:, 0]
+        lon1 = position_array[:-1, 1]
+        lon2 = position_array[1:, 1]
+        lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2])
+        dlat = lat1 - lat2
+        dlon = lon1 - lon2
         inner_val = np.sin(dlat/2.0)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2.0)**2
         outer_val = 2*np.arcsin(np.sqrt(inner_val))
         if units == "mi":
@@ -103,7 +107,7 @@ class DeriveDistance(DeriveParam):
 
     def transform_data(self):
         window_len = self.params["func_params"]["window"]
-        position_array = np.array(self.data[self.params["measure_rules"]["saptial_measure"]["val"]])
+        position_array = np.array(self.data[self.params["measure_rules"]["spatial_measure"]]["val"])
         if self.params["func_params"]["distance_func"] == "euclidean":
             dist_array = self.euclidean_dist(position_array, window_len)
         elif self.params["func_params"]["distance_func"] == "great_circle":
