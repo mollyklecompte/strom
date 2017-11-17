@@ -18,11 +18,11 @@ data_log = json.load(open("data_log.txt"))
 out_list = []
 for in_json in data_log:
     out_json = ds_template.copy()
-    out_json["timestamp"] = single_data["timestamp"]
-    out_json["measures"]["location"]["val"] = single_data["location"]
-    out_json["fields"]["region-code"] = single_data["region-code"]
-    out_json["user_ids"]["id"] = single_data["id"]
-    out_json["user_ids"]["driver-id"] = single_data["driver-id"]
+    out_json["timestamp"] = in_json["timestamp"]
+    out_json["measures"]["location"]["val"] = in_json["location"]
+    out_json["fields"]["region-code"] = in_json["region-code"]
+    out_json["user_ids"]["id"] = in_json["id"]
+    out_json["user_ids"]["driver-id"] = in_json["driver-id"]
     out_list.append(out_json)
 
 json.dump(out_list,open("demo_data_log.txt", "w"))
