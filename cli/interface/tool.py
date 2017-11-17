@@ -1,18 +1,16 @@
-""" CLI tool for comms b/w client and API.
-ANSI coloring is based on this methodology:
-Creation = Magenta, Modification = Cyan, Response = Yellow, Error = Red """
+""" CLI tool for comms b/w client and API. """
 import click
 import requests
-from termcolor import cprint
-from pyfiglet import figlet_format
+import json
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
+url = 'http://127.0.0.1:5000'
 
 def prnt_ver(ctx, param, value):
     if not value or ctx.resilient_parsing:
         return
-    click.echo(click.style(__version__, fg='yellow'))
+    click.secho(__version__, fg='yellow')
     ctx.exit()
 
 @click.group()
@@ -22,56 +20,48 @@ def dstream():
     pass
 
 @click.command()
-def welcome():
-    """ Usage instructions for first-time users. """
-    cprint(figlet_format("Strom CLI", font='small'), 'yellow')
-    click.echo(click.style("Initialize a DStream object using 'dstream init'...", fg='magenta'))
-    click.echo(click.style("Save your dstream_token in a safe place!", fg='magenta', underline=True))
-    click.echo(click.style("Define source of data(kafka stream or file upload) with 'dstream define --source'...", fg='cyan'))
-    click.echo(click.style("If source is a file: specify file with '--file'.", fg='cyan'))
-    click.echo(click.style("If source is a kafka stream: specify topic with '--kafka-topic'.", fg='cyan'))
-
-@click.command()
-def init():
-    """ Initialize DStream object. Returns stream_token. """
-    click.echo(click.style("Creating DStream.....\n", fg='magenta'))
+@click.option('-template', '-t', 'template', prompt=True, type=click.File('r'), help="Template file to initialize DStream")
+def define(template):
+    """ Send DStream template and set stream_token in template. """
+    data = template.read()
+    click.secho("Sending template file...\n", fg='white')
     try:
-        ret = requests.get('http://127.0.0.1:5000/init')
+        ret = requests.post(url + "/api/define", data={'template':data})
     except:
-        click.echo(click.style("Connection Refused!...\n", fg='red', reverse=True))
+        click.secho("Connection Refused!...\n", fg='red', reverse=True)
     else:
-        click.echo(click.style(str(ret.status_code), fg='yellow'))
-        click.echo(click.style(ret.text, fg='yellow'))
+        click.secho(str(ret.status_code), fg='yellow')
+        click.secho(ret.text, fg='yellow')
+    token = ret.text
+    try:
+        json_data = json.loads(data)
+        json_data['stream_token'] = token
+    except:
+        click.secho("\nProblem parsing template file!...", fg='red', reverse=True)
+    else:
+        click.secho("\nTemplate has been tokenized...{}".format(json_data['stream_token']), fg='white')
+        template_file = open("demo_data/tokenized_template.txt", "w")
+        template_file.write(json.dumps(json_data))
+        template_file.close()
+        click.secho("New template stored as 'tokenized_template.txt'.")
 
 @click.command()
-@click.option('--source', prompt=True, type=click.Choice(['kafka', 'file']), help="Specify source of data")
-@click.option('--file', 'f', type=click.File('r'), help="Template file to upload")
-@click.option('--topic', default=None, help="Specify kafka topic")
-def define(source, f, topic):
-    """ Define source of DStream. """
-    if source == 'kafka':
-        click.echo(click.style("Adding Kafka topic...\n", fg='cyan'))
-        try:
-            ret = requests.post('http://127.0.0.1:5000/define', data={'type':'kafka', 'content':topic})
-        except:
-            click.echo(click.style("Connection Refused!...\n", fg='red', reverse=True))
-        else:
-            click.echo(click.style(str(ret.status_code), fg='yellow'))
-            click.echo(click.style(ret.text, fg='yellow'))
-
+@click.option('-file', '-f', 'f', prompt=True, type=click.File('r'), help="Data file to upload")
+@click.option('-token', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
+def load(f, token):
+    """ Send data file and tokenized template. """
+    data = f.read()
+    cert = token.read()
+    click.secho("Sending file with token...", fg='white')
+    #NOTE: load token into data file
+    try:
+        requests.post(url + "/api/load", data={'file':data})
+    except:
+        click.secho("Connection Refused!...\n", fg='red', reverse=True)
     else:
-        click.echo(click.style("Adding template...\n", fg='cyan'))
-        data = f.read()
-        try:
-            ret = requests.post('http://127.0.0.1:5000/define', data={'type':'file', 'content':data})
-        except:
-            click.echo(click.style("Connection Refused!...\n", fg='red', reverse=True))
-        else:
-            click.echo(click.style(str(ret.status_code), fg='yellow'))
-            click.echo(click.style(ret.text, fg='yellow'))
-
+        click.secho(str(ret.status_code), fg='yellow')
+        click.secho(ret.text, fg='yellow')
 
 # d-stream group
-dstream.add_command(welcome)
-dstream.add_command(init)
 dstream.add_command(define)
+dstream.add_command(load)

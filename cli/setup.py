@@ -7,7 +7,8 @@ setup(
     author_email='adrian@tura.io',
     description='CLI tool for use with Strom',
     packages=find_packages(),
-    install_requires=['click', 'requests', 'termcolor', 'pyfiglet'],
+    include_package_data=True,
+    install_requires=['click', 'requests'],
     entry_points='''
     [console_scripts]
     dstream=interface.tool:dstream
