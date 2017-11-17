@@ -48,7 +48,7 @@ class ButterLowpass(Filter):
     def transform_data(self):
         buttered_data = {}
         for key in self.data.keys():
-            buttered_data[key+"_buttered"] = self.butter_data(np.array(self.data[key]["val"]), self.params["func_params"]["order"], self.params["func_params"]["nyquist"])
+            buttered_data[key+"_buttered"] = self.butter_data(np.array(self.data[key]["val"], dtype=float), self.params["func_params"]["order"], self.params["func_params"]["nyquist"])
 
         return buttered_data
 
@@ -61,7 +61,7 @@ class WindowAverage(Filter):
     def transform_data(self):
         windowed_data = {}
         for key in self.data.keys():
-            windowed_data[key+"_windowed"] = window_data(np.array(self.data[key]["val"]),
+            windowed_data[key+"_windowed"] = window_data(np.array(self.data[key]["val"], dtype=float),
                                                   self.params["func_params"]["window_len"])
 
 
