@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from Strom.strom.transform.derive_param import DeriveParam, DeriveSlope, DeriveChange, DeriveDistance
+from Strom.strom.transform.derive_param import DeriveParam, DeriveSlope, DeriveChange, DeriveDistance, DeriveHeading
 
 
 class TestDeriveParam(unittest.TestCase):
@@ -100,6 +100,34 @@ class TestDeriveDistance(unittest.TestCase):
         gc_dist = self.dd.transform_data()
         self.assertIn("great_circle_dist", gc_dist)
         self.assertIsInstance(gc_dist["great_circle_dist"], np.ndarray)
+
+class TestDeriveHeading(unittest.TestCase):
+    def setUp(self):
+        self.dh = DeriveHeading()
+        params = {}
+        params["func_params"] = {"window": 1, "heading_type": "bearing", "units":"deg"}
+        params["measure_rules"] = {"spatial_measure": "location",
+                                   "output_name": "bears"}
+        self.dh.load_params(params)
+        test_heading = np.array([(0.0, 0.0), (15.0, 0), (15.0, 15.0), (15, 0)])
+        test_measures = {"location":{"val":test_heading, "dtype":"tuple"}}
+        self.dh.load_measures(test_measures)
+
+    def test_bearing(self):
+        bears = self.dh.transform_data()
+        self.assertIn("bears", bears)
+        self.dh.params["func_params"]["units"] = "rad"
+        bears = self.dh.transform_data()
+        self.assertIn("bears", bears)
+
+    def test_flat_angle(self):
+        self.dh.params["func_params"]["heading_type"] = "flat_angle"
+        self.dh.params["measure_rules"]["output_name"] = "angle"
+        fa = self.dh.transform_data()
+        self.assertIn("angle", fa)
+        self.dh.params["func_params"]["units"] = "rad"
+        fa = self.dh.transform_data()
+        self.assertIn("angle", fa)
 
 
 

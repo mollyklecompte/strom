@@ -114,3 +114,47 @@ class DeriveDistance(DeriveParam):
             dist_array = self.great_circle(position_array, window_len)
 
         return {self.params["measure_rules"]["output_name"]:dist_array}
+
+class DeriveHeading(DeriveParam):
+    def __init__(self):
+        super().__init__()
+        self.params["func_params"] = {"window":1, "units":"deg", "heading_type":"bearing"}
+        self.params["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
+
+    @staticmethod
+    def flat_angle(position_array, window_len, units="deg"):
+        diff_array = np.diff(position_array, axis=0)
+        diff_angle = np.arctan2(diff_array[:,1], diff_array[:,0])
+        if units == "deg":
+            diff_angle = (np.rad2deg(diff_angle) + 360 ) % 360
+        if window_len > 1:
+            diff_angle = window_data(diff_angle, window_len)
+        return diff_angle
+
+
+    @staticmethod
+    def bearing(position_array, window_len, units="deg"):
+        lat1 = position_array[:-1, 0]
+        lat2 = position_array[1:, 0]
+        lon1 = position_array[:-1, 1]
+        lon2 = position_array[1:, 1]
+        lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2])
+        dlon = lon1 - lon2
+        first_val = np.sin(dlon)*np.cos(lat2)
+        second_val = np.cos(lat1)*np.sin(lat2)-np.sin(lat1)*np.cos(lat2)*np.cos(dlon)
+        cur_bear = np.arctan2(first_val, second_val)
+        if units == "deg":
+            cur_bear = (np.rad2deg(cur_bear) + 360 ) % 360
+        if window_len > 1:
+            cur_bear = window_data(cur_bear, window_len)
+        return cur_bear
+
+    def transform_data(self):
+        window_len = self.params["func_params"]["window"]
+        position_array = np.array(self.data[self.params["measure_rules"]["spatial_measure"]]["val"])
+        if self.params["func_params"]["heading_type"] == "bearing":
+            angle_array = self.bearing(position_array, window_len, self.params["func_params"]["units"])
+        elif self.params["func_params"]["heading_type"] == "flat_angle":
+            angle_array = self.flat_angle(position_array, window_len, self.params["func_params"]["units"])
+
+        return {self.params["measure_rules"]["output_name"]:angle_array}
