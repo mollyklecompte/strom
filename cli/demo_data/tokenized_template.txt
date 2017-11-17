@@ -1,1 +1,1 @@
-{"stream_name": "driver_data", "version": 0, "stream_token": "a2a85a74-cbe0-11e7-8c4e-f8a96333e4a9", "timestamp": null, "measures": {"location": {"val": null, "dtype": "float"}}, "fields": {"region-code": {}}, "user_ids": {"driver-id": {}, "id": {}}, "tags": {}, "foreign_keys": [], "filters": [], "dparam_rules": [], "event_rules": {}}
+{"id": 0, "location": [-122.69081962885704, 45.52110054870811], "timestamp": 1510603538107, "region-code": "PDX", "driver-id": "Molly Mora", "stream_token": "bf45d432-cbe9-11e7-b7b6-f8a96333e4a9"}

@@ -22,12 +22,13 @@ def dstream():
 @click.command()
 @click.option('-template', '-t', 'template', prompt=True, type=click.File('r'), help="Template file to initialize DStream")
 def define(template):
+    """  """
     data = template.read()
-    click.secho("Sending template file...\n", fg='white')
+    click.secho("\nSending template file...", fg='white')
     try:
         ret = requests.post(url + "/api/define", data={'template':data})
     except:
-        click.secho("Connection Refused!...\n", fg='red', reverse=True)
+        click.secho("\nConnection Refused!...\n", fg='red', reverse=True)
     else:
         click.secho(str(ret.status_code), fg='yellow')
         click.secho(ret.text, fg='yellow')
@@ -38,37 +39,48 @@ def define(template):
     except:
         click.secho("\nProblem parsing template file!...\n", fg='red', reverse=True)
     else:
-        click.secho("\nTemplate has been tokenized...{}".format(json_data['stream_token']), fg='white')
+        click.secho("\nTemplate has been tokenized with...{}".format(json_data['stream_token']), fg='white')
         template_file = open("demo_data/tokenized_template.txt", "w")
         template_file.write(json.dumps(json_data))
         template_file.close()
         click.secho("New template stored as 'tokenized_template.txt'.\n")
 
 @click.command()
-@click.option('-filepath', '-f', 'f', prompt=True, type=click.Path(exists=True), help="Filepath of data file to upload")
+@click.option('-filepath', '-f', 'filepath', prompt=True, type=click.Path(exists=True), help="Filepath of data file to upload")
 @click.option('-token', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
-def load(f, token):
-    click.secho("\nTokenizing data fields of {} with...".format(click.format_filename(f)), fg='white')
+def load(filepath, token):
+    """  """
+    click.secho("\nTokenizing data fields of {} with...".format(click.format_filename(filepath)), fg='white')
     cert = token.read()
-    json_data = json.load(open(f))
-    json_cert = json.loads(cert)
     try:
-        token = json_cert['stream_token']
+        json_data = json.load(open(filepath))
     except:
-        click.secho("Token not found in provided template...", fg='red', reverse=True)
+        click.secho("There is an error accessing that filepath!...\n", fg='red', reverse=True)
     else:
-        click.secho(token + '\n', fg='white')
-        with click.progressbar(json_data) as bar:
-            for obj in bar:
-                obj['stream_token'] = token
-        click.secho("\nSending tokenized data...\n", fg='white')
+        json_cert = json.loads(cert)
         try:
-            ret = requests.post(url + '/api/load', data={'data':json.dumps(json_data)})
+            token = json_cert['stream_token']
+            if token is None:
+                raise ValueError
         except:
-            click.secho("Connection Refused!...\n", fg='red', reverse=True)
+            click.secho("Token not found in provided template...\n", fg='red', reverse=True)
         else:
-            click.secho(str(ret.status_code), fg='yellow')
-            click.secho(ret.text, fg='yellow')
+            click.secho(token + '\n', fg='white')
+            try:
+                with click.progressbar(json_data) as bar:
+                    for obj in bar:
+                        obj['stream_token'] = token
+            except:
+                click.secho("Data file not correctly formatted!...\n", fg='red', reverse=True)
+            else:
+                click.secho("\nSending tokenized data...", fg='white')
+                try:
+                    ret = requests.post(url + '/api/load', data={'data':json.dumps(json_data)})
+                except:
+                    click.secho("Connection Refused!...\n", fg='red', reverse=True)
+                else:
+                    click.secho(str(ret.status_code), fg='yellow')
+                    click.secho(ret.text + '\n', fg='yellow')
 
 # d-stream group
 dstream.add_command(define)
