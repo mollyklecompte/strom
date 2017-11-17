@@ -158,7 +158,7 @@ class SQL_Connection:
         for filt in dstream['filters']:
             # create a column filt for that filter
             # filter_columns += "  `" + filt["filter_name"] + "` varchar(50),"
-            filter_columns += "  `" + filt["filter_name"] + "` " + filt['dtype'] + ","
+            filter_columns += "  `" + filt["filter_name"] + "` varchar(20),"
             # print(filt)
 
         # parse stream_token to stringify and replace hyphens with underscores
@@ -246,18 +246,24 @@ class SQL_Connection:
         for filt in dstream['filters']:
             # create a column filt for that filter
             # filter_columns += "  `" + filt["filter_name"] + "` varchar(50),"
-            filter_values += " `" + filt["func_param"] + "`,"
+            filter_values += " `" + str(filt["func_params"]) + "`,"
             # print(filt)
+
+        def _dictionary_to_string(dict):
+            return '"' + str(dict) + '"'
 
         values = (
             "(%s,"
             "%s,"
-            "%s,"
-            "%s,"
-            "%s,"
+            "%s"
+            "%s"
+            "%s"
             "%s,"
             "%s)"
-        % (dstream["version"], dstream["timestamp"], measure_values, uid_values, filter_values, dstream["tags"], dstream["fields"]))
+        % (dstream["version"], dstream["timestamp"], measure_values, uid_values, filter_values, _dictionary_to_string(dstream["tags"]), _dictionary_to_string(dstream["fields"])))
+
+        print("****** COLUMNS ******", columns)
+        print("****** VALUES ******", values)
 
         query = ("INSERT INTO %s %s VALUES %s" % (stringified_stream_token_uuid, columns, values))
         try:
@@ -293,7 +299,7 @@ single_dstream = {
     "version": 0,
     "stream_token": "test_token",
     "timestamp": 1510603538107,
-    "measures": {"location": {"val": [-122.69081962885704, 45.52110054870811], "dtype": "float"}},
+    "measures": {"location": {"val": [-122.69081962885704, 45.52110054870811], "dtype": "varchar(50)"}},
     "fields": {"region-code": "PDX"},
     "user_ids": {"driver-id": "Molly Mora", "id": 0},
     "tags": {},
@@ -321,6 +327,27 @@ single_dstream = {
 #     'dparam_rules': [],
 #     'ingest_rules': {}
 # }
+
+# input_dstream = {
+#     'foreign_keys': [],
+#     'engine_rules': {},
+#     'timestamp': 1510603538107,
+#     'stream_token': UUID('61604bca-cbbe-11e7-ab05-0242eb7ab33c'),
+#     'stream_name': 'driver_data',
+#     'storage_rules': {},
+#     'fields': {'region-code': 'PDX'},
+#     'event_rules': {},
+#     'tags': {},
+#     'filters': [],
+#     'version': 0,
+#     'sources': {},
+#     'user_ids': {'id': 0, 'driver-id': 'Molly Mora'},
+#     'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'float'}},
+#     'ingest_rules': {},
+#     'dparam_rules': []
+# }
+
+
 
 def main():
     sql = SQL_Connection()
@@ -352,14 +379,16 @@ def main():
     #
     # dstream._add_tag("first tag")
     # dstream._add_tag("second tag")
-    #
-    # filter_dict_1 = {"func_params":{}, "filter_name": "smoothing", "dtype":"float"}
-    # filter_dict_2 = {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}
-    #
-    # dstream._add_filter({"func_params":{}, "filter_name": "smoothing", "dtype":"float"})
-    # dstream._add_filter({"func_params":{}, "filter_name": "low_pass", "dtype":"float"})
 
     print(dstream.load_from_json(single_dstream))
+
+    filter_dict_1 = {"func_params":{}, "filter_name": "smoothing", "dtype":"float"}
+    filter_dict_2 = {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}
+
+    dstream._add_filter({"func_params":{}, "filter_name": "smoothing", "dtype":"float"})
+    dstream._add_filter({"func_params":{}, "filter_name": "low_pass", "dtype":"float"})
+
+    print("DSTREAM WITH FILTERS ADDED", dstream)
 
     sql._create_stream_lookup_table(dstream)
 
