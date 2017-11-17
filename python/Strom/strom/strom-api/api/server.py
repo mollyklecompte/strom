@@ -20,14 +20,14 @@ def define():
     args = parser.parse_args()
     template = args['template']
     print(template)
-    return str(ds['stream_token']), 200
+    return str(ds['stream_token']), 202
 
 def load():
     """ Route to collect tokenized data. """
     args = parser.parse_args()
     data = args['data']
     print(data)
-    return 'Success.', 200
+    return 'Success.', 202
 
 app.add_url_rule('/api/define', 'define', define, methods=['POST'])
 app.add_url_rule('/api/load', 'load', load, methods=['POST'])
