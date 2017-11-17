@@ -50,7 +50,7 @@ class TestDeriveDistance(unittest.TestCase):
     def setUp(self):
         self.dd = DeriveDistance()
         params = {}
-        params["func_params"] = {"window": 1, "distance_func": "euclidean"}
+        params["func_params"] = {"window": 1, "distance_func": "euclidean", "swap_lon_lat":False}
         params["measure_rules"] = {"spatial_measure": "grid_loc",
                                   "output_name": "eu_dist"}
         self.dd.load_params(params)
@@ -86,12 +86,16 @@ class TestDeriveDistance(unittest.TestCase):
         gc_dist = self.dd.transform_data()
         self.assertIn("great_circle_dist", gc_dist)
         self.assertIsInstance(gc_dist["great_circle_dist"], np.ndarray)
+        self.dd.params["func_params"]["swap_lon_lat"] = True
+        gc_dist = self.dd.transform_data()
+        self.assertIn("great_circle_dist", gc_dist)
+        self.assertIsInstance(gc_dist["great_circle_dist"], np.ndarray)
 
 class TestDeriveHeading(unittest.TestCase):
     def setUp(self):
         self.dh = DeriveHeading()
         params = {}
-        params["func_params"] = {"window": 1, "heading_type": "bearing", "units":"deg"}
+        params["func_params"] = {"window": 1, "heading_type": "bearing", "units":"deg", "swap_lon_lat":False}
         params["measure_rules"] = {"spatial_measure": "location",
                                    "output_name": "bears"}
         self.dh.load_params(params)

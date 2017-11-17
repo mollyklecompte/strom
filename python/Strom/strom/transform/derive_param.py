@@ -72,7 +72,7 @@ class DeriveChange(DeriveParam):
 class DeriveDistance(DeriveParam):
     def __init__(self):
         super().__init__()
-        self.params["func_params"] = {"window":1, "distance_func": "euclidean"}
+        self.params["func_params"] = {"window":1, "distance_func": "euclidean", "swap_lon_lat":False}
         self.params["supported_distances"] = ["euclidean", "great_circle"]
         self.params["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
 
@@ -108,6 +108,8 @@ class DeriveDistance(DeriveParam):
     def transform_data(self):
         window_len = self.params["func_params"]["window"]
         position_array = np.array(self.data[self.params["measure_rules"]["spatial_measure"]]["val"], dtype=float)
+        if self.params["func_params"]["swap_lon_lat"]:
+            position_array = position_array[:,[1, 0]]
         if self.params["func_params"]["distance_func"] == "euclidean":
             dist_array = self.euclidean_dist(position_array, window_len)
         elif self.params["func_params"]["distance_func"] == "great_circle":
@@ -118,7 +120,7 @@ class DeriveDistance(DeriveParam):
 class DeriveHeading(DeriveParam):
     def __init__(self):
         super().__init__()
-        self.params["func_params"] = {"window":1, "units":"deg", "heading_type":"bearing"}
+        self.params["func_params"] = {"window":1, "units":"deg", "heading_type":"bearing", "swap_lon_lat":False}
         self.params["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
 
     @staticmethod
@@ -152,6 +154,8 @@ class DeriveHeading(DeriveParam):
     def transform_data(self):
         window_len = self.params["func_params"]["window"]
         position_array = np.array(self.data[self.params["measure_rules"]["spatial_measure"]]["val"], dtype=float)
+        if self.params["func_params"]["swap_lon_lat"]:
+            position_array = position_array[:,[1, 0]]
         if self.params["func_params"]["heading_type"] == "bearing":
             angle_array = self.bearing(position_array, window_len, self.params["func_params"]["units"])
         elif self.params["func_params"]["heading_type"] == "flat_angle":
