@@ -236,24 +236,24 @@ class SQL_Connection:
 
         measure_values = ""
         for key, value in dstream["measures"].items():
-            measure_values += " `" + str(value["val"]) + "`,"
+            measure_values += ' "' + str(value["val"]) + '",'
 
         uid_values = ""
         for key, value in dstream["user_ids"].items():
-            uid_values += " `" + str(value) + "`,"
+            uid_values += ' "' + str(value) + '",'
 
         filter_values = ""
         for filt in dstream['filters']:
             # create a column filt for that filter
             # filter_columns += "  `" + filt["filter_name"] + "` varchar(50),"
-            filter_values += " `" + str(filt["func_params"]) + "`,"
+            filter_values += ' "' + str(filt["func_params"]) + '",'
             # print(filt)
 
         def _dictionary_to_string(dict):
             return '"' + str(dict) + '"'
 
         values = (
-            "(%s,"
+            "(%s, "
             "%s,"
             "%s"
             "%s"
@@ -266,9 +266,13 @@ class SQL_Connection:
         print("****** VALUES ******", values)
 
         query = ("INSERT INTO %s %s VALUES %s" % (stringified_stream_token_uuid, columns, values))
+        print("~~~~~~~~ QUERY ~~~~~~~~", query);
+
         try:
-            print("Returning all records within timestamp range")
+            print("Inserting row into table ", stringified_stream_token_uuid)
             self.cursor.execute(query)
+            self.mariadb_connection.commit()
+            print("Inserted row")
             # view data in cursor object
             # for (unique_id, version, tags, fields) in self.cursor:
             #     print("uid: {}, version: {}, tags: {}, fields: {}".format(unique_id, version, tags, fields))
@@ -294,19 +298,34 @@ class SQL_Connection:
             print("OK")
 
 
+# single_dstream = {
+#     "stream_name": "driver_data",
+#     "version": 0,
+#     "stream_token": "test_token",
+#     "timestamp": 20171117,
+#     "measures": {"location": {"val": [-122.69081962885704, 45.52110054870811], "dtype": "varchar(50)"}},
+#     "fields": {"region-code": "PDX"},
+#     "user_ids": {"driver-id": "Molly Mora", "id": 0},
+#     "tags": {},
+#     "foreign_keys": [],
+#     "filters": [],
+#     "dparam_rules": [],
+#     "event_rules": {}
+# }
+
 single_dstream = {
-    "stream_name": "driver_data",
-    "version": 0,
-    "stream_token": "test_token",
-    "timestamp": 1510603538107,
-    "measures": {"location": {"val": [-122.69081962885704, 45.52110054870811], "dtype": "varchar(50)"}},
-    "fields": {"region-code": "PDX"},
-    "user_ids": {"driver-id": "Molly Mora", "id": 0},
-    "tags": {},
-    "foreign_keys": [],
-    "filters": [],
-    "dparam_rules": [],
-    "event_rules": {}
+    'stream_name': 'driver_data',
+    'version': 0,
+    'stream_token': 'test_token',
+    'timestamp': 20171117,
+    'measures': {'location': {'val': [122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'fields': {'region-code': 'PDX'},
+    'user_ids': {'driverid': 'Molly Mora', 'id': 0},
+    'tags': {},
+    'foreign_keys': [],
+    'filters': [],
+    'dparam_rules': [],
+    'event_rules': {}
 }
 
 # initial_dstream = {
