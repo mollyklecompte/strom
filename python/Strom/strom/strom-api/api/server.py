@@ -10,33 +10,27 @@ __author__ = 'Adrian Agnic <adrian@tura.io>'
 app = Flask(__name__.split('.')[0])
 
 parser = reqparse.RequestParser()
-parser.add_argument('type')
-parser.add_argument('content')
+parser.add_argument('template')
+parser.add_argument('file')
 
 ds = DStream()# NOTE: TEMP
 
-def init():
-    """ Route for initializing DStream object. """
-    return "Welcome to Strom API. DStream token: {}".format(ds['stream_token'])
-
 def define():
-    """ Route for defining DStream. """
-    args = parser.parse_args()# eg.{'type':'file', 'content':data}
-    if args['content']:
-        typ = args['type']# file or kafka
-        cont = args['content']# kafka topic name or template
-        if typ == 'kafka':
-            ds._add_source('foo', {'type':typ, 'topic':cont})
-        else:
-            ds._add_source('foo', {'type': typ, 'topic':None})
-        print(ds['sources'])
-        ds.load_from_json(cont)
-        return '', 202
-    else:
-        return 'Missing Data...', 400
+    """ Route to collect template for DStream init and return stream_token. """
+    args = parser.parse_args()
+    template = args['template']
+    print(template)
+    return str(ds['stream_token']), 200
 
-app.add_url_rule('/init', 'init', init, methods=['GET'])
-app.add_url_rule('/define', 'define', define, methods=['POST'])
+def load():
+    """ Route to collect tokenized data. """
+    args = parser.parse_args()
+    data = args['file']
+    print(data)
+    return '', 200
+
+app.add_url_rule('/api/define', 'define', define, methods=['POST'])
+app.add_url_rule('/api/load', 'load', load, methods=['POST'])
 
 def start():
     """ Entrypoint """
