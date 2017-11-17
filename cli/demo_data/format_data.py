@@ -1,4 +1,4 @@
-import json
+import json, copy
 single_data = json.load(open("single_data.txt"))
 ds_template = json.load(open("demo_template.txt"))
 
@@ -23,7 +23,8 @@ for in_json in data_log:
     out_json["fields"]["region-code"] = in_json["region-code"]
     out_json["user_ids"]["id"] = in_json["id"]
     out_json["user_ids"]["driver-id"] = in_json["driver-id"]
-    out_list.append(out_json)
+    out_list.append(copy.deepcopy(out_json))
+print(len(out_list))
 
-json.dump(out_list,open("demo_data_log.txt", "w"))
+json.dump(json.dumps(out_list),open("demo_data_log.txt", "w"))
 
