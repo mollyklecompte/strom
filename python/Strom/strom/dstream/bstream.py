@@ -1,5 +1,7 @@
 """
-B-stream class.
+B-stream class
+
+Initializes a Bstream dict off Dstream, using a Dstream template to initialize all keys, static values. The Bstream contains methods to aggregate measures, timestamps, user ids, fields and tags, as well as a wrapper aggregate method.
 """
 
 from Strom.strom.dstream.dstream import DStream
@@ -12,7 +14,7 @@ class BStream(DStream):
     def __init__(self, template, dstreams):
         super().__init__()
         self.dstreams = dstreams
-        self.template_id = template["_id"]
+        self["template_id"] = template["_id"]
         self._load_from_dict(template)
 
     # def _set_from_temp(self):
@@ -46,3 +48,21 @@ class BStream(DStream):
 
     def _aggregate_ts(self):
         self["timestamp"] = [s["timestamp"] for s in self.dstreams]
+
+    def _aggregate_fields(self):
+        fields = [s["fields"] for s in self.dstreams]
+        self["fields"] = {fieldkey: [i[fieldkey] for i in fields] for fieldkey, v in self["fields"].items()}
+
+    def _aggregate_tags(self):
+        tags = [s["tags"] for s in self.dstreams]
+        self["tags"] = {tagkey: [i[tagkey] for i in tags] for tagkey, v in self["tags"].items()}
+
+    def aggregate(self):
+        self._aggregate_uids()
+        self._aggregate_measures()
+        self._aggregate_ts()
+        self._aggregate_fields()
+        self._aggregate_tags()
+
+        return self
+
