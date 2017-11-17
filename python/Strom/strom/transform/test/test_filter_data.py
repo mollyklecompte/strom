@@ -30,7 +30,7 @@ class TestButter(unittest.TestCase):
         buttered_data = self.butter.transform_data()
         self.assertIsInstance(buttered_data, dict)
         self.assertIn("viscosity", buttered_data)
-        self.assertEqual(len(measure["viscosity"]["val"]), buttered_data["viscosity"].shape[0])
+        self.assertEqual(len(measure["viscosity"]["val"]), buttered_data["viscosity_buttered"].shape[0])
 
 class TestWindow(unittest.TestCase):
     def setUp(self):
@@ -47,7 +47,7 @@ class TestWindow(unittest.TestCase):
             windowed_data = self.wa.transform_data()
             self.assertIsInstance(windowed_data, dict)
             self.assertIn("viscosity", windowed_data)
-            self.assertEqual(len(test_measure["viscosity"]["val"]), windowed_data["viscosity"].shape[0], "window len "+str(test_window))
+            self.assertEqual(len(test_measure["viscosity"]["val"]), windowed_data["viscosity_windowed"].shape[0], "window len "+str(test_window))
 
 
 if __name__ == "__main__":
