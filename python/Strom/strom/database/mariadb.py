@@ -4,6 +4,7 @@ __version__  = "0.1"
 __author__ = "Justine <justine@tura.io>"
 
 #!/usr/bin/python
+import copy
 import mysql.connector as mariadb
 from mysql.connector import errorcode
 # relative path works when running mariadb.py as a module
@@ -142,7 +143,7 @@ class SQL_Connection:
             # measure dstream['measures'][measure]['dtype']
             measure_columns += "  `" + measure + "` " + dstream['measures'][measure]['dtype'] + ","
             # measure_columns += "  `%s` %s,  " % (measure, dstream['measures'][measure]['dtype'])
-        print("***MEASURE COLUMNS****", measure_columns)
+        # print("***MEASURE COLUMNS****", measure_columns)
 
         uid_columns = ""
         # for each item in the uids dictionary
@@ -150,7 +151,7 @@ class SQL_Connection:
         for uid in dstream['user_ids']:
             # uid dstream['user_ids'][uid]
             uid_columns += "  `" + uid + "` varchar(50),"
-        print("***UID COLUMNS***", uid_columns)
+        # print("***UID COLUMNS***", uid_columns)
 
         filter_columns = ""
         # for each item in the filters dictionary
@@ -192,7 +193,7 @@ class SQL_Connection:
             print("OK")
 
     def _insert_row_into_stream_lookup_table(self, dstream):
-        print("*** INPUT DSTREAM ***", dstream)
+        # print("*** INPUT DSTREAM ***", dstream)
         # parse stream_token to stringify and replace hyphens with underscores
         stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
         print("***STREAM TOKEN WITH UNDERSCORES***", stringified_stream_token_uuid)
@@ -262,11 +263,11 @@ class SQL_Connection:
             "%s)"
         % (dstream["version"], dstream["timestamp"], measure_values, uid_values, filter_values, _dictionary_to_string(dstream["tags"]), _dictionary_to_string(dstream["fields"])))
 
-        print("****** COLUMNS ******", columns)
-        print("****** VALUES ******", values)
+        # print("****** COLUMNS ******", columns)
+        # print("****** VALUES ******", values)
 
         query = ("INSERT INTO %s %s VALUES %s" % (stringified_stream_token_uuid, columns, values))
-        print("~~~~~~~~ QUERY ~~~~~~~~", query);
+        # print("~~~~~~~~ QUERY ~~~~~~~~", query);
 
         try:
             print("Inserting row into table ", stringified_stream_token_uuid)
@@ -303,12 +304,12 @@ single_dstream = {
     'version': 0,
     'stream_token': 'test_token',
     'timestamp': 20171117,
-    'measures': {'location': {'val': [122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
-    'user_ids': {'driverid': 'Molly Mora', 'id': 0},
+    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
     'tags': {},
     'foreign_keys': [],
-    'filters': [],
+    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
     'dparam_rules': [],
     'event_rules': {}
 }
@@ -318,9 +319,9 @@ second_single_dstream = {
     'version': 0,
     'stream_token': 'test_token',
     'timestamp': 20171118,
-    'measures': {'location': {'val': [122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
-    'user_ids': {'driverid': 'Molly Mora', 'id': 0},
+    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
     'tags': {},
     'foreign_keys': [],
     'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
@@ -333,9 +334,9 @@ third_single_dstream = {
     'version': 0,
     'stream_token': 'test_token',
     'timestamp': 20171119,
-    'measures': {'location': {'val': [122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
-    'user_ids': {'driverid': 'Molly Mora', 'id': 0},
+    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
     'tags': {},
     'foreign_keys': [],
     'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
@@ -348,9 +349,39 @@ fourth_single_dstream = {
     'version': 0,
     'stream_token': 'test_token',
     'timestamp': 20171120,
-    'measures': {'location': {'val': [122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
-    'user_ids': {'driverid': 'Molly Mora', 'id': 0},
+    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
+    'tags': {},
+    'foreign_keys': [],
+    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
+    'dparam_rules': [],
+    'event_rules': {}
+}
+
+fifth_single_dstream = {
+    'stream_name': 'driver_data',
+    'version': 0,
+    'stream_token': 'test_token',
+    'timestamp': 20171121,
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'fields': {'region-code': 'PDX'},
+    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
+    'tags': {},
+    'foreign_keys': [],
+    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
+    'dparam_rules': [],
+    'event_rules': {}
+}
+
+sixth_single_dstream = {
+    'stream_name': 'driver_data',
+    'version': 0,
+    'stream_token': 'test_token',
+    'timestamp': 20171122,
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'fields': {'region-code': 'PDX'},
+    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
     'tags': {},
     'foreign_keys': [],
     'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
@@ -400,7 +431,6 @@ fourth_single_dstream = {
 
 def main():
     sql = SQL_Connection()
-    print(sql.pool_name)
     # sql._create_metadata_table()
     # sql._insert_row("stream_one", 13, 1.0)
     # sql._insert_row("stream_two", 11, 1.1)
@@ -412,7 +442,15 @@ def main():
 
 
     dstream = DStream()
-    print("***DSTREAM INITIALIZED***:", dstream)
+    # print("***DSTREAM INITIALIZED***:", dstream)
+
+    second_row = copy.deepcopy(dstream)
+    third_row = copy.deepcopy(dstream)
+    fourth_row = copy.deepcopy(dstream)
+    fifth_row = copy.deepcopy(dstream)
+
+    print("dstream", dstream)
+    print("SECOND ROW", second_row)
 
     # dstream._add_measure("m_2", "int(10)")
     # dstream._add_measure("m_1", "varchar(10)")
@@ -429,41 +467,31 @@ def main():
     # dstream._add_tag("first tag")
     # dstream._add_tag("second tag")
 
-    print(dstream.load_from_json(single_dstream))
+    dstream.load_from_json(single_dstream)
 
-    filter_dict_1 = {"func_params":{}, "filter_name": "smoothing", "dtype":"float"}
-    filter_dict_2 = {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}
+    # filter_dict_1 = {"func_params":{}, "filter_name": "smoothing", "dtype":"float"}
+    # filter_dict_2 = {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}
+    #
+    # dstream._add_filter({"func_params":{}, "filter_name": "smoothing", "dtype":"float"})
+    # dstream._add_filter({"func_params":{}, "filter_name": "low_pass", "dtype":"float"})
 
-    dstream._add_filter({"func_params":{}, "filter_name": "smoothing", "dtype":"float"})
-    dstream._add_filter({"func_params":{}, "filter_name": "low_pass", "dtype":"float"})
-
-    print("DSTREAM WITH FILTERS ADDED", dstream)
+    # print("DSTREAM WITH FILTERS ADDED", dstream)
 
     sql._create_stream_lookup_table(dstream)
 
-    # row_1 = {
-    #     unique_id: 1234,
-    #     version: 0,
-    #     {time_stamp: 20171116},
-    #     measures: {
-    #         {m_3: 1.0},
-    #         {m_2: 1.0},
-    #         {m_1: 1.0}
-    #     },
-    #     user_ids: {
-    #         {uid_2: 'blah'},
-    #         {uid_3: 'blah'},
-    #         {uid_1: 'blah'}
-    #     },
-    #     filters: [
-    #         {smoothing: 1.0},
-    #         {low_pass: 1.0}
-    #     ],
-    #     tags: 'blah',
-    #     fields: 'blah'
-    # }
+    second_row.load_from_json(second_single_dstream)
+    third_row.load_from_json(third_single_dstream)
+    fourth_row.load_from_json(fourth_single_dstream)
+    fifth_row.load_from_json(fifth_single_dstream)
 
     sql._insert_row_into_stream_lookup_table(dstream)
+    # sql._insert_row_into_stream_lookup_table(dstream)
+    # sql._insert_row_into_stream_lookup_table(dstream)
+
+    sql._insert_row_into_stream_lookup_table(second_row)
+    sql._insert_row_into_stream_lookup_table(third_row)
+    sql._insert_row_into_stream_lookup_table(fourth_row)
+    sql._insert_row_into_stream_lookup_table(fifth_row)
 
     # sql._retrieve_by_timestamp_range()
 
