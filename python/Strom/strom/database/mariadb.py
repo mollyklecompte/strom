@@ -178,8 +178,6 @@ class SQL_Connection:
             "  PRIMARY KEY (`unique_id`)"
             ") ENGINE=InnoDB" % (stringified_stream_token_uuid, measure_columns, uid_columns, filter_columns))
 
-        # CREATE TABLE test_lookup (`unique_id` int(10) NOT NULL AUTO_INCREMENT, `version` float(10, 2) NOT NULL, `time_stamp` float(10, 2) NOT NULL, `m_3` float(10, 2), `m_2` int(10), `m_1` varchar(10), `uid_1` varchar(50), `uid_2` varchar(50), `uid_3` varchar(50), `tags` varchar(50), PRIMARY KEY(`unique_id`));
-
         dstream_particulars = (measure_columns, uid_columns, filter_columns)
 
         try:
@@ -190,6 +188,87 @@ class SQL_Connection:
                 print("already exists")
             else:
                 print(err.msg)
+        else:
+            print("OK")
+
+    def _insert_row_into_stream_lookup_table(self, dstream):
+        print("*** INPUT DSTREAM ***", dstream)
+        # parse stream_token to stringify and replace hyphens with underscores
+        stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
+        print("***STREAM TOKEN WITH UNDERSCORES***", stringified_stream_token_uuid)
+        # stringified_stream_token_uuid = "stream_token_standin"
+
+        measure_columns = ""
+        # for each item in the measures dictionary
+            # create a column for that measure
+        for measure in dstream['measures']:
+            # measure dstream['measures'][measure]['dtype']
+            measure_columns += "  `" + measure + "`,"
+            # measure_columns += "  `%s` %s,  " % (measure, dstream['measures'][measure]['dtype'])
+        # print("***MEASURE COLUMNS****", measure_columns)
+
+        uid_columns = ""
+        # for each item in the uids dictionary
+            # create a column for that uid
+        for uid in dstream['user_ids']:
+            # uid dstream['user_ids'][uid]
+            uid_columns += "  `" + uid + "`,"
+        # print("***UID COLUMNS***", uid_columns)
+
+        filter_columns = ""
+        # for each item in the filters dictionary
+            # create a column for that filter
+        for filt in dstream['filters']:
+            # create a column filt for that filter
+            # filter_columns += "  `" + filt["filter_name"] + "` varchar(50),"
+            filter_columns += "  `" + filt["filter_name"] + "`,"
+            # print(filt)
+
+        columns = (
+            "(`version`,"
+            " `time_stamp`,"
+            "%s"
+            "%s"
+            "%s"
+            " `tags`,"
+            " `fields`)"
+        % (measure_columns, uid_columns, filter_columns))
+
+        measure_values = ""
+        for key, value in dstream["measures"].items():
+            measure_values += " `" + str(value["val"]) + "`,"
+
+        uid_values = ""
+        for key, value in dstream["user_ids"].items():
+            uid_values += " `" + str(value) + "`,"
+
+        filter_values = ""
+        for filt in dstream['filters']:
+            # create a column filt for that filter
+            # filter_columns += "  `" + filt["filter_name"] + "` varchar(50),"
+            filter_values += " `" + filt["func_param"] + "`,"
+            # print(filt)
+
+        values = (
+            "(%s,"
+            "%s,"
+            "%s,"
+            "%s,"
+            "%s,"
+            "%s,"
+            "%s)"
+        % (dstream["version"], dstream["timestamp"], measure_values, uid_values, filter_values, dstream["tags"], dstream["fields"]))
+
+        query = ("INSERT INTO %s %s VALUES %s" % (stringified_stream_token_uuid, columns, values))
+        try:
+            print("Returning all records within timestamp range")
+            self.cursor.execute(query)
+            # view data in cursor object
+            # for (unique_id, version, tags, fields) in self.cursor:
+            #     print("uid: {}, version: {}, tags: {}, fields: {}".format(unique_id, version, tags, fields))
+            #     return [unique_id, version, tags, fields]
+        except mariadb.Error as err:
+            print(err.msg)
         else:
             print("OK")
 
@@ -259,31 +338,55 @@ def main():
     dstream = DStream()
     print("***DSTREAM INITIALIZED***:", dstream)
 
-    dstream._add_measure("m_2", "int(10)")
-    dstream._add_measure("m_1", "varchar(10)")
-    dstream._add_measure("m_3", "float(10, 2)")
+    # dstream._add_measure("m_2", "int(10)")
+    # dstream._add_measure("m_1", "varchar(10)")
+    # dstream._add_measure("m_3", "float(10, 2)")
+    #
+    # dstream._add_field("field_1")
+    # dstream._add_field("field_2")
+    # dstream._add_field("field_3")
+    #
+    # dstream._add_user_id("uid_1")
+    # dstream._add_user_id("uid_2")
+    # dstream._add_user_id("uid_3")
+    #
+    # dstream._add_tag("first tag")
+    # dstream._add_tag("second tag")
+    #
+    # filter_dict_1 = {"func_params":{}, "filter_name": "smoothing", "dtype":"float"}
+    # filter_dict_2 = {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}
+    #
+    # dstream._add_filter({"func_params":{}, "filter_name": "smoothing", "dtype":"float"})
+    # dstream._add_filter({"func_params":{}, "filter_name": "low_pass", "dtype":"float"})
 
-    dstream._add_field("field_1")
-    dstream._add_field("field_2")
-    dstream._add_field("field_3")
-
-    dstream._add_user_id("uid_1")
-    dstream._add_user_id("uid_2")
-    dstream._add_user_id("uid_3")
-
-    dstream._add_tag("first tag")
-    dstream._add_tag("second tag")
-
-    filter_dict_1 = {"func_params":{}, "filter_name": "smoothing", "dtype":"float"}
-    filter_dict_2 = {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}
-
-    dstream._add_filter({"func_params":{}, "filter_name": "smoothing", "dtype":"float"})
-    dstream._add_filter({"func_params":{}, "filter_name": "low_pass", "dtype":"float"})
-
-
-
-    print("***DSTREAM WITH LOOKUP TABLE FIELDS***:", dstream)
+    print(dstream.load_from_json(single_dstream))
 
     sql._create_stream_lookup_table(dstream)
+
+    # row_1 = {
+    #     unique_id: 1234,
+    #     version: 0,
+    #     {time_stamp: 20171116},
+    #     measures: {
+    #         {m_3: 1.0},
+    #         {m_2: 1.0},
+    #         {m_1: 1.0}
+    #     },
+    #     user_ids: {
+    #         {uid_2: 'blah'},
+    #         {uid_3: 'blah'},
+    #         {uid_1: 'blah'}
+    #     },
+    #     filters: [
+    #         {smoothing: 1.0},
+    #         {low_pass: 1.0}
+    #     ],
+    #     tags: 'blah',
+    #     fields: 'blah'
+    # }
+
+    sql._insert_row_into_stream_lookup_table(dstream)
+
+    # sql._retrieve_by_timestamp_range()
 
 main()
