@@ -298,21 +298,6 @@ class SQL_Connection:
             print("OK")
 
 
-# single_dstream = {
-#     "stream_name": "driver_data",
-#     "version": 0,
-#     "stream_token": "test_token",
-#     "timestamp": 20171117,
-#     "measures": {"location": {"val": [-122.69081962885704, 45.52110054870811], "dtype": "varchar(50)"}},
-#     "fields": {"region-code": "PDX"},
-#     "user_ids": {"driver-id": "Molly Mora", "id": 0},
-#     "tags": {},
-#     "foreign_keys": [],
-#     "filters": [],
-#     "dparam_rules": [],
-#     "event_rules": {}
-# }
-
 single_dstream = {
     'stream_name': 'driver_data',
     'version': 0,
@@ -324,6 +309,51 @@ single_dstream = {
     'tags': {},
     'foreign_keys': [],
     'filters': [],
+    'dparam_rules': [],
+    'event_rules': {}
+}
+
+second_single_dstream = {
+    'stream_name': 'driver_data',
+    'version': 0,
+    'stream_token': 'test_token',
+    'timestamp': 20171118,
+    'measures': {'location': {'val': [122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'fields': {'region-code': 'PDX'},
+    'user_ids': {'driverid': 'Molly Mora', 'id': 0},
+    'tags': {},
+    'foreign_keys': [],
+    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
+    'dparam_rules': [],
+    'event_rules': {}
+}
+
+third_single_dstream = {
+    'stream_name': 'driver_data',
+    'version': 0,
+    'stream_token': 'test_token',
+    'timestamp': 20171119,
+    'measures': {'location': {'val': [122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'fields': {'region-code': 'PDX'},
+    'user_ids': {'driverid': 'Molly Mora', 'id': 0},
+    'tags': {},
+    'foreign_keys': [],
+    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
+    'dparam_rules': [],
+    'event_rules': {}
+}
+
+fourth_single_dstream = {
+    'stream_name': 'driver_data',
+    'version': 0,
+    'stream_token': 'test_token',
+    'timestamp': 20171120,
+    'measures': {'location': {'val': [122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'fields': {'region-code': 'PDX'},
+    'user_ids': {'driverid': 'Molly Mora', 'id': 0},
+    'tags': {},
+    'foreign_keys': [],
+    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
     'dparam_rules': [],
     'event_rules': {}
 }
