@@ -20,6 +20,18 @@ def dstream():
     pass
 
 @click.command()
+def welcome():
+    """ Usage instructions for first time users. """
+    click.secho("\nJust Do It.\n", fg='magenta')
+    click.pause()
+
+@click.command()
+@click.argument('path')
+def locate(path):
+    """ Tool for opening specified files. """
+    click.launch(path, locate=True)
+
+@click.command()
 @click.option('-template', '-t', 'template', prompt=True, type=click.File('r'), help="Template file with fields to initialize DStream with")
 def define(template):
     """ Upload template file for DStream init. """
@@ -91,3 +103,5 @@ def load(filepath, token):
 # d-stream group
 dstream.add_command(define)
 dstream.add_command(load)
+dstream.add_command(locate)
+dstream.add_command(welcome)
