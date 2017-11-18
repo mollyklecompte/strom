@@ -23,27 +23,29 @@ def dstream():
 @click.option('-template', '-t', 'template', prompt=True, type=click.File('r'), help="Template file to initialize DStream")
 def define(template):
     """  """
-    data = template.read()
+    tmplt = template.read()
     click.secho("\nSending template file...", fg='white')
+    #Try send template to server, if success...collect stream_token
     try:
-        ret = requests.post(url + "/api/define", data={'template':data})
+        ret = requests.post(url + "/api/define", data={'template':tmplt})
     except:
         click.secho("\nConnection Refused!...\n", fg='red', reverse=True)
     else:
         click.secho(str(ret.status_code), fg='yellow')
         click.secho(ret.text, fg='yellow')
-    token = ret.text
-    try:
-        json_data = json.loads(data)
-        json_data['stream_token'] = token
-    except:
-        click.secho("\nProblem parsing template file!...\n", fg='red', reverse=True)
-    else:
-        click.secho("\nTemplate has been tokenized with...{}".format(json_data['stream_token']), fg='white')
-        template_file = open("demo_data/tokenized_template.txt", "w")
-        template_file.write(json.dumps(json_data))
-        template_file.close()
-        click.secho("New template stored as 'tokenized_template.txt'.\n")
+        token = ret.text
+        #Try load template as json and set stream_token, if success...store tokenized template in new file
+        try:
+            json_tmplt = json.loads(tmplt)
+            json_tmplt['stream_token'] = token
+        except:
+            click.secho("\nProblem parsing template file!...\n", fg='red', reverse=True)
+        else:
+            click.secho("\nTemplate has been tokenized with...{}".format(json_tmplt['stream_token']), fg='white')
+            template_file = open("tokenized_template.txt", "w")
+            template_file.write(json.dumps(json_tmplt))
+            template_file.close()
+            click.secho("New template stored as 'tokenized_template.txt'.\n")
 
 @click.command()
 @click.option('-filepath', '-f', 'filepath', prompt=True, type=click.Path(exists=True), help="Filepath of data file to upload")
