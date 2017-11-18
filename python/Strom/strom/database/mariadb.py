@@ -24,7 +24,7 @@ class SQL_Connection:
         self.mariadb_connection = mariadb.connect(pool_name = "my_pool", pool_size = 10, **dbconfig)
         # self.mariadb_connection = mariadb.connect(user='root', password='123', host='172.17.0.2', database='test')
         # Create a cursor object to execute SQL commands
-        self.cursor = self.mariadb_connection.cursor()
+        self.cursor = self.mariadb_connection.cursor(buffered=True)
         self.pool_name = self.mariadb_connection.pool_name
 
     def _close_connection(self):
@@ -56,14 +56,14 @@ class SQL_Connection:
         else:
             print("OK")
 
-    def _insert_row(self, stream_name, stream_token, version):
+    def _insert_row_into_metadata_table(self, stream_name, stream_token, version, template_id, derived_id, events_id):
         # There doesn't seem to be a way to use parameter placeholders for
         # table names; it can only be used to insert column values.
         add_row = ("INSERT INTO template_metadata "
-        "(stream_name, stream_token, version) "
-        "VALUES (%s, %s, %s)")
+        "(stream_name, stream_token, version, template_id, derived_id, events_id) "
+        "VALUES (%s, %s, %s, %s, %s, %s)")
 
-        row_columns = (stream_name, stream_token, version)
+        row_columns = (stream_name, stream_token, version, template_id, derived_id, events_id)
 
         try:
             print("Inserting row")
@@ -434,26 +434,26 @@ sixth_single_dstream = {
 
 def main():
     sql = SQL_Connection()
-    # sql._create_metadata_table()
-    # sql._insert_row("stream_one", 13, 1.0)
-    # sql._insert_row("stream_two", 11, 1.1)
-    # sql._retrieve_by_stream_name("stream_one")
-    # sql._retrieve_by_id(1)
-    # sql._retrieve_by_stream_token(11)
-    # sql._select_all_from_metadata_table()
+    sql._create_metadata_table()
+    sql._insert_row_into_metadata_table("stream_one", 13, 1.0, "fillter", "filler", "filler")
+    sql._insert_row_into_metadata_table("stream_two", 11, 1.1, "fillter", "filler", "filler")
+    sql._retrieve_by_stream_name("stream_one")
+    sql._retrieve_by_id(1)
+    sql._retrieve_by_stream_token(11)
+    sql._select_all_from_metadata_table()
 
 
 
-    dstream = DStream()
-    # print("***DSTREAM INITIALIZED***:", dstream)
-
-    second_row = copy.deepcopy(dstream)
-    third_row = copy.deepcopy(dstream)
-    fourth_row = copy.deepcopy(dstream)
-    fifth_row = copy.deepcopy(dstream)
-
-    print("dstream", dstream)
-    print("SECOND ROW", second_row)
+    # dstream = DStream()
+    # # print("***DSTREAM INITIALIZED***:", dstream)
+    #
+    # second_row = copy.deepcopy(dstream)
+    # third_row = copy.deepcopy(dstream)
+    # fourth_row = copy.deepcopy(dstream)
+    # fifth_row = copy.deepcopy(dstream)
+    #
+    # print("dstream", dstream)
+    # print("SECOND ROW", second_row)
 
     # dstream._add_measure("m_2", "int(10)")
     # dstream._add_measure("m_1", "varchar(10)")
@@ -470,36 +470,30 @@ def main():
     # dstream._add_tag("first tag")
     # dstream._add_tag("second tag")
 
-    dstream.load_from_json(single_dstream)
-
-    # filter_dict_1 = {"func_params":{}, "filter_name": "smoothing", "dtype":"float"}
-    # filter_dict_2 = {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}
+    # dstream.load_from_json(single_dstream)
     #
-    # dstream._add_filter({"func_params":{}, "filter_name": "smoothing", "dtype":"float"})
-    # dstream._add_filter({"func_params":{}, "filter_name": "low_pass", "dtype":"float"})
-
-    # print("@@@@ DSTREAM WITH DATA @@@@", dstream)
-
-    sql._create_stream_lookup_table(dstream)
-
-    second_row.load_from_json(second_single_dstream)
-    # print("@@@@ DSTREAM WITH second_single_dstream @@@@", second_row)
-    third_row.load_from_json(third_single_dstream)
-    # print("@@@@ DSTREAM WITH third_single_dstream @@@@", third_row)
-    fourth_row.load_from_json(fourth_single_dstream)
-    # print("@@@@ DSTREAM WITH fourth_single_dstream @@@@", fourth_row)
-    fifth_row.load_from_json(fifth_single_dstream)
-    # print("@@@@ DSTREAM WITH fifth_single_dstream @@@@", fifth_row)
-
-    sql._insert_row_into_stream_lookup_table(dstream)
+    # # print("@@@@ DSTREAM WITH DATA @@@@", dstream)
+    #
+    # sql._create_stream_lookup_table(dstream)
+    #
+    # second_row.load_from_json(second_single_dstream)
+    # # print("@@@@ DSTREAM WITH second_single_dstream @@@@", second_row)
+    # third_row.load_from_json(third_single_dstream)
+    # # print("@@@@ DSTREAM WITH third_single_dstream @@@@", third_row)
+    # fourth_row.load_from_json(fourth_single_dstream)
+    # # print("@@@@ DSTREAM WITH fourth_single_dstream @@@@", fourth_row)
+    # fifth_row.load_from_json(fifth_single_dstream)
+    # # print("@@@@ DSTREAM WITH fifth_single_dstream @@@@", fifth_row)
+    #
     # sql._insert_row_into_stream_lookup_table(dstream)
-    # sql._insert_row_into_stream_lookup_table(dstream)
-
-    sql._insert_row_into_stream_lookup_table(second_row)
-    sql._insert_row_into_stream_lookup_table(third_row)
-    sql._insert_row_into_stream_lookup_table(fourth_row)
-    sql._insert_row_into_stream_lookup_table(fifth_row)
-
-    sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
+    # # sql._insert_row_into_stream_lookup_table(dstream)
+    # # sql._insert_row_into_stream_lookup_table(dstream)
+    #
+    # sql._insert_row_into_stream_lookup_table(second_row)
+    # sql._insert_row_into_stream_lookup_table(third_row)
+    # sql._insert_row_into_stream_lookup_table(fourth_row)
+    # sql._insert_row_into_stream_lookup_table(fifth_row)
+    #
+    # sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
 
 main()
