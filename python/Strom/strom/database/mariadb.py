@@ -123,8 +123,12 @@ class SQL_Connection:
             print("Returning all data from template_metadata table")
             self.cursor.execute(query)
             # view data in cursor object
-            for (unique_id, stream_name, stream_token, version, template_id, derived_id, events_id) in self.cursor:
-                print("uid: {}, name: {}, stream: {}, version: {}, template id: {}, derived id: {}, events id: {}".format(unique_id, stream_name, stream_token, version, template_id, derived_id, events_id))
+            # for (unique_id, stream_name, stream_token, version, template_id, derived_id, events_id) in self.cursor:
+            #     print("uid: {}, name: {}, stream: {}, version: {}, template id: {}, derived id: {}, events id: {}".format(unique_id, stream_name, stream_token, version, template_id, derived_id, events_id))
+            #     return [unique_id, stream_name, stream_token, version, template_id, derived_id, events_id]
+            results = self.cursor.fetchall()
+            for row in results:
+                print(row)
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -296,6 +300,7 @@ class SQL_Connection:
             results = self.cursor.fetchall()
             for row in results:
                 print(row)
+                return row
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -496,4 +501,4 @@ def main():
     #
     # sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
 
-main()
+# main()
