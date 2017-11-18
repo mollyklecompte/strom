@@ -11,9 +11,10 @@ __author__ = "Molly <molly@tura.io>"
 
 
 class BStream(DStream):
-    def __init__(self, template, dstreams):
+    def __init__(self, template, dstreams, ids):
         super().__init__()
         self.dstreams = dstreams
+        self.ids = ids
         self["template_id"] = template["_id"]
         self._load_from_dict(template)
 

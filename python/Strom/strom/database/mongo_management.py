@@ -9,7 +9,7 @@ __version__  = "0.1"
 __author__ = "Molly <molly@tura.io>"
 
 # temporary config
-config = {'mongo_host' : '172.17.0.2', 'mongo_port' : 27017, 'template_coll' : 'templates', 'derived_coll' : 'derived_params', 'event_coll' : 'events', 'db' : 'strom'}
+config = {'mongo_host' : '172.17.0.2', 'mongo_port' : 27017, 'template_coll' : 'templates', 'derived_coll_suf' : 'derived_params', 'event_coll_suf' : 'events', 'db' : 'strom'}
 
 
 class MongoManager(object):
@@ -19,20 +19,20 @@ class MongoManager(object):
         self.db = self.client[config['db']]
         self.temp_coll_name = config['template_coll']
         self.temp_collection = self.db[self.temp_coll_name]
-        self.derived_coll_name = config['derived_coll']
-        self.derived_collection = self.db[self.derived_coll_name]
-        self.event_coll_name = config['event_coll']
-        self.event_collection = self.db[self.event_coll_name]
+        self.derived_coll_suffix = config['derived_coll_suf']
+        self.event_coll_suffix = config['event_coll_suf']
 
-    def _insert(self, dstream, dtype):
-        doc = dstream
+    def insert(self, doc, dtype):
+        token = doc["stream_token"]
 
         if dtype == 'template':
             inserted = self.temp_collection.insert_one(doc)
         elif dtype == 'derived':
-            inserted = self.derived_collection.insert_one(doc)
+            coll = self.db['%s_%s'] % (token, self.derived_coll_suffix)
+            inserted = coll.insert_one(doc)
         elif dtype == 'event':
-            inserted = self.event_collection.insert_one(doc)
+            coll = self.db['%s_%s'] % (token, self.event_coll_suffix)
+            inserted = coll.insert_one(doc)
         else:
             raise ValueError('Invalid d-stream type.')
 
@@ -41,13 +41,15 @@ class MongoManager(object):
         else:
             raise ValueError('Insert failed.')
 
-    def _get_by_id(self, doc_id, dtype):
+    def get_by_id(self, doc_id, dtype, token=None):
         if dtype == 'template':
             doc = self.temp_collection.find_one({"_id": doc_id})
         elif dtype == 'derived':
-            doc = self.derived_collection.find_one({"_id": doc_id})
+            coll = self.db['%s_%s'] % (token, self.derived_coll_suffix)
+            doc = coll.find_one({"_id": doc_id})
         elif dtype == 'event':
-            doc = self.event_collection.find_one({"_id": doc_id})
+            coll = self.db['%s_%s'] % (token, self.event_coll_suffix)
+            doc = coll.find_one({"_id": doc_id})
         else:
             raise ValueError('Invalid d-stream type')
 
@@ -56,5 +58,3 @@ class MongoManager(object):
 
         else:
             raise ValueError('Document with id ' + doc_id + ' does not exist.')
-
-
