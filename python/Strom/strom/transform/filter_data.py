@@ -24,6 +24,7 @@ class Filter(Transformer):
     def load_params(self, params):
         """Load func_params dict into filter.params"""
         self.params["func_params"] = params["func_params"]
+        self.params["filter_name"] = params["filter_name"]
 
     def get_params(self):
         """Method to return function default parameters"""
@@ -39,6 +40,7 @@ class ButterLowpass(Filter):
     def __init__(self):
         super().__init__()
         self.params["func_params"] ={"order":3, "nyquist":0.05}
+        self.params["filter_name"] =  "buttered"
 
     @staticmethod
     def butter_data(data_array, order, nyquist):
@@ -48,7 +50,7 @@ class ButterLowpass(Filter):
     def transform_data(self):
         buttered_data = {}
         for key in self.data.keys():
-            buttered_data[key+"_buttered"] = self.butter_data(np.array(self.data[key]["val"], dtype=float), self.params["func_params"]["order"], self.params["func_params"]["nyquist"])
+            buttered_data[self.params["filter_name"]] = self.butter_data(np.array(self.data[key]["val"], dtype=float), self.params["func_params"]["order"], self.params["func_params"]["nyquist"])
         return buttered_data
 
 class WindowAverage(Filter):
@@ -56,10 +58,11 @@ class WindowAverage(Filter):
     def __init__(self):
         super().__init__()
         self.params["func_params"] = {"window_len": 2}
+        self.params["filter_name"] = "windowed"
 
     def transform_data(self):
         windowed_data = {}
         for key in self.data.keys():
-            windowed_data[key+"_windowed"] = window_data(np.array(self.data[key]["val"], dtype=float),
+            windowed_data[self.params["filter_name"]] = window_data(np.array(self.data[key]["val"], dtype=float),
                                                   self.params["func_params"]["window_len"])
         return windowed_data
