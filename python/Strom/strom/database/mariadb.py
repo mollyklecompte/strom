@@ -169,8 +169,8 @@ class SQL_Connection:
 
         table = ("CREATE TABLE %s ("
             "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
-            "  `version` float(10, 2) NOT NULL,"
-            "  `time_stamp` float(10, 2) NOT NULL,"
+            "  `version` decimal(10, 2) NOT NULL,"
+            "  `time_stamp` decimal(10, 2) NOT NULL,"
             "%s"
             "%s"
             "%s"
@@ -284,15 +284,18 @@ class SQL_Connection:
             print("OK")
 
     def _retrieve_by_timestamp_range(self, dstream, start, end):
-        query = ("SELECT * FROM %s WHERE time_stamp BETWEEN %s AND %s")
-        dstream_particulars = (dstream['stream_token'], start, end)
+        stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
+        dstream_particulars = (stringified_stream_token_uuid, start, end)
+        query = ("SELECT * FROM %s WHERE time_stamp BETWEEN %s AND %s" % (stringified_stream_token_uuid, start, end))
+        # print("~~~~~~~~ QUERY ~~~~~~~~", query);
         try:
             print("Returning all records within timestamp range")
-            self.cursor.execute(query, dstream_particulars)
+            # self.cursor.execute(query, dstream_particulars)
+            self.cursor.execute(query)
             # view data in cursor object
-            for (unique_id, version, tags, fields) in self.cursor:
-                print("uid: {}, version: {}, tags: {}, fields: {}".format(unique_id, version, tags, fields))
-                return [unique_id, version, tags, fields]
+            results = self.cursor.fetchall()
+            for row in results:
+                print(row)
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -475,14 +478,18 @@ def main():
     # dstream._add_filter({"func_params":{}, "filter_name": "smoothing", "dtype":"float"})
     # dstream._add_filter({"func_params":{}, "filter_name": "low_pass", "dtype":"float"})
 
-    # print("DSTREAM WITH FILTERS ADDED", dstream)
+    # print("@@@@ DSTREAM WITH DATA @@@@", dstream)
 
     sql._create_stream_lookup_table(dstream)
 
     second_row.load_from_json(second_single_dstream)
+    # print("@@@@ DSTREAM WITH second_single_dstream @@@@", second_row)
     third_row.load_from_json(third_single_dstream)
+    # print("@@@@ DSTREAM WITH third_single_dstream @@@@", third_row)
     fourth_row.load_from_json(fourth_single_dstream)
+    # print("@@@@ DSTREAM WITH fourth_single_dstream @@@@", fourth_row)
     fifth_row.load_from_json(fifth_single_dstream)
+    # print("@@@@ DSTREAM WITH fifth_single_dstream @@@@", fifth_row)
 
     sql._insert_row_into_stream_lookup_table(dstream)
     # sql._insert_row_into_stream_lookup_table(dstream)
@@ -493,6 +500,6 @@ def main():
     sql._insert_row_into_stream_lookup_table(fourth_row)
     sql._insert_row_into_stream_lookup_table(fifth_row)
 
-    # sql._retrieve_by_timestamp_range()
+    sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
 
 main()
