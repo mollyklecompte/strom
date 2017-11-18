@@ -20,9 +20,9 @@ def dstream():
     pass
 
 @click.command()
-@click.option('-template', '-t', 'template', prompt=True, type=click.File('r'), help="Template file to initialize DStream")
+@click.option('-template', '-t', 'template', prompt=True, type=click.File('r'), help="Template file with fields to initialize DStream with")
 def define(template):
-    """  """
+    """ Load template file for DStream init. """
     tmplt = template.read()
     click.secho("\nSending template file...", fg='white')
     #Try send template to server, if success...collect stream_token
@@ -34,7 +34,7 @@ def define(template):
         click.secho(str(ret.status_code), fg='yellow')
         click.secho(ret.text, fg='yellow')
         token = ret.text
-        #Try load template as json and set stream_token, if success...store tokenized template in new file
+        #Try load template as json and set stream_token field, if success...store tokenized template in new file
         try:
             json_tmplt = json.loads(tmplt)
             json_tmplt['stream_token'] = token
@@ -49,25 +49,28 @@ def define(template):
 
 @click.command()
 @click.option('-filepath', '-f', 'filepath', prompt=True, type=click.Path(exists=True), help="Filepath of data file to upload")
-@click.option('-token', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
+@click.option('-token', '-tk', 'token', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
 def load(filepath, token):
     """  """
     click.secho("\nTokenizing data fields of {} with...".format(click.format_filename(filepath)), fg='white')
     cert = token.read()
+    #Try load client files as json, if success...pass
     try:
         json_data = json.load(open(filepath))
-    except:
-        click.secho("There is an error accessing that filepath!...\n", fg='red', reverse=True)
-    else:
         json_cert = json.loads(cert)
+    except:
+        click.secho("There is an error accessing/parsing those files!...\n", fg='red', reverse=True)
+    else:
+        #Try collect stream_token, if success...pass
         try:
             token = json_cert['stream_token']
             if token is None:
                 raise ValueError
         except:
-            click.secho("Token not found in provided template...\n", fg='red', reverse=True)
+            click.secho("Token not found in provided template!...\n", fg='red', reverse=True)
         else:
-            click.secho(token + '\n', fg='white')
+            click.secho("Found stream_token: " + token + '\n', fg='white')
+            #Try set stream_token fields to collected token, if success...pass
             try:
                 with click.progressbar(json_data) as bar:
                     for obj in bar:
@@ -76,6 +79,7 @@ def load(filepath, token):
                 click.secho("Data file not correctly formatted!...\n", fg='red', reverse=True)
             else:
                 click.secho("\nSending tokenized data...", fg='white')
+                #Try send data with token to server, if success...return status_code
                 try:
                     ret = requests.post(url + '/api/load', data={'data':json.dumps(json_data)})
                 except:
