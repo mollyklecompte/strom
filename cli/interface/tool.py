@@ -22,7 +22,7 @@ def dstream():
 @click.command()
 @click.option('-template', '-t', 'template', prompt=True, type=click.File('r'), help="Template file with fields to initialize DStream with")
 def define(template):
-    """ Load template file for DStream init. """
+    """ Upload template file for DStream init. """
     tmplt = template.read()
     click.secho("\nSending template file...", fg='white')
     #Try send template to server, if success...collect stream_token
@@ -51,7 +51,7 @@ def define(template):
 @click.option('-filepath', '-f', 'filepath', prompt=True, type=click.Path(exists=True), help="Filepath of data file to upload")
 @click.option('-token', '-tk', 'token', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
 def load(filepath, token):
-    """  """
+    """ Provide filepath of data to upload, along with tokenized_template for this DStream. """
     click.secho("\nTokenizing data fields of {} with...".format(click.format_filename(filepath)), fg='white')
     cert = token.read()
     #Try load client files as json, if success...pass
