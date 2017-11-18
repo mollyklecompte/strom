@@ -13,7 +13,7 @@ class DeriveParam(Transformer):
 
     def load_params(self, params):
         self.params["func_params"] = params["func_params"]
-        self.params["measure_rules"] = params["measure_rules"]
+        self.params["measure_rules"] = params["measure_rules"] #Must have output_name key
 
     def get_params(self):
         """Method to return function default parameters"""
