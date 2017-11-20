@@ -6,7 +6,15 @@ from .derive_param import *
 def map_to_measure(transform_output_dict):
     return_dict = {}
     for key, val in transform_output_dict.items():
-        return_dict[key] = {"val": transform_output_dict[key].tolist(), "dtype": str(transform_output_dict[key].dtype)}
+        if len(val.shape) > 1:
+            dtype_str = "varchar"
+        elif "float" in str(val.dtype):
+            dtype_str = "decimal"
+        elif "int" in str(val.dtype):
+            dtype_str = "int"
+        else:
+            dtype_str = "varchar"
+        return_dict[key] = {"val": val.tolist(), "dtype": dtype_str}
     return return_dict
 
 def select_filter(func_name):
