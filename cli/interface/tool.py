@@ -27,7 +27,7 @@ def dstream():
 @click.command()
 def welcome():
     """ Usage instructions for first time users. """
-    click.secho("\nJust Do It.\n", fg='magenta', bold=True, blink=True)
+    click.secho("\nJust Do It.\n", fg='magenta', bold=True)
     click.pause()
 
 @click.command()
@@ -38,7 +38,7 @@ def locate(path):
 
 @click.command()
 @click.option('-template', '-t', 'template', prompt=True, type=click.File('r'), help="Template file with required and custom fields")
-@click.option('--yes', is_flag=True, callback=_abort_if_false, expose_value=False, prompt="Initialize new DStream with this template?", help="Bypass confirmation prompt")
+@click.option('--yes', is_flag=True, callback=_abort_if_false, expose_value=False, prompt="\nInitialize new DStream with this template?", help="Bypass confirmation prompt")
 def define(template):
     """ Upload template file for DStream. """
     template_data = template.read()
