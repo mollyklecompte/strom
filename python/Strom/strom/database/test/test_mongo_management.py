@@ -30,10 +30,6 @@ class TestMongoManager(unittest.TestCase):
         inserted_id3 = self.manager.insert(self.events, 'event')
         queried3 = self.manager.get_by_id(inserted_id3, 'event', token)
 
-        self.assertEqual("driver_data", queried["stream_name"])
-        self.assertEqual("driver_data", queried2["stream_name"])
-        self.assertEqual("driver_data", queried3["stream_name"])
-
         self.assertEqual(inserted_id, queried["_id"])
         self.assertEqual(inserted_id2, queried2["_id"])
         self.assertEqual(inserted_id3, queried3["_id"])
