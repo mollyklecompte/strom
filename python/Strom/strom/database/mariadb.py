@@ -6,6 +6,7 @@ __author__ = "Justine <justine@tura.io>"
 
 #!/usr/bin/python
 import copy
+import gc
 import mysql.connector as mariadb
 from mysql.connector import errorcode
 # relative path works when running mariadb.py as a module
@@ -14,6 +15,9 @@ from ..dstream.filter_rules import FilterRules
 
 class SQL_Connection:
     def __init__(self):
+        # Prevent connection leakage by manually invoking the Python garbage collector to avoid
+        # running out of database connections.
+        gc.collect()
         # Set up connection to 'test' database in the MariaDB instance on Docker
         # Implicit connection pool creation
         dbconfig = {
@@ -486,10 +490,10 @@ def main():
     sql._insert_row_into_stream_lookup_table(third_row)
     sql._insert_row_into_stream_lookup_table(fourth_row)
     sql._insert_row_into_stream_lookup_table(fifth_row)
-    #
-    # sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
-    # sql._select_all_from_stream_lookup_table(dstream)
-    # sql._select_data_by_column_where(dstream, "`driver-id`", "unique_id", 3)
+
+    sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
+    sql._select_all_from_stream_lookup_table(dstream)
+    sql._select_data_by_column_where(dstream, "`driver-id`", "unique_id", 3)
     sql._close_connection()
 
 # main()
