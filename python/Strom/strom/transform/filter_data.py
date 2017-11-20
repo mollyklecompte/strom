@@ -50,7 +50,17 @@ class ButterLowpass(Filter):
     def transform_data(self):
         buttered_data = {}
         for key in self.data.keys():
-            buttered_data[self.params["filter_name"]] = self.butter_data(np.array(self.data[key]["val"], dtype=float), self.params["func_params"]["order"], self.params["func_params"]["nyquist"])
+            key_array = np.array(self.data[key]["val"], dtype=float)
+            if len(key_array.shape) > 1:
+                buttered_data[self.params["filter_name"]] = np.zeros(key_array.shape)
+                for ind in range(key_array.shape[1]):
+                    buttered_data[self.params["filter_name"]][:,ind] = self.butter_data(key_array[:,ind],
+                                                                                        self.params["func_params"]["order"],
+                                                                                        self.params["func_params"]["nyquist"])
+            else:
+                buttered_data[self.params["filter_name"]] = self.butter_data(key_array,
+                                                                             self.params["func_params"]["order"],
+                                                                             self.params["func_params"]["nyquist"])
         return buttered_data
 
 class WindowAverage(Filter):
@@ -63,6 +73,14 @@ class WindowAverage(Filter):
     def transform_data(self):
         windowed_data = {}
         for key in self.data.keys():
-            windowed_data[self.params["filter_name"]] = window_data(np.array(self.data[key]["val"], dtype=float),
+            key_array = np.array(self.data[key]["val"], dtype=float)
+            if len(key_array.shape) > 1:
+                windowed_data[self.params["filter_name"]] = np.zeros(key_array.shape)
+                for ind in range(key_array.shape[1]):
+                    windowed_data[self.params["filter_name"]][:,ind] = window_data(key_array[:,ind],
                                                   self.params["func_params"]["window_len"])
+            else:
+                windowed_data[self.params["filter_name"]] = window_data(key_array,
+                                                                        self.params["func_params"]["window_len"])
+
         return windowed_data
