@@ -8,6 +8,7 @@ class TestMongoManager(unittest.TestCase):
         self.manager = MongoManager()
         self.dstream = DStream()
         self.dstream["device_id"] = 'Chad'
+        self.dstream["stream_token"] = 'abc123'
 
     def test_insert(self):
         token = self.dstream["stream_token"]
