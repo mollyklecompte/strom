@@ -3,7 +3,7 @@ Coordinator class
 
 """
 
-from Strom.strom.dstream.dstream import BStream
+from Strom.strom.dstream.bstream import BStream
 from Strom.strom.database.mongo_management import MongoManager
 
 __version__ = "0.1"
