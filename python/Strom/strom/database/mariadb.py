@@ -40,7 +40,7 @@ class SQL_Connection:
             "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
             "  `stream_name` varchar(20) NOT NULL,"
             "  `stream_token` int(10) NOT NULL,"
-            "  `version` float(10, 2) NOT NULL,"
+            "  `version` decimal(10, 2) NOT NULL,"
             "  PRIMARY KEY (`unique_id`)"
             ") ENGINE=InnoDB")
         try:
