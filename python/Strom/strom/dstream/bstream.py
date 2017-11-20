@@ -5,6 +5,7 @@ Initializes a Bstream dict off Dstream, using a Dstream template to initialize a
 """
 
 from Strom.strom.dstream.dstream import DStream
+from Strom.strom.transform.apply_transformer import apply_transformation
 
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"
@@ -66,3 +67,15 @@ class BStream(DStream):
 
         return self
 
+    def apply_filters(self):
+        filter_measures = {}
+        for filter_rule in self["filters"]:
+            filter_measures[filter_rule["filter_name"]] = apply_transformation(filter_rule, self)[filter_rule["filter_name"]]
+        self["filter_measures"] = filter_measures
+
+
+    def apply_dparam_rules(self):
+        dparam_measures = {}
+        for dparam_rule in self["dparam_rules"]:
+            dparam_measures[dparam_rule["measure_rules"]["output_name"]] = apply_transformation(dparam_rule, self)[dparam_rule["measure_rules"]["output_name"]]
+        self["derived_measures"] = dparam_measures

@@ -1,1 +1,16 @@
-mysql-connector==2.1.6
+###### Requirements without Version Specifiers ######
+#
+
+#
+###### Requirements with Version Specifiers ######
+#
+numpy>=1.13.3
+scipy>=0.19.1K
+mysql-connector>=2.1.6
+#
+###### Refer to other requirements files ######
+#
+#
+###### A particular file ######
+#
+#
