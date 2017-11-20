@@ -45,6 +45,7 @@ class SQL_Connection:
             "  `stream_name` varchar(20) NOT NULL,"
             "  `stream_token` int(10) NOT NULL,"
             "  `version` decimal(10, 2) NOT NULL,"
+            "  `template_id` varchar(20) NOT NULL,"
             "  PRIMARY KEY (`unique_id`)"
             ") ENGINE=InnoDB")
         try:
@@ -58,12 +59,12 @@ class SQL_Connection:
         else:
             print("OK")
 
-    def _insert_row_into_metadata_table(self, stream_name, stream_token, version):
+    def _insert_row_into_metadata_table(self, stream_name, stream_token, version, template_id):
         add_row = ("INSERT INTO template_metadata "
-        "(stream_name, stream_token, version) "
-        "VALUES (%s, %s, %s)")
+        "(stream_name, stream_token, version, template_id) "
+        "VALUES (%s, %s, %s, %s)")
 
-        row_columns = (stream_name, stream_token, version)
+        row_columns = (stream_name, stream_token, version, template_id)
 
         try:
             print("Inserting row")
@@ -80,9 +81,9 @@ class SQL_Connection:
         try:
             print("Querying by stream name")
             self.cursor.execute(query, [stream_name])
-            for (unique_id, stream_name, stream_token, version) in self.cursor:
-                print("uid: {}, name: {}, stream: {}, version: {}".format(unique_id, stream_name, stream_token, version))
-                return [unique_id, stream_name, stream_token, version]
+            for (unique_id, stream_name, stream_token, version, template_id) in self.cursor:
+                print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
+                return [unique_id, stream_name, stream_token, float(version), template_id]
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -93,9 +94,9 @@ class SQL_Connection:
         try:
             print("Querying by unique id")
             self.cursor.execute(query, [unique_id])
-            for (unique_id, stream_name, stream_token, version) in self.cursor:
-                print("uid: {}, name: {}, stream: {}, version: {}".format(unique_id, stream_name, stream_token, version))
-                return [unique_id, stream_name, stream_token, version]
+            for (unique_id, stream_name, stream_token, version, template_id) in self.cursor:
+                print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
+                return [unique_id, stream_name, stream_token, float(version), template_id]
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -106,9 +107,9 @@ class SQL_Connection:
         try:
             print("Querying by stream token")
             self.cursor.execute(query, [stream_token])
-            for (unique_id, stream_name, stream_token, version) in self.cursor:
-                print("uid: {}, name: {}, stream: {}, version: {}".format(unique_id, stream_name, stream_token, version))
-                return [unique_id, stream_name, stream_token, version]
+            for (unique_id, stream_name, stream_token, version, template_id) in self.cursor:
+                print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
+                return [unique_id, stream_name, stream_token, float(version), template_id]
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -432,8 +433,8 @@ sixth_single_dstream = {
 def main():
     sql = SQL_Connection()
     sql._create_metadata_table()
-    sql._insert_row_into_metadata_table("stream_one", 13, 1.0)
-    sql._insert_row_into_metadata_table("stream_two", 11, 1.1)
+    sql._insert_row_into_metadata_table("stream_one", 13, 1.0, "filler")
+    sql._insert_row_into_metadata_table("stream_two", 11, 1.1, "filler")
     sql._retrieve_by_stream_name("stream_one")
     sql._retrieve_by_id(1)
     sql._retrieve_by_stream_token(11)

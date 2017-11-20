@@ -118,8 +118,9 @@ class TestSQL_Connection(unittest.TestCase):
         stream_name = "stream_one"
         stream_token = 11
         version = 1.0
-        self.cnx._insert_row_into_metadata_table(stream_name, stream_token, version)
-        self.assertEqual(self.cnx._retrieve_by_stream_name(stream_name), [1, "stream_one", 11, 1.0])
+        template_id = "filler"
+        self.cnx._insert_row_into_metadata_table(stream_name, stream_token, version, template_id)
+        self.assertEqual(self.cnx._retrieve_by_stream_name(stream_name), [1, "stream_one", 11, 1.0, "filler"])
 
     def test_insert_row_into_stream_lookup_table(self):
         self.cnx._insert_row_into_stream_lookup_table(single_dstream)
@@ -134,18 +135,20 @@ class TestSQL_Connection(unittest.TestCase):
         stream_name = "stream_two"
         stream_token = 12
         version = 1.1
-        self.cnx._insert_row_into_metadata_table(stream_name, stream_token, version)
-        self.assertEqual(self.cnx._retrieve_by_id(2), [2, "stream_two", 12, 1.1])
+        template_id = "filler"
+        self.cnx._insert_row_into_metadata_table(stream_name, stream_token, version, template_id)
+        self.assertEqual(self.cnx._retrieve_by_id(2), [2, "stream_two", 12, 1.1, "filler"])
 
     def test_retrieve_by_stream_name(self):
         stream_name = "stream_three"
         stream_token = 13
         version = 1.2
-        self.cnx._insert_row_into_metadata_table(stream_name, stream_token, version)
-        self.assertEqual(self.cnx._retrieve_by_stream_name(stream_name), [3, "stream_three", 13, 1.2])
+        template_id = "filler"
+        self.cnx._insert_row_into_metadata_table(stream_name, stream_token, version, template_id)
+        self.assertEqual(self.cnx._retrieve_by_stream_name(stream_name), [3, "stream_three", 13, 1.2, "filler"])
 
     def test_retrieve_by_stream_token(self):
-        self.assertEqual(self.cnx._retrieve_by_stream_token(13), [3, "stream_three", 13, 1.2])
+        self.assertEqual(self.cnx._retrieve_by_stream_token(13), [3, "stream_three", 13, 1.2, "filler"])
 
     def test_retrieve_by_timestamp_range(self):
         self.cnx._insert_row_into_stream_lookup_table(single_dstream)
