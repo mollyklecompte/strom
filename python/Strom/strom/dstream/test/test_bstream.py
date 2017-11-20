@@ -89,6 +89,7 @@ class TestBStream(unittest.TestCase):
             bdict["tags"][tag] = bdict["tags"][tag][:100]
         for uid in bdict["user_ids"].keys():
             bdict["user_ids"][uid] = bdict["user_ids"][uid][:100]
+
         bstream = BStream(dtemplate, {}, ids)
         bstream._load_from_dict(bdict)
         bstream["filters"].append(first_filter_rule)
