@@ -5,7 +5,7 @@ from Strom.strom.dstream.dstream import DStream
 single_dstream = {
     'stream_name': 'driver_data',
     'version': 0,
-    'stream_token': 'test_token',
+    'stream_token': 'test_mariadb_stream_lookup_table',
     'timestamp': 20171117,
     'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
@@ -20,7 +20,7 @@ single_dstream = {
 second_single_dstream = {
     'stream_name': 'driver_data',
     'version': 0,
-    'stream_token': 'test_token',
+    'stream_token': 'test_mariadb_stream_lookup_table',
     'timestamp': 20171118,
     'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
@@ -35,7 +35,7 @@ second_single_dstream = {
 third_single_dstream = {
     'stream_name': 'driver_data',
     'version': 0,
-    'stream_token': 'test_token',
+    'stream_token': 'test_mariadb_stream_lookup_table',
     'timestamp': 20171119,
     'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
@@ -50,7 +50,7 @@ third_single_dstream = {
 fourth_single_dstream = {
     'stream_name': 'driver_data',
     'version': 0,
-    'stream_token': 'test_token',
+    'stream_token': 'test_mariadb_stream_lookup_table',
     'timestamp': 20171120,
     'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
@@ -65,7 +65,7 @@ fourth_single_dstream = {
 fifth_single_dstream = {
     'stream_name': 'driver_data',
     'version': 0,
-    'stream_token': 'test_token',
+    'stream_token': 'test_mariadb_stream_lookup_table',
     'timestamp': 20171121,
     'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
@@ -76,7 +76,6 @@ fifth_single_dstream = {
     'dparam_rules': [],
     'event_rules': {}
 }
-
 
 class TestSQL_Connection(unittest.TestCase):
     def setUp(self):
@@ -90,12 +89,15 @@ class TestSQL_Connection(unittest.TestCase):
         self.assertIs(self.cursor, self.cnx.cursor)
         self.assertEqual(self.pool_name, "my_pool")
 
+    # def test_close_connection(self):
+    #     self.assertIsNone(self.cnx._close_connection())
+
     def test_create_metadata_table(self):
         self.assertIsNone(self.cnx._create_metadata_table())
 
     def test_create_stream_lookup_table(self):
-        self.dstream = DStream()
-        self.assertIsNone(self.cnx._create_stream_lookup_table(self.dstream))
+        # self.dstream = DStream()
+        self.assertIsNone(self.cnx._create_stream_lookup_table(single_dstream))
 
     def test_insert_row_into_metadata_table(self):
         stream_name = "stream_one"
@@ -104,6 +106,10 @@ class TestSQL_Connection(unittest.TestCase):
         id_filler = "filler"
         self.cnx._insert_row_into_metadata_table(stream_name, stream_token, version, id_filler, id_filler, id_filler)
         self.assertEqual(self.cnx._retrieve_by_stream_name(stream_name), [1, "stream_one", 11, 1.0, "filler", "filler", "filler"])
+
+    # def test_insert_row_into_stream_lookup_table(self):
+    #     self.cnx._insert_row_into_stream_lookup_table(single_dstream)
+    #     self.assertEqual(self.cnx._retrieve_by_timestamp_range('test_mariadb_stream_lookup_table', 20171117, 20171118), )
 
     def test_retrieve_by_id(self):
         stream_name = "stream_two"
@@ -124,16 +130,10 @@ class TestSQL_Connection(unittest.TestCase):
     def test_retrieve_by_stream_token(self):
         self.assertEqual(self.cnx._retrieve_by_stream_token(13), [3, "stream_three", 13, 1.2, "filler", "filler", "filler"])
 
+    # def test_retrieve_by_timestamp_range(self):
+
     def test_select_all_from_metadata_table(self):
         self.assertIsNone(self.cnx._select_all_from_metadata_table())
-
-    # def test_close_connection(self):
-    #     self.assertIsNone(self.cnx._close_connection())
-
-    # def test_insert_row_into_stream_lookup_table(self):
-    #     self.dstream = DStream()
-    #     self.cnx._insert_row_into_stream_lookup_table(dstream)
-    #     self.assertEqual(self.cnx._retrieve_by_stream_token())
 
 if __name__ == "__main__":
     unittest.main()
