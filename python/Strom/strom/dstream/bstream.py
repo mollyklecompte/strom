@@ -77,5 +77,5 @@ class BStream(DStream):
     def apply_dparam_rules(self):
         dparam_measures = {}
         for dparam_rule in self["dparam_rules"]:
-            dparam_measures[dparam_rule["measure_rules"]["output_name"]] = apply_transformation(filter_rule, self)[dparam_rule["measure_rules"]["output_name"]]
-        self["dparam_measures"] = dparam_measures
+            dparam_measures[dparam_rule["measure_rules"]["output_name"]] = apply_transformation(dparam_rule, self)[dparam_rule["measure_rules"]["output_name"]]
+        self["derived_measures"] = dparam_measures
