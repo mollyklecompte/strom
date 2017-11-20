@@ -14,41 +14,41 @@ Command-line interface tool for use with Strom-API.
 
 #### Download:
 *   Clone Repository
-    *   ```commandline
-        git clone git@github.com:tura-io/strom.git
-        ```
+```commandline
+git clone git@github.com:tura-io/strom.git
+```
 
 #### Install:
 *   Navigate to project directory
-    *   ```commandline
-        cd strom/cli/
-        ```
+```commandline
+cd strom/cli/
+```
 *   Install using Pip
-    *   ```commandline
-        pip install .
-        ```
+```commandline
+pip install .
+```
 *   (Optional) Enable auto-complete in Bash
-    *   ```commandline
-        eval "$(_DSTREAM_COMPLETE=source dstream)"
-        ```
+    ```commandline
+    eval "$(_DSTREAM_COMPLETE=source dstream)"
+    ```
 
 #### Run:
-*   ```commandline
-    dstream --help
-    ```
+```commandline
+dstream --help
+```
 
-#### Example Usage:
-*   ```commandline
-    dstream define -template demo_data/demo_template
-    ```
-*   ```commandline
-    dstream add_source -source file -token tokenized_template
-    ```
-*   ```commandline
-    dstream load -filepath demo_data/demo_data_log -token tokenized_template
-    ```
+##### Example Usage:
+```commandline
+dstream define -template demo_data/demo_template
+```
+```commandline
+dstream add_source -source file -token tokenized_template
+```
+```commandline
+dstream load -filepath demo_data/demo_data_log -token tokenized_template
+```
 
-##### Help:
+#### Help:
 * ``` --help``` can be given to each command for more information
 *   Hard Errors(Red):
     *   Server failure
