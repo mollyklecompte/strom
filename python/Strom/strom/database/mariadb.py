@@ -436,46 +436,6 @@ sixth_single_dstream = {
     'event_rules': {}
 }
 
-# initial_dstream = {
-#     'storage_rules': {},
-#     'tags': [],
-#     'filters': [],
-#     'timestamp': None,
-#     'engine_rules': {},
-#     'user_ids': {},
-#     'foreign_keys': {},
-#     'device_id': None,
-#     'version': 0,
-#     'fields': {},
-#     'stream_token': UUID('2c16caea_caf4_11e7_ab05_0242eb7ab33c'),
-#     'sources': {},
-#     'measures': {},
-#     'event_rules': {},
-#     'dparam_rules': [],
-#     'ingest_rules': {}
-# }
-
-# input_dstream = {
-#     'foreign_keys': [],
-#     'engine_rules': {},
-#     'timestamp': 1510603538107,
-#     'stream_token': UUID('61604bca-cbbe-11e7-ab05-0242eb7ab33c'),
-#     'stream_name': 'driver_data',
-#     'storage_rules': {},
-#     'fields': {'region-code': 'PDX'},
-#     'event_rules': {},
-#     'tags': {},
-#     'filters': [],
-#     'version': 0,
-#     'sources': {},
-#     'user_ids': {'id': 0, 'driver-id': 'Molly Mora'},
-#     'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'float'}},
-#     'ingest_rules': {},
-#     'dparam_rules': []
-# }
-
-
-
 def main():
     sql = SQL_Connection()
     # sql._create_metadata_table()
