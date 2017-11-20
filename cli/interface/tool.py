@@ -38,7 +38,7 @@ def locate(path):
 
 @click.command()
 @click.option('-template', '-t', 'template', prompt=True, type=click.File('r'), help="Template file with required and custom fields")
-@click.option('--yes', is_flag=True, callback=_abort_if_false, expose_value=False, prompt="Initialize new DStream with this template?", help="Confirm init DStream w/ this template")
+@click.option('--yes', is_flag=True, callback=_abort_if_false, expose_value=False, prompt="Initialize new DStream with this template?", help="Bypass confirmation prompt")
 def define(template):
     """ Upload template file for DStream. """
     template_data = template.read()
@@ -68,14 +68,32 @@ def define(template):
 @click.command()
 @click.option('-source', '-s', 'source', prompt=True, type=click.Choice(['kafka', 'file']), help="Specify source of data")
 @click.option('--kafka-topic', default=None, help="If source is kafka, specify topic")
-def add_source(source, kafka_topic):
+@click.option('-token', '-tk', 'token', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
+def add_source(source, kafka_topic, token):
     """ Declare source of data: file upload or kafka stream. """
+    #Check if topic was supplied when source is kafka
     if source == 'kafka' and kafka_topic == None:
         click.secho("No topic specified, please re-run command.", fg='yellow', reverse=True)
     else:
-        click.secho(source)
-        if kafka_topic is not None:
-            click.secho(kafka_topic)
+        cert = token.read()
+        #Try loading template as json and retrieving token, if success...pass
+        try:
+            json_cert = json.loads(cert)
+            tk = json_cert['stream_token']
+        except:
+            click.secho("\nThere was an error parsing that file and/or the token was not found!...\n", fg='yellow', reverse=True)
+        else:
+            click.secho("\nFound stream_token: " + tk, fg='white')
+            click.secho("\nSending source for this DStream...\n", fg='white')
+            #Try posting data to server, if success...return status_code
+            try:
+                ret = requests.post(url + "/api/add-source", data={'source':source, 'topic':kafka_topic, 'token':tk})
+            except:
+                click.secho("\nConnection Refused!...\n", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text + '\n', fg='yellow')
+
 
 @click.command()
 @click.option('-filepath', '-f', 'filepath', prompt=True, type=click.Path(exists=True), help="File-path of data file to upload")
@@ -89,29 +107,29 @@ def load(filepath, token):
         json_data = json.load(open(filepath))
         json_cert = json.loads(cert)
     except:
-        click.secho("There is an error accessing/parsing those files!...\n", fg='red', reverse=True)
+        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
     else:
         #Try collect stream_token, if success...pass
         try:
-            token = json_cert['stream_token']
-            if token is None:
+            tk = json_cert['stream_token']
+            if tk is None:
                 raise ValueError
         except:
-            click.secho("Token not found in provided template!...\n", fg='red', reverse=True)
+            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
         else:
-            click.secho("Found stream_token: " + token + '\n', fg='white')
+            click.secho("Found stream_token: " + tk + '\n', fg='white')
             #Try set stream_token fields to collected token, if success...pass
             try:
                 with click.progressbar(json_data) as bar:
                     for obj in bar:
-                        obj['stream_token'] = token
+                        obj['stream_token'] = tk
             except:
                 click.secho("Data file not correctly formatted!...\n", fg='red', reverse=True)
             else:
                 click.secho("\nSending tokenized data...", fg='white')
                 #Try send data with token to server, if success...return status_code
                 try:
-                    ret = requests.post(url + '/api/load', data={'data':json.dumps(json_data)})
+                    ret = requests.post(url + "/api/load", data={'data':json.dumps(json_data)})
                 except:
                     click.secho("Connection Refused!...\n", fg='red', reverse=True)
                 else:
