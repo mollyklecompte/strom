@@ -28,11 +28,13 @@ class MongoManager(object):
         if dtype == 'template':
             inserted = self.temp_collection.insert_one(doc)
         elif dtype == 'derived':
-            coll = self.db['%s_%s'] % (token, self.derived_coll_suffix)
-            inserted = coll.insert_one(doc)
+            coll_name = '%s_%s' % (token, self.derived_coll_suffix)
+            coll = self.db[coll_name]
+            inserted = coll.insert_one(doc["derived_measures"])
         elif dtype == 'event':
-            coll = self.db['%s_%s'] % (token, self.event_coll_suffix)
-            inserted = coll.insert_one(doc)
+            coll_name = '%s_%s' % (token, self.event_coll_suffix)
+            coll = self.db[coll_name]
+            inserted = coll.insert_one(doc["event_measures"])
         else:
             raise ValueError('Invalid d-stream type.')
 
@@ -45,10 +47,12 @@ class MongoManager(object):
         if dtype == 'template':
             doc = self.temp_collection.find_one({"_id": doc_id})
         elif dtype == 'derived':
-            coll = self.db['%s_%s'] % (token, self.derived_coll_suffix)
+            coll_name = '%s_%s' % (token, self.derived_coll_suffix)
+            coll = self.db[coll_name]
             doc = coll.find_one({"_id": doc_id})
         elif dtype == 'event':
-            coll = self.db['%s_%s'] % (token, self.event_coll_suffix)
+            coll_name = '%s_%s' % (token, self.event_coll_suffix)
+            coll = self.db[coll_name]
             doc = coll.find_one({"_id": doc_id})
         else:
             raise ValueError('Invalid d-stream type')
