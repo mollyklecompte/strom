@@ -1,4 +1,5 @@
 """MySQL Database Connector Class"""
+"""REFACTOR NEEDED FOR MODULARITY AND CODE REUSABILITY"""
 
 __version__  = "0.1"
 __author__ = "Justine <justine@tura.io>"
@@ -40,9 +41,6 @@ class SQL_Connection:
             "  `stream_name` varchar(20) NOT NULL,"
             "  `stream_token` int(10) NOT NULL,"
             "  `version` float(10, 2) NOT NULL,"
-            "  `template_id` varchar(20),"
-            "  `derived_id` varchar(30),"
-            "  `events_id` varchar(30),"
             "  PRIMARY KEY (`unique_id`)"
             ") ENGINE=InnoDB")
         try:
@@ -56,14 +54,14 @@ class SQL_Connection:
         else:
             print("OK")
 
-    def _insert_row_into_metadata_table(self, stream_name, stream_token, version, template_id, derived_id, events_id):
+    def _insert_row_into_metadata_table(self, stream_name, stream_token, version):
         # There doesn't seem to be a way to use parameter placeholders for
         # table names; it can only be used to insert column values.
         add_row = ("INSERT INTO template_metadata "
-        "(stream_name, stream_token, version, template_id, derived_id, events_id) "
-        "VALUES (%s, %s, %s, %s, %s, %s)")
+        "(stream_name, stream_token, version) "
+        "VALUES (%s, %s, %s)")
 
-        row_columns = (stream_name, stream_token, version, template_id, derived_id, events_id)
+        row_columns = (stream_name, stream_token, version)
 
         try:
             print("Inserting row")
@@ -81,9 +79,9 @@ class SQL_Connection:
             print("Querying by stream name")
             self.cursor.execute(query, [stream_name])
             # view data in cursor object
-            for (unique_id, stream_name, stream_token, version, template_id, derived_id, events_id) in self.cursor:
-                print("uid: {}, name: {}, stream: {}, version: {}, template id: {}, derived id: {}, events id: {}".format(unique_id, stream_name, stream_token, version, template_id, derived_id, events_id))
-                return [unique_id, stream_name, stream_token, version, template_id, derived_id, events_id]
+            for (unique_id, stream_name, stream_token, version) in self.cursor:
+                print("uid: {}, name: {}, stream: {}, version: {}".format(unique_id, stream_name, stream_token, version))
+                return [unique_id, stream_name, stream_token, version]
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -95,9 +93,9 @@ class SQL_Connection:
             print("Querying by unique id")
             self.cursor.execute(query, [unique_id])
             # view data in cursor object
-            for (unique_id, stream_name, stream_token, version, template_id, derived_id, events_id) in self.cursor:
-                print("uid: {}, name: {}, stream: {}, version: {}, template id: {}, derived id: {}, events id: {}".format(unique_id, stream_name, stream_token, version, template_id, derived_id, events_id))
-                return [unique_id, stream_name, stream_token, version, template_id, derived_id, events_id]
+            for (unique_id, stream_name, stream_token, version) in self.cursor:
+                print("uid: {}, name: {}, stream: {}, version: {}".format(unique_id, stream_name, stream_token, version))
+                return [unique_id, stream_name, stream_token, version]
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -109,9 +107,9 @@ class SQL_Connection:
             print("Querying by stream token")
             self.cursor.execute(query, [stream_token])
             # view data in cursor object
-            for (unique_id, stream_name, stream_token, version, template_id, derived_id, events_id) in self.cursor:
-                print("uid: {}, name: {}, stream: {}, version: {}, template id: {}, derived id: {}, events id: {}".format(unique_id, stream_name, stream_token, version, template_id, derived_id, events_id))
-                return [unique_id, stream_name, stream_token, version, template_id, derived_id, events_id]
+            for (unique_id, stream_name, stream_token, version) in self.cursor:
+                print("uid: {}, name: {}, stream: {}, version: {}".format(unique_id, stream_name, stream_token, version))
+                return [unique_id, stream_name, stream_token, version]
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -438,13 +436,13 @@ sixth_single_dstream = {
 
 def main():
     sql = SQL_Connection()
-    # sql._create_metadata_table()
-    # sql._insert_row_into_metadata_table("stream_one", 13, 1.0, "fillter", "filler", "filler")
-    # sql._insert_row_into_metadata_table("stream_two", 11, 1.1, "fillter", "filler", "filler")
-    # sql._retrieve_by_stream_name("stream_one")
-    # sql._retrieve_by_id(1)
-    # sql._retrieve_by_stream_token(11)
-    # sql._select_all_from_metadata_table()
+    sql._create_metadata_table()
+    sql._insert_row_into_metadata_table("stream_one", 13, 1.0)
+    sql._insert_row_into_metadata_table("stream_two", 11, 1.1)
+    sql._retrieve_by_stream_name("stream_one")
+    sql._retrieve_by_id(1)
+    sql._retrieve_by_stream_token(11)
+    sql._select_all_from_metadata_table()
 
 
 
