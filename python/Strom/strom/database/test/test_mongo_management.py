@@ -7,7 +7,7 @@ class TestMongoManager(unittest.TestCase):
     def setUp(self):
         self.manager = MongoManager()
         self.dstream = DStream()
-        self.dstream["device_id"] = 'Chad'
+        self.dstream["stream_name"] = 'driver_data'
         self.dstream["stream_token"] = 'abc123'
         self.derived = {"stream_name": "driver_data", "version": 0, "stream_token": "abc123", "sources": {},'storage_rules': {}, 'ingest_rules': {}, 'engine_rules': {}, "timestamp": [1510603538107, 1510603538108, 1510603538109],
          "derived_measures":{"location": {"val": [[-122.69081962885704, 45.52110054870811], [-132.69081962885704, 55.52110054870811], [-142.69081962885704, 65.52110054870811]], "dtype": "float"}, "measure2": {"val": [13, 9, 4], "dtype": "int"}},
@@ -30,9 +30,9 @@ class TestMongoManager(unittest.TestCase):
         inserted_id3 = self.manager.insert(self.events, 'event')
         queried3 = self.manager.get_by_id(inserted_id3, 'event', token)
 
-        self.assertEqual("Chad", queried["device_id"])
-        self.assertEqual("Chad", queried2["device_id"])
-        self.assertEqual("Chad", queried3["device_id"])
+        self.assertEqual("driver_data", queried["stream_name"])
+        self.assertEqual("driver_data", queried2["stream_name"])
+        self.assertEqual("driver_data", queried3["stream_name"])
 
         self.assertEqual(inserted_id, queried["_id"])
         self.assertEqual(inserted_id2, queried2["_id"])
