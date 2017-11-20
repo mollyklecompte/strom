@@ -55,6 +55,7 @@ class TestBStream(unittest.TestCase):
 
     def test_applying(self):
         dtemplate = DStream()
+        ids = [1, 2, 3]
         dtemplate.load_from_json({"_id": "fromMONGO","stream_name": "driver_data", "version": 0, "stream_token": None, "timestamp": None,
                                   "measures": {"location": {"val": None, "dtype": "float"}}, "fields": {"region-code": {}},
                                   "user_ids": {"driver-id": {}, "id": {}}, "tags": {}, "foreign_keys": [],
@@ -88,7 +89,8 @@ class TestBStream(unittest.TestCase):
             bdict["tags"][tag] = bdict["tags"][tag][:100]
         for uid in bdict["user_ids"].keys():
             bdict["user_ids"][uid] = bdict["user_ids"][uid][:100]
-        bstream = BStream(dtemplate, {})
+
+        bstream = BStream(dtemplate, {}, ids)
         bstream._load_from_dict(bdict)
         bstream["filters"].append(first_filter_rule)
         bstream["filters"].append(second_filter_rule)
