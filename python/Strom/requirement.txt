@@ -1,10 +1,11 @@
 ###### Requirements without Version Specifiers ######
 #
-numpy
-scipy
+
 #
 ###### Requirements with Version Specifiers ######
 #
+numpy>=1.13.3
+scipy>=0.19.1K
 #
 ###### Refer to other requirements files ######
 #
