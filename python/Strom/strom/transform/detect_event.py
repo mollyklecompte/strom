@@ -36,7 +36,7 @@ class DetectThreshold(DetectEvent):
     def compare_threshold(data_array, comparison_operator, comparision_val):
         comparisons= {"==":np.equal, "!=":np.not_equal, ">=":np.greater_equal, "<=":np.less_equal, ">":np.greater, "<":np.less}
         cur_comp = comparisons[comparison_operator]
-        match_inds = np.nonzero(cur_comp(data_array, comparision_val))
+        match_inds = np.nonzero(cur_comp(np.nan_to_num(data_array), comparision_val))
         return match_inds[0]
 
     def create_events(self, event_inds):
@@ -47,10 +47,11 @@ class DetectThreshold(DetectEvent):
             cur_event["event_rules"] = self.params["event_rules"]
             cur_event["stream_token"] = self.params["stream_token"]
             cur_event["timestamp"] = self.data["timestamp"]["val"][e_ind]
-            for key, val in self.data:
+            for key, val in self.data.items():
                 if key != "timestamp":
                     cur_event["event_context"][key] = val["val"][e_ind]
             event_list.append(deepcopy(cur_event))
+        return event_list
 
 
     def transform_data(self):
