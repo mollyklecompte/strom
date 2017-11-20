@@ -55,8 +55,12 @@ def apply_transformation(param_dict, bstream):
     if "measures" in param_dict.keys():
         for measure_name in param_dict["measures"]:
             transformer.add_measure(measure_name, bstream["measures"][measure_name])
-    else:
-        raise KeyError("No measures to transform")
+    if "filter_measures" in param_dict.keys():
+        for measure_name in param_dict["filter_measures"]:
+            transformer.add_measure(measure_name, bstream["filter_measures"][measure_name])
+    if "derived_measures" in param_dict.keys():
+        for measure_name in param_dict["derived_measures"]:
+            transformer.add_measure(measure_name, bstream["derived_measures"][measure_name])
 
     transformer.load_params(param_dict)
     return map_to_measure(transformer.transform_data())
