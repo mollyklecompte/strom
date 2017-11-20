@@ -21,9 +21,9 @@ class SQL_Connection:
         # Set up connection to 'test' database in the MariaDB instance on Docker
         # Implicit connection pool creation
         dbconfig = {
-            "user": 'root',
+            "user": 'user',
             "password": '123',
-            "host": '172.17.0.2',
+            "host": '172.17.0.3',
             "database": 'test'
         }
         self.mariadb_connection = mariadb.connect(pool_name = "my_pool", pool_size = 12, **dbconfig)
@@ -43,7 +43,7 @@ class SQL_Connection:
         table = ("CREATE TABLE template_metadata ("
             "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
             "  `stream_name` varchar(20) NOT NULL,"
-            "  `stream_token` int(10) NOT NULL,"
+            "  `stream_token` varchar(50) NOT NULL,"
             "  `version` decimal(10, 2) NOT NULL,"
             "  `template_id` varchar(20) NOT NULL,"
             "  PRIMARY KEY (`unique_id`)"
@@ -110,6 +110,23 @@ class SQL_Connection:
             for (unique_id, stream_name, stream_token, version, template_id) in self.cursor:
                 print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
                 return [unique_id, stream_name, stream_token, float(version), template_id]
+        except mariadb.Error as err:
+            print(err.msg)
+        else:
+            print("OK")
+
+    def _return_template_id_for_latest_version_of_stream(self, stream_token):
+        query = ("SELECT `template_id` FROM template_metadata WHERE version = ("
+                "SELECT MAX(version) FROM template_metadata WHERE stream_token = %s)")
+        try:
+            print("Returning template_id for latest version of stream by stream_token")
+            self.cursor.execute(query, [stream_token])
+            # for (template_id) in self.cursor:
+            #     print("template_id: {}".format(template_id))
+            #     return template_id
+            result = self.cursor.fetchone()
+            print(result[0])
+            return result[0]
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -433,68 +450,72 @@ sixth_single_dstream = {
 def main():
     sql = SQL_Connection()
     sql._create_metadata_table()
-    sql._insert_row_into_metadata_table("stream_one", 13, 1.0, "filler")
-    sql._insert_row_into_metadata_table("stream_two", 11, 1.1, "filler")
+    sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
+    sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "filler")
+    sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
     sql._retrieve_by_stream_name("stream_one")
     sql._retrieve_by_id(1)
-    sql._retrieve_by_stream_token(11)
+    sql._retrieve_by_stream_token("stream_token_two")
+    sql._return_template_id_for_latest_version_of_stream("stream_token_two")
     sql._select_all_from_metadata_table()
 
 
 
-    dstream = DStream()
-    # print("***DSTREAM INITIALIZED***:", dstream)
+# STREAM LOOKUP TABLE PRELIMINARY TESTS
 
-    second_row = copy.deepcopy(dstream)
-    third_row = copy.deepcopy(dstream)
-    fourth_row = copy.deepcopy(dstream)
-    fifth_row = copy.deepcopy(dstream)
-
-    # print("dstream", dstream)
-    # print("SECOND ROW", second_row)
+    # dstream = DStream()
+    # # print("***DSTREAM INITIALIZED***:", dstream)
     #
-    # dstream._add_measure("m_2", "int(10)")
-    # dstream._add_measure("m_1", "varchar(10)")
-    # dstream._add_measure("m_3", "float(10, 2)")
+    # second_row = copy.deepcopy(dstream)
+    # third_row = copy.deepcopy(dstream)
+    # fourth_row = copy.deepcopy(dstream)
+    # fifth_row = copy.deepcopy(dstream)
     #
-    # dstream._add_field("field_1")
-    # dstream._add_field("field_2")
-    # dstream._add_field("field_3")
+    # # print("dstream", dstream)
+    # # print("SECOND ROW", second_row)
+    # #
+    # # dstream._add_measure("m_2", "int(10)")
+    # # dstream._add_measure("m_1", "varchar(10)")
+    # # dstream._add_measure("m_3", "float(10, 2)")
+    # #
+    # # dstream._add_field("field_1")
+    # # dstream._add_field("field_2")
+    # # dstream._add_field("field_3")
+    # #
+    # # dstream._add_user_id("uid_1")
+    # # dstream._add_user_id("uid_2")
+    # # dstream._add_user_id("uid_3")
+    # #
+    # # dstream._add_tag("first tag")
+    # # dstream._add_tag("second tag")
     #
-    # dstream._add_user_id("uid_1")
-    # dstream._add_user_id("uid_2")
-    # dstream._add_user_id("uid_3")
+    # dstream.load_from_json(single_dstream)
     #
-    # dstream._add_tag("first tag")
-    # dstream._add_tag("second tag")
-
-    dstream.load_from_json(single_dstream)
-
-    # print("@@@@ DSTREAM WITH DATA @@@@", dstream)
-
-    sql._create_stream_lookup_table(dstream)
-
-    second_row.load_from_json(second_single_dstream)
-    # print("@@@@ DSTREAM WITH second_single_dstream @@@@", second_row)
-    third_row.load_from_json(third_single_dstream)
-    # print("@@@@ DSTREAM WITH third_single_dstream @@@@", third_row)
-    fourth_row.load_from_json(fourth_single_dstream)
-    # print("@@@@ DSTREAM WITH fourth_single_dstream @@@@", fourth_row)
-    fifth_row.load_from_json(fifth_single_dstream)
-    # print("@@@@ DSTREAM WITH fifth_single_dstream @@@@", fifth_row)
-
-    sql._insert_row_into_stream_lookup_table(dstream)
+    # # print("@@@@ DSTREAM WITH DATA @@@@", dstream)
+    #
+    # sql._create_stream_lookup_table(dstream)
+    #
+    # second_row.load_from_json(second_single_dstream)
+    # # print("@@@@ DSTREAM WITH second_single_dstream @@@@", second_row)
+    # third_row.load_from_json(third_single_dstream)
+    # # print("@@@@ DSTREAM WITH third_single_dstream @@@@", third_row)
+    # fourth_row.load_from_json(fourth_single_dstream)
+    # # print("@@@@ DSTREAM WITH fourth_single_dstream @@@@", fourth_row)
+    # fifth_row.load_from_json(fifth_single_dstream)
+    # # print("@@@@ DSTREAM WITH fifth_single_dstream @@@@", fifth_row)
+    #
     # sql._insert_row_into_stream_lookup_table(dstream)
-    # sql._insert_row_into_stream_lookup_table(dstream)
-
-    sql._insert_row_into_stream_lookup_table(second_row)
-    sql._insert_row_into_stream_lookup_table(third_row)
-    sql._insert_row_into_stream_lookup_table(fourth_row)
-    sql._insert_row_into_stream_lookup_table(fifth_row)
-
-    sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
-    sql._select_all_from_stream_lookup_table(dstream)
-    sql._select_data_by_column_where(dstream, "`driver-id`", "unique_id", 3)
+    # # sql._insert_row_into_stream_lookup_table(dstream)
+    # # sql._insert_row_into_stream_lookup_table(dstream)
+    #
+    # sql._insert_row_into_stream_lookup_table(second_row)
+    # sql._insert_row_into_stream_lookup_table(third_row)
+    # sql._insert_row_into_stream_lookup_table(fourth_row)
+    # sql._insert_row_into_stream_lookup_table(fifth_row)
+    #
+    # sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
+    # sql._select_all_from_stream_lookup_table(dstream)
+    # sql._select_data_by_column_where(dstream, "`driver-id`", "unique_id", 3)
     sql._close_connection()
 
 # main()
