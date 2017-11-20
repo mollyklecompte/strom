@@ -21,7 +21,7 @@ class SQL_Connection:
             "host": '172.17.0.2',
             "database": 'test'
         }
-        self.mariadb_connection = mariadb.connect(pool_name = "my_pool", pool_size = 10, **dbconfig)
+        self.mariadb_connection = mariadb.connect(pool_name = "my_pool", pool_size = 12, **dbconfig)
         # self.mariadb_connection = mariadb.connect(user='root', password='123', host='172.17.0.2', database='test')
         # Create a cursor object to execute SQL commands
         self.cursor = self.mariadb_connection.cursor(buffered=True)
@@ -282,6 +282,8 @@ class SQL_Connection:
             # for (unique_id, version, tags, fields) in self.cursor:
             #     print("uid: {}, version: {}, tags: {}, fields: {}".format(unique_id, version, tags, fields))
             #     return [unique_id, version, tags, fields]
+            print(self.cursor.lastrowid)
+            return self.cursor.lastrowid
         except mariadb.Error as err:
             print(err.msg)
         else:
@@ -325,6 +327,24 @@ class SQL_Connection:
         else:
             print("OK")
 
+    def _select_data_by_column_where(self, dstream, data_column, filter_column, value):
+        stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
+        query = ("SELECT %s FROM %s WHERE %s = %s" % (data_column, stringified_stream_token_uuid, filter_column, value))
+        # print("~~~~~~~~ QUERY ~~~~~~~~", query);
+        try:
+            print("Returning data")
+            # self.cursor.execute(query, dstream_particulars)
+            self.cursor.execute(query)
+            # view data in cursor object
+            results = self.cursor.fetchall()
+            # for row in results:
+            #     print(row)
+            print(results)
+            return results
+        except mariadb.Error as err:
+            print(err.msg)
+        else:
+            print("OK")
 
 single_dstream = {
     'stream_name': 'driver_data',
@@ -348,7 +368,7 @@ second_single_dstream = {
     'timestamp': 20171118,
     'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
-    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
+    'user_ids': {'driver-id': 'Kelson Agnic', 'id': 0},
     'tags': {},
     'foreign_keys': [],
     'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
@@ -363,7 +383,7 @@ third_single_dstream = {
     'timestamp': 20171119,
     'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
-    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
+    'user_ids': {'driver-id': 'David Parvizi', 'id': 0},
     'tags': {},
     'foreign_keys': [],
     'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
@@ -378,7 +398,7 @@ fourth_single_dstream = {
     'timestamp': 20171120,
     'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
-    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
+    'user_ids': {'driver-id': 'Justine LeCompte', 'id': 0},
     'tags': {},
     'foreign_keys': [],
     'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
@@ -393,7 +413,7 @@ fifth_single_dstream = {
     'timestamp': 20171121,
     'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
-    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
+    'user_ids': {'driver-id': 'Adrian Wang', 'id': 0},
     'tags': {},
     'foreign_keys': [],
     'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
@@ -408,7 +428,7 @@ sixth_single_dstream = {
     'timestamp': 20171122,
     'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
-    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
+    'user_ids': {'driver-id': 'Parham Nielsen', 'id': 0},
     'tags': {},
     'foreign_keys': [],
     'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
@@ -517,8 +537,10 @@ def main():
     sql._insert_row_into_stream_lookup_table(third_row)
     sql._insert_row_into_stream_lookup_table(fourth_row)
     sql._insert_row_into_stream_lookup_table(fifth_row)
+    #
+    # sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
+    # sql._select_all_from_stream_lookup_table(dstream)
+    # sql._select_data_by_column_where(dstream, "`driver-id`", "unique_id", 3)
+    sql._close_connection()
 
-    sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
-    sql._select_all_from_stream_lookup_table(dstream)
-
-main()
+# main()

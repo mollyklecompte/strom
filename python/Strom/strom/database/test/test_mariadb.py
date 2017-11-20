@@ -24,7 +24,7 @@ second_single_dstream = {
     'timestamp': 20171118,
     'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
-    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
+    'user_ids': {'driver-id': 'Kelson Agnic', 'id': 0},
     'tags': {},
     'foreign_keys': [],
     'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
@@ -39,7 +39,7 @@ third_single_dstream = {
     'timestamp': 20171119,
     'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
-    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
+    'user_ids': {'driver-id': 'David Parvizi', 'id': 0},
     'tags': {},
     'foreign_keys': [],
     'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
@@ -54,7 +54,7 @@ fourth_single_dstream = {
     'timestamp': 20171120,
     'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
-    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
+    'user_ids': {'driver-id': 'Justine LeCompte', 'id': 0},
     'tags': {},
     'foreign_keys': [],
     'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
@@ -69,7 +69,22 @@ fifth_single_dstream = {
     'timestamp': 20171121,
     'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
     'fields': {'region-code': 'PDX'},
-    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
+    'user_ids': {'driver-id': 'Adrian Wang', 'id': 0},
+    'tags': {},
+    'foreign_keys': [],
+    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
+    'dparam_rules': [],
+    'event_rules': {}
+}
+
+sixth_single_dstream = {
+    'stream_name': 'driver_data',
+    'version': 0,
+    'stream_token': 'test_mariadb_stream_lookup_table',
+    'timestamp': 20171122,
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'fields': {'region-code': 'PDX'},
+    'user_ids': {'driver-id': 'Parham Nielsen', 'id': 0},
     'tags': {},
     'foreign_keys': [],
     'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
@@ -107,9 +122,14 @@ class TestSQL_Connection(unittest.TestCase):
         self.cnx._insert_row_into_metadata_table(stream_name, stream_token, version, id_filler, id_filler, id_filler)
         self.assertEqual(self.cnx._retrieve_by_stream_name(stream_name), [1, "stream_one", 11, 1.0, "filler", "filler", "filler"])
 
-    # def test_insert_row_into_stream_lookup_table(self):
-    #     self.cnx._insert_row_into_stream_lookup_table(single_dstream)
-    #     self.assertEqual(self.cnx._retrieve_by_timestamp_range('test_mariadb_stream_lookup_table', 20171117, 20171118), )
+    def test_insert_row_into_stream_lookup_table(self):
+        self.cnx._insert_row_into_stream_lookup_table(single_dstream)
+        self.cnx._insert_row_into_stream_lookup_table(second_single_dstream)
+        self.cnx._insert_row_into_stream_lookup_table(third_single_dstream)
+        self.cnx._insert_row_into_stream_lookup_table(fourth_single_dstream)
+        self.cnx._insert_row_into_stream_lookup_table(fifth_single_dstream)
+        # self.assertEqual(self.cnx._retrieve_by_timestamp_range('test_mariadb_stream_lookup_table', 20171117, 20171118), )
+        self.assertEqual(self.cnx._select_data_by_column_where(single_dstream, "`driver-id`", "unique_id", 3), [('David Parvizi',)])
 
     def test_retrieve_by_id(self):
         stream_name = "stream_two"
@@ -130,10 +150,22 @@ class TestSQL_Connection(unittest.TestCase):
     def test_retrieve_by_stream_token(self):
         self.assertEqual(self.cnx._retrieve_by_stream_token(13), [3, "stream_three", 13, 1.2, "filler", "filler", "filler"])
 
-    # def test_retrieve_by_timestamp_range(self):
+    def test_retrieve_by_timestamp_range(self):
+        self.cnx._insert_row_into_stream_lookup_table(single_dstream)
+        self.cnx._insert_row_into_stream_lookup_table(second_single_dstream)
+        self.cnx._insert_row_into_stream_lookup_table(third_single_dstream)
+        self.cnx._insert_row_into_stream_lookup_table(fourth_single_dstream)
+        self.cnx._insert_row_into_stream_lookup_table(fifth_single_dstream)
+        self.assertTrue(self.cnx._retrieve_by_timestamp_range(single_dstream, 20171117, 20171118))
 
     def test_select_all_from_metadata_table(self):
         self.assertIsNone(self.cnx._select_all_from_metadata_table())
+
+    def test_select_data_by_column_where(self):
+        self.cnx._insert_row_into_stream_lookup_table(single_dstream)
+        self.assertEqual(self.cnx._select_data_by_column_where(single_dstream, "`driver-id`", "unique_id", 1), [('Molly Mora',)])
+        # close connect after last test
+        self.cnx._close_connection()
 
 if __name__ == "__main__":
     unittest.main()
