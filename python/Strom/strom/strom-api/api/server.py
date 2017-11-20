@@ -1,6 +1,5 @@
 """ Flask-API server for comms b/w CLI and services. """
-import json
-from flask import Flask, request
+from flask import Flask
 from flask_restful import reqparse
 from Strom.strom.dstream.dstream import DStream
 
@@ -33,7 +32,7 @@ app.add_url_rule('/api/define', 'define', define, methods=['POST'])
 app.add_url_rule('/api/load', 'load', load, methods=['POST'])
 
 def start():
-    """ Entrypoint """
+    """ Entry-point """
     app.run()
 if __name__ == '__main__':
     start()

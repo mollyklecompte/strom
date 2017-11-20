@@ -5,3 +5,9 @@
       * ``` eval "$(_DSTREAM_COMPLETE=source dstream)" ```
 ### Run:
   * ``` dstream --help ```
+
+#####Download
+#####Install
+#####Run
+#####Usage
+#####Help
