@@ -13,7 +13,7 @@ class TestCoordinator(unittest.TestCase):
         self.events_bstream = {"stream_name": "driver_data", "version": 0, "stream_token": "abc123", "sources": {},'storage_rules': {}, 'ingest_rules': {}, 'engine_rules': {}, "timestamp": [1510603538107, 1510603538108, 1510603538109], "event_measures":{"location": {"val": [[-122.69081962885704, 45.52110054870811], [-132.69081962885704, 55.52110054870811], [-142.69081962885704, 65.52110054870811]], "dtype": "float"}, "measure2": {"val": [13, 9, 4], "dtype": "int"}}, "fields": {"region-code": ["PDX", "PDX", "PDX"]}, "user_ids": {"driver-id": ["Molly Mora", "Molly Mora", "Molly Mora"], "id": [0, 0, 0]}, "tags": {"mood": ["chill", "big mood", "the last big mood"]}, "foreign_keys": [], "filters": [], "dparam_rules": [], "event_rules": {}, "template_id": "chadwick666"}
 
     def test_store_json(self):
-        inserted_template_id = self.coordinator._storejson(self.dstream_template, 'template')
+        inserted_template_id = self.coordinator._store_json(self.dstream_template, 'template')
         inserted_derived_id = self.coordinator._store_json(self.derived_bstream, 'derived')
         inserted_event_id = self.coordinator._store_json(self.events_bstream, 'event')
 
