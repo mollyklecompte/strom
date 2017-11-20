@@ -1,5 +1,6 @@
 import unittest
-from Strom.strom.dstream.bstream import BStream
+import json
+from Strom.strom.dstream.bstream import DStream, BStream
 
 class TestBStream(unittest.TestCase):
     def setUp(self):
@@ -53,3 +54,53 @@ class TestBStream(unittest.TestCase):
         print(x)
 
         self.assertEqual(b,x)
+
+    def test_applying(self):
+        dtemplate = DStream()
+        dtemplate.load_from_json({"_id": "fromMONGO","stream_name": "driver_data", "version": 0, "stream_token": None, "timestamp": None,
+                                  "measures": {"location": {"val": None, "dtype": "float"}}, "fields": {"region-code": {}},
+                                  "user_ids": {"driver-id": {}, "id": {}}, "tags": {}, "foreign_keys": [],
+                                  "filters": [], "dparam_rules": [], "event_rules": {}})
+        first_filter_rule = {}
+        first_filter_rule["func_type"] = "filter_data"
+        first_filter_rule["func_name"] = "ButterLowpass"
+        first_filter_rule["filter_name"] = "buttery_location"
+        first_filter_rule["func_params"] = {"order":2, "nyquist":0.05}
+        first_filter_rule["measures"] = ["location"]
+
+        second_filter_rule = {}
+        second_filter_rule["func_type"] = "filter_data"
+        second_filter_rule["func_name"] = "WindowAverage"
+        second_filter_rule["filter_name"] = "window_location"
+        second_filter_rule["func_params"] = {"window_len":3}
+        second_filter_rule["measures"] = ["location"]
+
+        heading_params = {}
+        heading_params["filter_name"] = "bears"
+        heading_params["func_name"] = "DeriveHeading"
+        heading_params["func_type"] = "derive_param"
+        heading_params["func_params"] = {"window": 1, "units": "deg", "heading_type": "bearing", "swap_lon_lat": True}
+        heading_params["measure_rules"] = {"spatial_measure": "location", "output_name": "bears"}
+        heading_params["measures"] = ["location"]
+
+        bdict = json.load(open("Strom/strom/transform/bstream.txt"))
+        bdict["timestamp"] = bdict["timestamp"][:100]
+        bdict["measures"]["location"]["val"] = bdict["measures"]["location"]["val"][:100]
+        for tag in bdict["tags"].keys():
+            bdict["tags"][tag] = bdict["tags"][tag][:100]
+        for uid in bdict["user_ids"].keys():
+            bdict["user_ids"][uid] = bdict["user_ids"][uid][:100]
+        bstream = BStream(dtemplate, {})
+        bstream._load_from_dict(bdict)
+        bstream["filters"].append(first_filter_rule)
+        bstream["filters"].append(second_filter_rule)
+        bstream["dparam_rules"].append(heading_params)
+        bstream.apply_filters()
+        self.assertIsInstance(bstream["filter_measures"], dict)
+        self.assertIn(first_filter_rule["filter_name"], bstream["filter_measures"])
+        self.assertIsInstance(bstream["filter_measures"][first_filter_rule["filter_name"]]["val"], list)
+
+        bstream.apply_dparam_rules()
+        self.assertIsInstance(bstream["derived_measures"], dict)
+        self.assertIn(heading_params["measure_rules"]["output_name"], bstream["derived_measures"])
+        self.assertIsInstance(bstream["derived_measures"][heading_params["measure_rules"]["output_name"]]["val"], list)
