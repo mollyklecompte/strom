@@ -61,4 +61,4 @@ class MongoManager(object):
             return doc
 
         else:
-            raise ValueError('Document with id ' + doc_id + ' does not exist.')
+            raise ValueError('Document does not exist.')
