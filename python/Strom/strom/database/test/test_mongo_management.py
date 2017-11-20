@@ -10,14 +10,16 @@ class TestMongoManager(unittest.TestCase):
         self.dstream["device_id"] = 'Chad'
 
     def test_insert(self):
+        token = self.dstream["stream_token"]
+
         inserted_id = self.manager.insert(self.dstream, 'template')
         queried = self.manager.get_by_id(inserted_id, 'template')
 
         inserted_id2 = self.manager.insert(self.dstream, 'derived')
-        queried2 = self.manager.get_by_id(inserted_id2, 'derived')
+        queried2 = self.manager.get_by_id(inserted_id2, 'derived', token)
 
         inserted_id3 = self.manager.insert(self.dstream, 'event')
-        queried3 = self.manager.get_by_id(inserted_id3, 'event')
+        queried3 = self.manager.get_by_id(inserted_id3, 'event', token)
 
         self.assertEqual("Chad", queried["device_id"])
         self.assertEqual("Chad", queried2["device_id"])
