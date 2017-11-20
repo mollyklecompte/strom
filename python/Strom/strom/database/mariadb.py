@@ -55,8 +55,6 @@ class SQL_Connection:
             print("OK")
 
     def _insert_row_into_metadata_table(self, stream_name, stream_token, version):
-        # There doesn't seem to be a way to use parameter placeholders for
-        # table names; it can only be used to insert column values.
         add_row = ("INSERT INTO template_metadata "
         "(stream_name, stream_token, version) "
         "VALUES (%s, %s, %s)")
@@ -78,7 +76,6 @@ class SQL_Connection:
         try:
             print("Querying by stream name")
             self.cursor.execute(query, [stream_name])
-            # view data in cursor object
             for (unique_id, stream_name, stream_token, version) in self.cursor:
                 print("uid: {}, name: {}, stream: {}, version: {}".format(unique_id, stream_name, stream_token, version))
                 return [unique_id, stream_name, stream_token, version]
@@ -92,7 +89,6 @@ class SQL_Connection:
         try:
             print("Querying by unique id")
             self.cursor.execute(query, [unique_id])
-            # view data in cursor object
             for (unique_id, stream_name, stream_token, version) in self.cursor:
                 print("uid: {}, name: {}, stream: {}, version: {}".format(unique_id, stream_name, stream_token, version))
                 return [unique_id, stream_name, stream_token, version]
@@ -106,7 +102,6 @@ class SQL_Connection:
         try:
             print("Querying by stream token")
             self.cursor.execute(query, [stream_token])
-            # view data in cursor object
             for (unique_id, stream_name, stream_token, version) in self.cursor:
                 print("uid: {}, name: {}, stream: {}, version: {}".format(unique_id, stream_name, stream_token, version))
                 return [unique_id, stream_name, stream_token, version]
@@ -120,7 +115,6 @@ class SQL_Connection:
         try:
             print("Returning all data from template_metadata table")
             self.cursor.execute(query)
-            # view data in cursor object
             # for (unique_id, stream_name, stream_token, version, template_id, derived_id, events_id) in self.cursor:
             #     print("uid: {}, name: {}, stream: {}, version: {}, template id: {}, derived id: {}, events id: {}".format(unique_id, stream_name, stream_token, version, template_id, derived_id, events_id))
             #     return [unique_id, stream_name, stream_token, version, template_id, derived_id, events_id]
@@ -276,7 +270,6 @@ class SQL_Connection:
             self.cursor.execute(query)
             self.mariadb_connection.commit()
             print("Inserted row")
-            # view data in cursor object
             # for (unique_id, version, tags, fields) in self.cursor:
             #     print("uid: {}, version: {}, tags: {}, fields: {}".format(unique_id, version, tags, fields))
             #     return [unique_id, version, tags, fields]
@@ -297,7 +290,6 @@ class SQL_Connection:
             print("Returning all records within timestamp range")
             # self.cursor.execute(query, dstream_particulars)
             self.cursor.execute(query)
-            # view data in cursor object
             results = self.cursor.fetchall()
             for row in results:
                 print(row)
@@ -315,7 +307,6 @@ class SQL_Connection:
             print("Returning all records from stream lookup table ", stringified_stream_token_uuid)
             # self.cursor.execute(query, dstream_particulars)
             self.cursor.execute(query)
-            # view data in cursor object
             results = self.cursor.fetchall()
             for row in results:
                 print(row)
@@ -326,6 +317,7 @@ class SQL_Connection:
             print("OK")
 
     def _select_data_by_column_where(self, dstream, data_column, filter_column, value):
+        # Method created for testing purposes. Not intended for use by the coordinator (for now).
         stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
         query = ("SELECT %s FROM %s WHERE %s = %s" % (data_column, stringified_stream_token_uuid, filter_column, value))
         # print("~~~~~~~~ QUERY ~~~~~~~~", query);
@@ -333,7 +325,6 @@ class SQL_Connection:
             print("Returning data")
             # self.cursor.execute(query, dstream_particulars)
             self.cursor.execute(query)
-            # view data in cursor object
             results = self.cursor.fetchall()
             # for row in results:
             #     print(row)
