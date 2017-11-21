@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from Strom.strom.transform.derive_param import DeriveParam, DeriveSlope, DeriveChange, DeriveDistance, DeriveHeading
+from Strom.strom.transform.derive_param import DeriveParam, DeriveSlope, DeriveChange, DeriveCumsum, DeriveDistance, DeriveHeading
 
 
 class TestDeriveParam(unittest.TestCase):
@@ -20,16 +20,37 @@ class TestDeriveChange(unittest.TestCase):
     def setUp(self):
         self.dc = DeriveChange()
         params = {}
-        params["func_params"] = {"window": 5}
+        params["func_params"] = {"window": 5, "angle_change":False}
         params["measure_rules"] = {"target_measure":"viscosity", "output_name":"viscous_difference"}
         self.dc.load_params(params)
         test_data_len = 200
         test_data = np.random.randint(0, 15, (test_data_len,))
         test_measure = {"viscosity": {"val": test_data, "dtype": "int"}}
         self.dc.load_measures(test_measure)
+
     def test_transform_data(self):
         diff_data = self.dc.transform_data()
         self.assertIn("viscous_difference", diff_data)
+        self.dc.params["func_params"]["angle_change"] = True
+        diff_data = self.dc.transform_data()
+        self.assertIn("viscous_difference", diff_data)
+
+class TestDeriveCumsum(unittest.TestCase):
+    def setUp(self):
+        self.dc = DeriveCumsum()
+        params = {}
+        params["func_params"] = {}
+        params["measure_rules"] = {"target_measure": "viscosity", "output_name": "viscous_difference"}
+        self.dc.load_params(params)
+        test_data_len = 200
+        test_data = np.random.randint(0, 15, (test_data_len,))
+        test_measure = {"viscosity": {"val": test_data, "dtype": "int"}}
+        self.dc.load_measures(test_measure)
+
+    def test_cumsum(self):
+        cumsum_array = self.dc.transform_data()
+        self.assertIn("viscous_difference", cumsum_array)
+
 
 class TestDeriveSlope(unittest.TestCase):
     def setUp(self):

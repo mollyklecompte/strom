@@ -1,5 +1,4 @@
 import unittest
-import numpy as np
 import json
 from Strom.strom.transform.apply_transformer import *
 from Strom.strom.transform.derive_param import *
@@ -37,7 +36,6 @@ class TestApplyTransformer(unittest.TestCase):
     def test_apply_transformation(self):
         bstream = json.load(open("Strom/strom/transform/bstream.txt"))
         heading_params = {}
-        heading_params["filter_name"] = "bears"
         heading_params["func_name"] = "DeriveHeading"
         heading_params["func_type"] = "derive_param"
         heading_params["func_params"] = {"window": 1, "units": "deg", "heading_type": "bearing", "swap_lon_lat":True}
@@ -45,5 +43,19 @@ class TestApplyTransformer(unittest.TestCase):
         heading_params["measures"] = ["location"]
         transformed_data = apply_transformation(heading_params, bstream)
         self.assertIsInstance(transformed_data, dict)
-        self.assertIn(heading_params["filter_name"], transformed_data)
+        self.assertIn(heading_params["measure_rules"]["output_name"], transformed_data)
 
+        bstream["derived_measures"] = transformed_data
+        event_params = {}
+        event_params["func_type"] ="detect_event"
+        event_params["func_name"] = "DetectThreshold"
+        event_params["event_rules"] = {"measure":"bears", "threshold_value":90, "comparison_operator":">="}
+        event_params["event_name"] = "turn90"
+        event_params["stream_token"] = bstream["stream_token"]
+        event_params["measures"] = ["location"]
+        event_params["derived_measures"] = ["bears"]
+        event_list = apply_transformation(event_params, bstream)
+        self.assertIsInstance(event_list, list)
+        for event in event_list:
+            self.assertIsInstance(event, dict)
+            self.assertEqual(event["event_name"], event_params["event_name"])
