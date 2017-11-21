@@ -78,3 +78,8 @@ class BStream(DStream):
         self["derived_measures"] = {}
         for dparam_rule in self["dparam_rules"]:
             self["derived_measures"][dparam_rule["measure_rules"]["output_name"]] = apply_transformation(dparam_rule, self)[dparam_rule["measure_rules"]["output_name"]]
+
+    def find_events(self):
+        self["events"] = {}
+        for event_rule in self["event_rules"]:
+            self["events"][event_rule["event_name"]] = apply_transformation(event_rule, self)
