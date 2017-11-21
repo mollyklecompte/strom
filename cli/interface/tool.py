@@ -143,12 +143,14 @@ def load(filepath, token):
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.command()
-@click.option('-date', type=str, default="", help="DD/MM/YY:HH:MM:SS")
-@click.option('-utc', type=int, default=0, help="UTC timestamp")
-def raw(date, utc):
+@click.option('-datetime', '-d', 'time', type=str, help="Datetime to collect from")
+@click.option('-utc', type=int, default=0, help="UTC-formatted time to collect from")
+@click.option('--all', '--a', 'a' is_flag=True, is_eager=True, help="Collect all data")
+def raw(time, utc, a):
     """ Collect all raw data for specified time-range """
-    click.secho(date, fg='magenta')
-    click.secho(utc, fg='magenta')
+    requests.get(url + '/api/get/raw?timestamp={}'.format(ts))
+    if a:
+        pass
 
 @click.command()
 def filtered(timestamp, range):
