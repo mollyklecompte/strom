@@ -115,11 +115,12 @@ class TestSQL_Connection(unittest.TestCase):
         self.assertIsNone(self.cnx._create_stream_lookup_table(single_dstream))
 
     def test_insert_filtered_measure_into_stream_lookup_table(self):
-        stream_token = "test_mariadb_stream_lookup_table"
-        filtered_measure = "smoothing"
-        value = "dummy data for filtered_measure"
+        stream_token = 'test_mariadb_stream_lookup_table'
+        filtered_measure = 'smoothing'
+        value = 'dummy data for filtered_measure'
         unique_id = 2
-        self.cnx._insert_filtered_measure_into_stream_lookup_table(stream_token, filtered_measure, value, unique_id)
+        cursor_statement = "UPDATE test_mariadb_stream_lookup_table SET smoothing = 'dummy data for filtered_measure' WHERE unique_id = 2"
+        self.assertEqual(self.cnx._insert_filtered_measure_into_stream_lookup_table(stream_token, filtered_measure, value, unique_id), cursor_statement)
 
     def test_insert_row_into_metadata_table(self):
         stream_name = "stream_one"
