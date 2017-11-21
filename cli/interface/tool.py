@@ -34,7 +34,7 @@ def welcome():
 @click.command()
 @click.argument('path')
 def locate(path):
-    """ Tool for opening specified files. """
+    """ Tool for opening specified files in file explorer. """
     click.launch(path, locate=True)
 
 @click.command()
@@ -60,8 +60,8 @@ def define(template):
             template_filename = os.path.basename(template.name) # NOTE: TEMP, REFACTOR OUT OF TRY
             path_list = template_filename.split('.')
             template_name = path_list[0]
-            template_ext = path_list[1] #!!!!!!!!!!!!! NOTE: TEMP, FILE UPLOAD EXTENSION. USE THIS
-            print("Found File Extension: .{}".format(template_ext))  #NOTE: TEMP
+            template_ext = path_list[1] #!!!!!!!!!!!!! NOTE: TEMP, FILE UPLOAD EXTENSION
+            print("Found File Extension: .{}".format(template_ext))  # NOTE: TEMP
         except:
             click.secho("\nProblem parsing template file!...\n", fg='red', reverse=True)
         else:
@@ -99,7 +99,6 @@ def add_source(source, kafka_topic, token):
             else:
                 click.secho(str(ret.status_code), fg='yellow')
                 click.secho(ret.text + '\n', fg='yellow')
-
 
 @click.command()
 @click.option('-filepath', '-f', 'filepath', prompt=True, type=click.Path(exists=True), help="File-path of data file to upload")
@@ -142,10 +141,14 @@ def load(filepath, token):
                     click.secho(str(ret.status_code), fg='yellow')
                     click.secho(ret.text + '\n', fg='yellow')
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.command()
-def raw(timestamp, range):
+@click.option('-date', type=str, default="", help="DD/MM/YY:HH:MM:SS")
+@click.option('-utc', type=int, default=0, help="UTC timestamp")
+def raw(date, utc):
     """ Collect all raw data for specified time-range """
-    pass
+    click.secho(date, fg='magenta')
+    click.secho(utc, fg='magenta')
 
 @click.command()
 def filtered(timestamp, range):
@@ -168,3 +171,8 @@ dstream.add_command(welcome)
 dstream.add_command(define)
 dstream.add_command(add_source)
 dstream.add_command(load)
+# testing
+dstream.add_command(raw)
+dstream.add_command(filtered)
+dstream.add_command(derived_params)
+dstream.add_command(events)

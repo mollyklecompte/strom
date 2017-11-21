@@ -57,8 +57,14 @@ dstream load -filepath demo_data/demo_data_log -token tokenized_template
     *   ``` dstream events ```
 
 #### Help:
-* ``` --help``` can be given to each command for more information
-*   Hard Errors(Red):
-    *   Server failure
-*   Soft Errors(Yellow):
-    *   Syntax issue
+* ``` --help ``` can be given to each command for more information
+-
+* *Yellow Errors*
+  Check:
+  * Syntax
+  * File format
+* *Red Errors*
+  Check:
+  * Server connection
+  * File format (detrimental issue)
+  * Missing expected data
