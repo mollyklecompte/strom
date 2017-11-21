@@ -63,12 +63,19 @@ class MongoManager(object):
         else:
             raise ValueError('Document does not exist.')
 
-    def get_range(self, token, doc_type, start_ts=0, end_ts=32503680000):
-        if doc_type == 'derived':
+    def get_all_coll(self, dtype, token):
+        if dtype == 'derived':
             coll_name = '%s_%s' % (token, self.derived_coll_suffix)
             coll = self.db[coll_name]
-            docs = coll.find({"timestamp_min": {'$gte': start_ts}, "timestamp_max": {'$lte': end_ts}})
-        elif doc_type == 'event':
+        elif dtype == 'event':
             coll_name = '%s_%s' % (token, self.event_coll_suffix)
             coll = self.db[coll_name]
-            docs = coll.find({"timestamp_min": {'$gte': start_ts}, "timestamp_max": {'$lte': end_ts}})
+        else:
+            raise ValueError('Invalid stream type')
+
+        docs = list(coll.find())
+
+        if docs is not None:
+            return docs
+        else:
+            raise ValueError("Collection is empty or does not exist.")
