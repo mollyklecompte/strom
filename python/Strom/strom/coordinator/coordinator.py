@@ -5,6 +5,7 @@ Coordinator class
 
 from Strom.strom.dstream.bstream import BStream
 from Strom.strom.database.mongo_management import MongoManager
+from Strom.strom.database.mariadb import SQL_Connection
 
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"
@@ -12,6 +13,7 @@ __author__ = "Molly <molly@tura.io>"
 class Coordinator(object):
     def __init__(self):
         self.mongo = MongoManager()
+        self.maria = SQL_Connection()
 
     def _store_json(self, data, data_type):
         insert_id = self.mongo.insert(data, data_type)
@@ -118,7 +120,7 @@ class Coordinator(object):
         # store derived params
         self._store_json(bstream, 'derived')
 
-        # apply derived param transforms
+        # apply event transforms
         # store events
         # self._store_json(bstream, 'event')
 
