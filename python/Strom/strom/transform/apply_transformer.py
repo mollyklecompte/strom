@@ -41,7 +41,7 @@ def select_dparam(func_name):
     return func
 
 def select_detect_event(func_name):
-    if func_name == "DetectThreshold"
+    if func_name == "DetectThreshold":
         func = DetectThreshold()
     else:
         raise ValueError("%s not supported" % func_name)
@@ -77,6 +77,7 @@ def apply_transformation(param_dict, bstream):
     transformer.load_params(param_dict)
 
     if param_dict["func_type"] == "detect_event":
+        transformer.add_timestamp(bstream["timestamp"])
         return transformer.transform_data()
     else:
         return map_to_measure(transformer.transform_data())
