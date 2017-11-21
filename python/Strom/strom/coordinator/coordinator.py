@@ -20,23 +20,12 @@ class Coordinator(object):
 
         return insert_id
 
-    def _store_template_metadata(self, mongo_id, stream_token, stream_name, version):
-        """
-        stores template metadata in mariadb by calling mariadb insert_row method
-        :param mongo_id: the template's mongodb ib
-        :param stream_token: stream token
-        :param stream_name: stream name
-        :param version: stream version
-        :return: sql id for metadata
-        """
-        self.maria._insert_row_into_metadata_table(stream_name, stream_token)
-
     def _store_raw(self, data_list):
         ids = []
-        fake_id = 1
-        for i in data_list:
-            ids.append(fake_id)
-            fake_id += 1
+
+        for dstream in data_list:
+            row_id = self.maria._insert_row_into_stream_lookup_table(dstream)
+            ids.append(row_id)
 
         print("Inserted rows: %s-%s") % (ids[0], ids[-1])
         return ids
@@ -53,10 +42,7 @@ class Coordinator(object):
             for i in val_id_pair_list:
                 val = i[0]
                 id = i[1]
-                store(token, measure, val, id)
-
-        print("Filtered measures added")
-
+                self.maria._insert_filtered_measure_into_stream_lookup_table(token, measure, val, id)
 
     def _list_to_bstream(self, template, dstreams, ids):
         bstream = BStream(template, dstreams, ids)
@@ -84,7 +70,7 @@ class Coordinator(object):
         :param temp_id: template's unique id in mongodb
         :return: template json
         """
-        temp_id = "this will be a mariadb method for query"
+        temp_id = self.maria._return_template_id_for_latest_version_of_stream(token)
         template = self.mongo.get_by_id(temp_id, 'template')
 
         return template
@@ -94,9 +80,10 @@ class Coordinator(object):
         name = temp_dstream["stream_name"]
         version = temp_dstream["version"]
         mongo_id = self._store_json(temp_dstream, 'template')
-        inserted = self._store_template_metadata(mongo_id, token, name, version)
 
-        print("Template inserted into template table. Id: %s") % inserted
+        self.maria._insert_row_into_metadata_table(name, token, version, mongo_id)
+        self.maria._stream_lookup_table(temp_dstream)
+
 
     def process_data_sync(self, dstream_list, token):
         # store raw dstream data, return list of ids
