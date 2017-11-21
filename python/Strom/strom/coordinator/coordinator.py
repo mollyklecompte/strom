@@ -29,7 +29,7 @@ class Coordinator(object):
         :param version: stream version
         :return: sql id for metadata
         """
-        pass
+        self.maria._insert_row_into_metadata_table(stream_name, stream_token)
 
     def _store_raw(self, data_list):
         ids = []
@@ -121,8 +121,10 @@ class Coordinator(object):
         self._store_json(bstream, 'derived')
 
         # apply event transforms
+        bstream.find_events()
+
         # store events
-        # self._store_json(bstream, 'event')
+        self._store_json(bstream, 'event')
 
         print("whoop WHOOOOP")
 
