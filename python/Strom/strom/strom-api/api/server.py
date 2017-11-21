@@ -52,7 +52,7 @@ def get(this):
     print(time)
     if time_range:
         if time_range == 'ALL':
-            pass
+            print("10 x 10^10") #   TEMP
     return '', 200
 
 #   POST

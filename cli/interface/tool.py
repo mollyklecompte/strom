@@ -66,7 +66,7 @@ def define(template):
             click.secho("\nProblem parsing template file!...\n", fg='red', reverse=True)
         else:
             click.secho("\nTemplate has been tokenized with...{}".format(json_template['stream_token']), fg='white')
-            template_file = open("{}_template.txt".format(template_name), "w")
+            template_file = open("{}_token.txt".format(template_name), "w")
             template_file.write(json.dumps(json_template))
             template_file.close()
             click.secho("New template stored locally as '{}_token.txt'.\n".format(template_name))
@@ -182,7 +182,7 @@ def raw(time, utc, a):
     elif time:
         if len(time) == 1:
             try:
-                requests.get(url + "/api/get/raw?time={}".format(time[0]))
+                ret = requests.get(url + "/api/get/raw?time={}".format(time[0]))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -190,7 +190,7 @@ def raw(time, utc, a):
                 click.secho(ret.text, fg='yellow')
         elif len(time) == 2:
             try:
-                requests.get(url + "/api/get/raw?range={}".format(time))
+                ret = requests.get(url + "/api/get/raw?range={}".format(time))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -241,7 +241,7 @@ def filtered(time, utc, a):
     elif time:
         if len(time) == 1:
             try:
-                requests.get(url + "/api/get/filtered?time={}".format(time[0]))
+                ret = requests.get(url + "/api/get/filtered?time={}".format(time[0]))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -249,7 +249,7 @@ def filtered(time, utc, a):
                 click.secho(ret.text, fg='yellow')
         elif len(time) == 2:
             try:
-                requests.get(url + "/api/get/filtered?range={}".format(time))
+                ret = requests.get(url + "/api/get/filtered?range={}".format(time))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -301,7 +301,7 @@ def derived_params(time, utc, a):
     elif time:
         if len(time) == 1:
             try:
-                requests.get(url + "/api/get/derived_params?time={}".format(time[0]))
+                ret = requests.get(url + "/api/get/derived_params?time={}".format(time[0]))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -309,7 +309,7 @@ def derived_params(time, utc, a):
                 click.secho(ret.text, fg='yellow')
         elif len(time) == 2:
             try:
-                requests.get(url + "/api/get/derived_params?range={}".format(time))
+                ret = requests.get(url + "/api/get/derived_params?range={}".format(time))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -323,7 +323,7 @@ def derived_params(time, utc, a):
 
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
-@click.option('-utc', type=int, multiple=True, help="UTC-formatted time to collect from")
+@click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
 def events(time, utc, a):
     """
@@ -361,7 +361,7 @@ def events(time, utc, a):
     elif time:
         if len(time) == 1:
             try:
-                requests.get(url + "/api/get/events?time={}".format(time[0]))
+                ret = requests.get(url + "/api/get/events?time={}".format(time[0]))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -369,7 +369,7 @@ def events(time, utc, a):
                 click.secho(ret.text, fg='yellow')
         elif len(time) == 2:
             try:
-                requests.get(url + "/api/get/events?range={}".format(time))
+                ret = requests.get(url + "/api/get/events?range={}".format(time))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
