@@ -61,7 +61,7 @@ def define(template):
             path_list = template_filename.split('.')
             template_name = path_list[0]
             template_ext = path_list[1] #!!!!!!!!!!!!! NOTE: TEMP, FILE UPLOAD EXTENSION. USE THIS
-            print("DAVID: Found File Extension: {}".format(template_ext))  #NOTE: TEMP
+            print("Found File Extension: .{}".format(template_ext))  #NOTE: TEMP
         except:
             click.secho("\nProblem parsing template file!...\n", fg='red', reverse=True)
         else:
@@ -141,6 +141,26 @@ def load(filepath, token):
                 else:
                     click.secho(str(ret.status_code), fg='yellow')
                     click.secho(ret.text + '\n', fg='yellow')
+
+@click.command()
+def raw(timestamp, range):
+    """ Collect all raw data for specified time-range """
+    pass
+
+@click.command()
+def filtered(timestamp, range):
+    """ Collect all filtered data for specified time-range"""
+    pass
+
+@click.command()
+def derived_params(timestamp, range):
+    """ Collect all derived parameters from specified time-range """
+    pass
+
+@click.command()
+def events(timestamp, range):
+    """ Collect all events fired in specified time-range """
+    pass
 
 # d-stream group
 dstream.add_command(locate)
