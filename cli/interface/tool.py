@@ -143,28 +143,63 @@ def load(filepath, token):
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.command()
-@click.option('-datetime', '-d', 'time', type=str, help="Datetime to collect from")
-@click.option('-utc', type=int, default=0, help="UTC-formatted time to collect from")
-@click.option('--all', '--a', 'a' is_flag=True, is_eager=True, help="Collect all data")
+@click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
+@click.option('-utc', type=int, multiple=True, help="UTC-formatted time to collect from")
+@click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
 def raw(time, utc, a):
-    """ Collect all raw data for specified time-range """
-    requests.get(url + '/api/get/raw?timestamp={}'.format(ts))
+    """
+    \b
+     Collect all raw data for specified datetime or time-range*.
+     *Options can be supplied twice to indicate a range to collect from.
+    """
     if a:
+        #Try GET request to server
+        try:
+            ret = requests.get(url + "/api/get/raw?range=ALL")
+        except:
+            click.secho("Connection Refused!...", fg='red', reverse=True)
+        else:
+            click.secho(str(ret.status_code), fg='yellow')
+            click.secho(ret.text, fg='yellow')
+    elif utc:
+        if len(utc) == 1:
+            #Try GET request to server
+            try:
+                ret = requests.get(url + "/api/get/raw?time={}".format(utc[0]))
+            except:
+                click.secho("Connection Refused!...", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text, fg='yellow')
+        elif len(utc) == 2:
+            ret = requests.get(url + "/api/get/raw?range={}".format(utc))
+            click.secho(str(ret.status_code), fg='yellow')
+            click.secho(ret.text, fg='yellow')
+        else:
+            click.secho("Too many arguments given!...", fg='yellow', reverse=True)
+    elif time:
+        if len(time) == 1:
+            pass
+        elif len(time) == 2:
+            pass
+        else:
+            pass
+    else:
         pass
 
 @click.command()
 def filtered(timestamp, range):
-    """ Collect all filtered data for specified time-range"""
+    """ Collect all filtered data for specified time-range. """
     pass
 
 @click.command()
 def derived_params(timestamp, range):
-    """ Collect all derived parameters from specified time-range """
+    """ Collect all derived parameters from specified time-range. """
     pass
 
 @click.command()
 def events(timestamp, range):
-    """ Collect all events fired in specified time-range """
+    """ Collect all events fired in specified time-range. """
     pass
 
 # d-stream group
