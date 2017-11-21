@@ -1,6 +1,6 @@
 import unittest
-from Strom.strom.database.mariadb import SQL_Connection
-from Strom.strom.dstream.dstream import DStream
+from strom.database.mariadb import SQL_Connection
+from strom.dstream.dstream import DStream
 
 single_dstream = {
     'stream_name': 'driver_data',
@@ -113,6 +113,13 @@ class TestSQL_Connection(unittest.TestCase):
     def test_create_stream_lookup_table(self):
         # self.dstream = DStream()
         self.assertIsNone(self.cnx._create_stream_lookup_table(single_dstream))
+
+    def test_insert_filtered_measure_into_stream_lookup_table(self):
+        stream_token = "test_mariadb_stream_lookup_table"
+        filtered_measure = "smoothing"
+        value = "dummy data for filtered_measure"
+        unique_id = 2
+        self.cnx._insert_filtered_measure_into_stream_lookup_table(stream_token, filtered_measure, value, unique_id)
 
     def test_insert_row_into_metadata_table(self):
         stream_name = "stream_one"

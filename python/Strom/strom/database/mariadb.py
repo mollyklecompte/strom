@@ -26,7 +26,7 @@ class SQL_Connection:
             "host": '172.17.0.3',
             "database": 'test'
         }
-        self.mariadb_connection = mariadb.connect(pool_name = "my_pool", pool_size = 12, **dbconfig)
+        self.mariadb_connection = mariadb.connect(pool_name = "my_pool", pool_size = 13, **dbconfig)
         # self.mariadb_connection = mariadb.connect(user='root', password='123', host='172.17.0.2', database='test')
         # Create a cursor object to execute SQL commands
         self.cursor = self.mariadb_connection.cursor(buffered=True)
@@ -36,6 +36,7 @@ class SQL_Connection:
         # close pooled connection and return it to the connection pool as an available connection
         print("Closing connection")
         self.mariadb_connection.close()
+        gc.collect()
 
     # ***** Metadata Table and Methods *****
 
@@ -284,6 +285,24 @@ class SQL_Connection:
         else:
             print("OK")
 
+    def _insert_filtered_measure_into_stream_lookup_table(self, stream_token, filtered_measure, value, unique_id):
+        query = ("UPDATE %s SET %s " % (stream_token, filtered_measure)) + "= %s WHERE unique_id = %s"
+        parameters = (value, unique_id)
+        try:
+            print("Updating", filtered_measure, "at", unique_id)
+            self.cursor.execute(query, parameters)
+            self.mariadb_connection.commit()
+            # for (stream_token, filtered_measure, value, version, unique_id) in self.cursor:
+            #     print("Inserted {} into column {} where unique_id = {} into table {}".format(value, filtered_measure, unique_id, stream_token))
+            #     print("IN FOR LOOP")
+            #     return [stream_token, filtered_measure, value, unique_id]
+            print("Executed", self.cursor.statement)
+            return self.cursor.statement
+        except mariadb.Error as err:
+            print(err.msg)
+        else:
+            print("OK")
+
     def _retrieve_by_timestamp_range(self, dstream, start, end):
         stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
         dstream_particulars = (stringified_stream_token_uuid, start, end)
@@ -320,15 +339,6 @@ class SQL_Connection:
         else:
             print("OK")
 
-    def _insert_filtered_measure_into_stream_lookup_table(self, stream_token, filtered_measure, value, unique_id):
-        query = ("UPDATE %s SET %s = %s WHERE unique_id = %s")
-        try:
-            print("Updating", filtered_measure, "at", unique_id)
-            self.cursor.execute(query, [filtered_measure, value, unique_id])
-        except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
 
     def _select_data_by_column_where(self, dstream, data_column, filter_column, value):
         # Method created for testing purposes. Not intended for use by the coordinator (for now).
@@ -461,6 +471,8 @@ def main():
     dstream = DStream()
     # print("***DSTREAM INITIALIZED***:", dstream)
 
+    dstream["stream_token"] = "gosh_darn"
+
     second_row = copy.deepcopy(dstream)
     third_row = copy.deepcopy(dstream)
     fourth_row = copy.deepcopy(dstream)
@@ -503,16 +515,21 @@ def main():
     # sql._insert_row_into_stream_lookup_table(dstream)
     # sql._insert_row_into_stream_lookup_table(dstream)
 
-    sql._insert_row_into_stream_lookup_table(second_row)
-    sql._insert_row_into_stream_lookup_table(third_row)
-    sql._insert_row_into_stream_lookup_table(fourth_row)
-    sql._insert_row_into_stream_lookup_table(fifth_row)
+    # sql._insert_row_into_stream_lookup_table(second_row)
+    # sql._insert_row_into_stream_lookup_table(third_row)
+    # sql._insert_row_into_stream_lookup_table(fourth_row)
+    # sql._insert_row_into_stream_lookup_table(fifth_row)
 
-    # sql._insert_filtered_measure_into_stream_lookup_table()
+    # stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
 
-    sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
-    sql._select_all_from_stream_lookup_table(dstream)
-    sql._select_data_by_column_where(dstream, "`driver-id`", "unique_id", 3)
+    print("~~~~~INSERT FILTER MEASURE COLUMN VALUE~~~~~")
+    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy_data', 1)
+
+    # sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
+    # sql._select_all_from_stream_lookup_table(dstream)
+    # sql._select_data_by_column_where(dstream, "`driver-id`", "unique_id", 3)
+
+    gc.collect()
     sql._close_connection()
 
 main()
