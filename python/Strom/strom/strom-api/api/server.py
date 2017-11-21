@@ -1,5 +1,5 @@
 """ Flask-API server for communications b/w CLI and services. """
-from flask import Flask
+from flask import Flask, request
 from flask_restful import reqparse
 from Strom.strom.dstream.dstream import DStream
 
@@ -20,7 +20,7 @@ ds = DStream()# NOTE: TEMP
 def define():
     """ Route to collect template for DStream init and return stream_token. """
     args = parser.parse_args()
-    template = args['template']
+    template = args['template'] #   dstream template
     print(template)
     return str(ds['stream_token']), 200
 
@@ -28,10 +28,10 @@ def add_source():
     """ Route to collect data source and set in DStream field """
     args = parser.parse_args()
     if args['topic'] is not None:
-        topic = args['topic']
+        topic = args['topic']   #   kafka topic
         print(topic)
-    source = args['source']
-    token = args['token']
+    source = args['source'] #   file/kafka
+    token = args['token']   #   stream_token
     print(source)
     print(token)
     return 'Success.', 202
@@ -39,13 +39,28 @@ def add_source():
 def load():
     """ Route to collect tokenized data. """
     args = parser.parse_args()
-    data = args['data']
+    data = args['data'] #   data with token
     print(data)
     return 'Success.', 202
 
+def get(this):
+    """ Route for returning data, specified by endpoint & URL params. """
+    time_range = request.args.get('range', '')
+    time = request.args.get('time', '')
+    print(this) #   endpoint: raw, filtered, derived_params, events
+    print(time_range)
+    print(time)
+    if time_range:
+        if time_range == 'ALL':
+            pass
+    return '', 200
+
+#   POST
 app.add_url_rule('/api/define', 'define', define, methods=['POST'])
-app.add_url_rule('/api/load', 'load', load, methods=['POST'])
 app.add_url_rule('/api/add-source', 'add_source', add_source, methods=['POST'])
+app.add_url_rule('/api/load', 'load', load, methods=['POST'])
+#   GET
+app.add_url_rule('/api/get/<this>', 'get', get, methods=['GET'])
 
 def start():
     """ Entry-point """
