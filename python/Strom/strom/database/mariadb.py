@@ -454,15 +454,15 @@ sixth_single_dstream = {
 
 def main():
     sql = SQL_Connection()
-    # sql._create_metadata_table()
-    # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
-    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "filler")
-    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
-    # sql._retrieve_by_stream_name("stream_one")
-    # sql._retrieve_by_id(1)
-    # sql._retrieve_by_stream_token("stream_token_two")
-    # sql._return_template_id_for_latest_version_of_stream("stream_token_two")
-    # sql._select_all_from_metadata_table()
+    sql._create_metadata_table()
+    sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
+    sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "filler")
+    sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
+    sql._retrieve_by_stream_name("stream_one")
+    sql._retrieve_by_id(1)
+    sql._retrieve_by_stream_token("stream_token_two")
+    sql._return_template_id_for_latest_version_of_stream("stream_token_two")
+    sql._select_all_from_metadata_table()
 
 
 
@@ -478,23 +478,6 @@ def main():
     fourth_row = copy.deepcopy(dstream)
     fifth_row = copy.deepcopy(dstream)
 
-    # print("dstream", dstream)
-    # print("SECOND ROW", second_row)
-    #
-    # dstream._add_measure("m_2", "int(10)")
-    # dstream._add_measure("m_1", "varchar(10)")
-    # dstream._add_measure("m_3", "float(10, 2)")
-    #
-    # dstream._add_field("field_1")
-    # dstream._add_field("field_2")
-    # dstream._add_field("field_3")
-    #
-    # dstream._add_user_id("uid_1")
-    # dstream._add_user_id("uid_2")
-    # dstream._add_user_id("uid_3")
-    #
-    # dstream._add_tag("first tag")
-    # dstream._add_tag("second tag")
 
     dstream.load_from_json(single_dstream)
 
@@ -512,22 +495,22 @@ def main():
     # print("@@@@ DSTREAM WITH fifth_single_dstream @@@@", fifth_row)
 
     sql._insert_row_into_stream_lookup_table(dstream)
-    # sql._insert_row_into_stream_lookup_table(dstream)
-    # sql._insert_row_into_stream_lookup_table(dstream)
 
-    # sql._insert_row_into_stream_lookup_table(second_row)
-    # sql._insert_row_into_stream_lookup_table(third_row)
-    # sql._insert_row_into_stream_lookup_table(fourth_row)
-    # sql._insert_row_into_stream_lookup_table(fifth_row)
+
+    sql._insert_row_into_stream_lookup_table(second_row)
+    sql._insert_row_into_stream_lookup_table(third_row)
+    sql._insert_row_into_stream_lookup_table(fourth_row)
+    sql._insert_row_into_stream_lookup_table(fifth_row)
 
     # stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
 
     print("~~~~~INSERT FILTER MEASURE COLUMN VALUE~~~~~")
     sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy_data', 1)
-
-    # sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
-    # sql._select_all_from_stream_lookup_table(dstream)
-    # sql._select_data_by_column_where(dstream, "`driver-id`", "unique_id", 3)
+    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'test data', 2)
+    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy data', 3)
+    sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
+    sql._select_all_from_stream_lookup_table(dstream)
+    sql._select_data_by_column_where(dstream, "`driver-id`", "unique_id", 3)
 
     gc.collect()
     sql._close_connection()
