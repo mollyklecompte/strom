@@ -30,11 +30,11 @@ class MongoManager(object):
         elif dtype == 'derived':
             coll_name = '%s_%s' % (token, self.derived_coll_suffix)
             coll = self.db[coll_name]
-            inserted = coll.insert_one(doc["derived_measures"])
+            inserted = coll.insert_one({"derived_measures": doc["derived_measures"], "timestamp_min": min(doc["timestamp"]), "timestamp_max": max(doc["timestamp"])})
         elif dtype == 'event':
             coll_name = '%s_%s' % (token, self.event_coll_suffix)
             coll = self.db[coll_name]
-            inserted = coll.insert_one(doc["event_measures"])
+            inserted = coll.insert_one({"event_measures": doc["event_measures"], "timestamp_min": min(doc["timestamp"]), "timestamp_max": max(doc["timestamp"])})
         else:
             raise ValueError('Invalid d-stream type.')
 
@@ -62,3 +62,20 @@ class MongoManager(object):
 
         else:
             raise ValueError('Document does not exist.')
+
+    def get_all_coll(self, dtype, token):
+        if dtype == 'derived':
+            coll_name = '%s_%s' % (token, self.derived_coll_suffix)
+            coll = self.db[coll_name]
+        elif dtype == 'event':
+            coll_name = '%s_%s' % (token, self.event_coll_suffix)
+            coll = self.db[coll_name]
+        else:
+            raise ValueError('Invalid stream type')
+
+        docs = list(coll.find())
+
+        if docs is not None:
+            return docs
+        else:
+            raise ValueError("Collection is empty or does not exist.")
