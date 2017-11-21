@@ -1,5 +1,6 @@
 from .filter_data import *
 from .derive_param import *
+from .detect_event import *
 
 """Methods for building an applying Transforms to data"""
 
@@ -39,11 +40,22 @@ def select_dparam(func_name):
         raise ValueError("%s not supported" % func_name)
     return func
 
+def select_detect_event(func_name):
+    if func_name == "DetectThreshold"
+        func = DetectThreshold()
+    else:
+        raise ValueError("%s not supported" % func_name)
+    return func
+
 def select_transform(func_type, func_name):
     if func_type == "filter_data":
         func = select_filter(func_name)
-    if func_type == "derive_param":
+    elif func_type == "derive_param":
         func = select_dparam(func_name)
+    elif func_type == "detect_event":
+        func = select_detect_event(func_name)
+    else:
+        raise ValueError("%s not supported" % func_type)
     return func
 
 def apply_transformation(param_dict, bstream):
@@ -63,5 +75,9 @@ def apply_transformation(param_dict, bstream):
             transformer.add_measure(measure_name, bstream["derived_measures"][measure_name])
 
     transformer.load_params(param_dict)
-    return map_to_measure(transformer.transform_data())
+
+    if param_dict["func_type"] == "detect_event":
+        return transformer.transform_data()
+    else:
+        return map_to_measure(transformer.transform_data())
 
