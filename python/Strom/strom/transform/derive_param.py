@@ -53,12 +53,14 @@ class DeriveSlope(DeriveParam):
 class DeriveChange(DeriveParam):
     def __init__(self):
         super().__init__()
-        self.params["func_params"] = {"window":1}
+        self.params["func_params"] = {"window":1, "angle_change":False}
         self.params["measure_rules"] ={"target_measure":"measure_name", "output_name":"name of returned measure"}
 
     @staticmethod
-    def diff_data(data_array, window_len):
+    def diff_data(data_array, window_len, angle_diff):
         diffed_data = np.diff(data_array)
+        if angle_diff:
+            diffed_data = (diffed_data + 180.0) % 360 - 180
         if window_len > 1:
             diffed_data = window_data(diffed_data, window_len)
         return diffed_data
@@ -66,8 +68,24 @@ class DeriveChange(DeriveParam):
     def transform_data(self):
         window_len = self.params["func_params"]["window"]
         target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
-        diffed_data = self.diff_data(target_array, window_len)
+        diffed_data = self.diff_data(target_array, window_len, self.params["func_params"]["angle_change"])
         return {self.params["measure_rules"]["output_name"]:diffed_data}
+
+class DeriveCumsum(DeriveParam):
+    def __init__(self):
+        super().__init__()
+        self.params["func_params"] = {}
+        self.params["measure_rules"] = {"target_measure":"measure_name", "output_name":"name of returned measure"}
+
+    @staticmethod
+    def cumsum(data_array):
+        return np.cumsum(data_array)
+
+    def transform_data(self):
+        target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
+        cumsum_array = self.cumsum(target_array)
+        return {self.params["measure_rules"]["output_name"]:cumsum_array}
+
 
 class DeriveDistance(DeriveParam):
     def __init__(self):

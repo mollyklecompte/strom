@@ -56,7 +56,7 @@ class TestBStream(unittest.TestCase):
     def test_applying(self):
         dtemplate = DStream()
         ids = [1, 2, 3]
-        dtemplate.load_from_json({"_id": "fromMONGO","stream_name": "driver_data", "version": 0, "stream_token": None, "timestamp": None,
+        dtemplate.load_from_json({"_id": "fromMONGO","stream_name": "driver_data", "version": 0, "stream_token": "token_stream", "timestamp": None,
                                   "measures": {"location": {"val": None, "dtype": "float"}}, "fields": {"region-code": {}},
                                   "user_ids": {"driver-id": {}, "id": {}}, "tags": {}, "foreign_keys": [],
                                   "filters": [], "dparam_rules": [], "event_rules": {}})
@@ -82,6 +82,17 @@ class TestBStream(unittest.TestCase):
         heading_params["measure_rules"] = {"spatial_measure": "location", "output_name": "bears"}
         heading_params["measures"] = ["location"]
 
+        event_params = {}
+        event_params["func_type"] = "detect_event"
+        event_params["func_name"] = "DetectThreshold"
+        event_params["event_rules"] = {"measure": "bears", "threshold_value": 90, "comparison_operator": ">="}
+        event_params["event_name"] = "turn90"
+        event_params["stream_token"] = dtemplate["stream_token"]
+        event_params["measures"] = ["location"]
+        event_params["filter_measurs"] = ["window_location"]
+        event_params["derived_measures"] = ["bears"]
+
+
         bdict = json.load(open("Strom/strom/transform/bstream.txt"))
         bdict["timestamp"] = bdict["timestamp"][:100]
         bdict["measures"]["location"]["val"] = bdict["measures"]["location"]["val"][:100]
@@ -95,6 +106,7 @@ class TestBStream(unittest.TestCase):
         bstream["filters"].append(first_filter_rule)
         bstream["filters"].append(second_filter_rule)
         bstream["dparam_rules"].append(heading_params)
+        bstream["event_rules"][event_params["event_name"]] = event_params
         bstream.apply_filters()
         self.assertIsInstance(bstream["filter_measures"], dict)
         self.assertIn(first_filter_rule["filter_name"], bstream["filter_measures"])
@@ -104,3 +116,11 @@ class TestBStream(unittest.TestCase):
         self.assertIsInstance(bstream["derived_measures"], dict)
         self.assertIn(heading_params["measure_rules"]["output_name"], bstream["derived_measures"])
         self.assertIsInstance(bstream["derived_measures"][heading_params["measure_rules"]["output_name"]]["val"], list)
+
+        bstream.find_events()
+        self.assertIsInstance(bstream["events"], dict)
+        self.assertIn(event_params["event_name"], bstream["events"])
+        self.assertIsInstance(bstream["events"][event_params["event_name"]], list)
+        self.assertIsInstance(bstream["events"][event_params["event_name"]][0], dict)
+
+
