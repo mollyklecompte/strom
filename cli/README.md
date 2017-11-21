@@ -7,6 +7,7 @@
 Command-line interface tool for use with Strom-API.
 
 #### Pre-Requisites:
+*   Python3
 *   [Click](http://click.pocoo.org/)
     *   *CLI building tool*
 *   [Requests](http://docs.python-requests.org/en/master/)

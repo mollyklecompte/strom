@@ -2,6 +2,7 @@
 import click
 import requests
 import json
+import os
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
@@ -56,14 +57,19 @@ def define(template):
         try:
             json_template = json.loads(template_data)
             json_template['stream_token'] = token
+            template_filename = os.path.basename(template.name) # NOTE: TEMP, REFACTOR OUT OF TRY
+            path_list = template_filename.split('.')
+            template_name = path_list[0]
+            template_ext = path_list[1] #!!!!!!!!!!!!! NOTE: TEMP, FILE UPLOAD EXTENSION. USE THIS
+            print("DAVID: Found File Extension: {}".format(template_ext))  #NOTE: TEMP
         except:
             click.secho("\nProblem parsing template file!...\n", fg='red', reverse=True)
         else:
             click.secho("\nTemplate has been tokenized with...{}".format(json_template['stream_token']), fg='white')
-            template_file = open("tokenized_template.txt", "w")
+            template_file = open("{}_template.txt".format(template_name), "w")
             template_file.write(json.dumps(json_template))
             template_file.close()
-            click.secho("New template stored locally as 'tokenized_template.txt'.\n")
+            click.secho("New template stored locally as '{}_token.txt'.\n".format(template_name))
 
 @click.command()
 @click.option('-source', '-s', 'source', prompt=True, type=click.Choice(['kafka', 'file']), help="Specify source of data")
