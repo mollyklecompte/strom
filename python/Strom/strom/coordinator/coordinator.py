@@ -41,15 +41,17 @@ class Coordinator(object):
 
     def _store_filtered(self, bstream):
         ids = bstream.ids
-        table = bstream['stream_token']
+        token = bstream['stream_token']
         zippies = {}
         for m,v in bstream['filter_measures'].items():
             z = zip(m['val'], ids)
             zippies[m] = list(z)
 
-        for m,v in zippies.items():
-            for i in v:
-                print("INSERT %s INTO %s WHERE id= %s") % (i[0], table.m, i[1])
+        for measure,val_id_pair_list in zippies.items():
+            for i in val_id_pair_list:
+                val = i[0]
+                id = i[1]
+                store(token, measure, val, id)
 
         print("Filtered measures added")
 
@@ -59,15 +61,20 @@ class Coordinator(object):
         bstream.aggregate()
 
         return bstream
-
-    def _apply_filters(self, bstream):
-        return bstream
+    """
+     def _apply_filters(self, bstream):
+        filtered_bstream = bstream.apply_filters()
+        
+        return filtered_bstream
 
     def _apply_derived_params(self, bstream):
+        derived_bstream = bstream.
         return bstream
 
     def _apply_events(self, bstream):
         return bstream
+    """
+
 
     def _retrieve_current_template(self, token):
         """
@@ -100,22 +107,20 @@ class Coordinator(object):
         bstream = self._list_to_bstream(template, dstream_list, stream_ids)
 
         # filter bstream data
-        filtered_bstream = self._apply_filters(bstream)
+        bstream.apply_filters()
 
         # store filtered dstream data
-        self._store_filtered(filtered_bstream)
+        self._store_filtered(bstream)
 
         # apply derived param transforms
-        derived_bstream = self._apply_derived_params(filtered_bstream)
+        bstream.apply_dparam_rules()
 
         # store derived params
-        self._store_json(derived_bstream, 'derived')
+        self._store_json(bstream, 'derived')
 
         # apply derived param transforms
-        events = self._apply_events(derived_bstream)
-
         # store events
-        self._store_json(events, 'event')
+        # self._store_json(bstream, 'event')
 
         print("whoop WHOOOOP")
 
