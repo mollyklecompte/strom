@@ -22,11 +22,11 @@ git clone git@github.com:tura-io/strom.git
 #### Install:
 *   Navigate to project directory
 ```commandline
-cd strom/cli/
+    cd strom/cli/
 ```
 *   Install using Pip
 ```commandline
-pip install .
+    pip install .
 ```
 *   (Optional) Enable auto-complete in Bash
     ```commandline
@@ -48,6 +48,13 @@ dstream add_source -source file -token tokenized_template
 ```commandline
 dstream load -filepath demo_data/demo_data_log -token tokenized_template
 ```
+
+##### *INCOMING*:
+*   'GET' methods for data
+    *   ``` dstream raw ```
+    *   ``` dstream filtered ```
+    *   ``` dstream derived_params ```
+    *   ``` dstream events ```
 
 #### Help:
 * ``` --help``` can be given to each command for more information
