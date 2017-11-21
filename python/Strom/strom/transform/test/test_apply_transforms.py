@@ -1,5 +1,4 @@
 import unittest
-import numpy as np
 import json
 from Strom.strom.transform.apply_transformer import *
 from Strom.strom.transform.derive_param import *

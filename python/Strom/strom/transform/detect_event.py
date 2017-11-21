@@ -19,7 +19,7 @@ class DetectEvent(Transformer):
         return self.params
 
     def add_timestamp(self, timestamp_list):
-        self.data["timestamp"] = {"val":timestamp_list, "dypte":"decimal"}
+        self.data["timestamp"] = {"val":timestamp_list, "dtype":"decimal"}
 
     @abstractmethod
     def transform_data(self):
@@ -43,6 +43,7 @@ class DetectThreshold(DetectEvent):
         event_list = []
         for e_ind in event_inds:
             cur_event = Event()
+            cur_event["event_ind"] = e_ind
             cur_event["event_name"] = self.params["event_name"]
             cur_event["event_rules"] = self.params["event_rules"]
             cur_event["stream_token"] = self.params["stream_token"]
