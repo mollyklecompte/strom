@@ -60,7 +60,7 @@ def define(template):
             template_filename = os.path.basename(template.name) # NOTE: TEMP, REFACTOR OUT OF TRY
             path_list = template_filename.split('.')
             template_name = path_list[0]
-            template_ext = path_list[1] #!!!!!!!!!!!!! NOTE: TEMP, FILE UPLOAD EXTENSION
+            template_ext = path_list[1] # NOTE: TEMP, FILE UPLOAD EXTENSION
             print("Found File Extension: .{}".format(template_ext))  # NOTE: TEMP
         except:
             click.secho("\nProblem parsing template file!...\n", fg='red', reverse=True)
@@ -146,15 +146,30 @@ def load(filepath, token):
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
 @click.option('-utc', type=int, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
-def raw(time, utc, a):
+@click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
+def raw(time, utc, a, tk):
     """
     \b
      Collect all raw data for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
     """
+    cert = tk.read()
+    try:
+        json_cert = json.loads(cert)
+    except:
+        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
+    else:
+        try:
+            token = json_cert['stream_token']
+            if token is None:
+                raise ValueError
+        except:
+            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
+        else:
+            click.secho("Found stream_token: " + token + '\n', fg='white')
     if a:
         try:
-            ret = requests.get(url + "/api/get/raw?range=ALL")
+            ret = requests.get(url + "/api/get/raw?range=ALL&token={}".format(token))
         except:
             click.secho("Connection Refused!...", fg='red', reverse=True)
         else:
@@ -205,12 +220,27 @@ def raw(time, utc, a):
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
 @click.option('-utc', type=int, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
-def filtered(time, utc, a):
+@click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
+def filtered(time, utc, a, tk):
     """
     \b
      Collect all filtered data for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
     """
+    cert = tk.read()
+    try:
+        json_cert = json.loads(cert)
+    except:
+        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
+    else:
+        try:
+            token = json_cert['stream_token']
+            if token is None:
+                raise ValueError
+        except:
+            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
+        else:
+            click.secho("Found stream_token: " + token + '\n', fg='white')
     if a:
         try:
             ret = requests.get(url + "/api/get/filtered?range=ALL")
@@ -265,12 +295,27 @@ def filtered(time, utc, a):
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
 @click.option('-utc', type=int, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
-def derived_params(time, utc, a):
+@click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
+def derived_params(time, utc, a, tk):
     """
     \b
      Collect all derived parameters for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
     """
+    cert = tk.read()
+    try:
+        json_cert = json.loads(cert)
+    except:
+        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
+    else:
+        try:
+            token = json_cert['stream_token']
+            if token is None:
+                raise ValueError
+        except:
+            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
+        else:
+            click.secho("Found stream_token: " + token + '\n', fg='white')
     if a:
         try:
             ret = requests.get(url + "/api/get/derived_params?range=ALL")
@@ -325,12 +370,27 @@ def derived_params(time, utc, a):
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
 @click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
-def events(time, utc, a):
+@click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
+def events(time, utc, a, tk):
     """
     \b
      Collect all event data for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
     """
+    cert = tk.read()
+    try:
+        json_cert = json.loads(cert)
+    except:
+        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
+    else:
+        try:
+            token = json_cert['stream_token']
+            if token is None:
+                raise ValueError
+        except:
+            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
+        else:
+            click.secho("Found stream_token: " + token + '\n', fg='white')
     if a:
         try:
             ret = requests.get(url + "/api/get/events?range=ALL")

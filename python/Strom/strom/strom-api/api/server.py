@@ -47,9 +47,11 @@ def get(this):
     """ Route for returning data, specified by endpoint & URL params. """
     time_range = request.args.get('range', '')
     time = request.args.get('time', '')
+    token = request.args.get('token', '')
     print(this) #   endpoint: raw, filtered, derived_params, events
     print(time_range)
     print(time)
+    print(token)
     if time_range:
         if time_range == 'ALL':
             print("10 x 10^10") #   TEMP
