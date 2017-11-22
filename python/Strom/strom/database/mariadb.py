@@ -23,7 +23,7 @@ class SQL_Connection:
         dbconfig = {
             "user": 'user',
             "password": '123',
-            "host": '0.0.0.0',
+            "host": '172.17.0.3',
             "database": 'test'
         }
         self.mariadb_connection = mariadb.connect(pool_name = "my_pool", pool_size = 13, **dbconfig)
@@ -43,10 +43,10 @@ class SQL_Connection:
     def _create_metadata_table(self):
         table = ("CREATE TABLE template_metadata ("
             "  `unique_id` int(50) NOT NULL AUTO_INCREMENT,"
-            "  `stream_name` varchar(20) NOT NULL,"
-            "  `stream_token` varchar(50) NOT NULL,"
+            "  `stream_name` varchar(60) NOT NULL,"
+            "  `stream_token` varchar(60) NOT NULL,"
             "  `version` decimal(10, 2) NOT NULL,"
-            "  `template_id` varchar(30) NOT NULL,"
+            "  `template_id` varchar(60) NOT NULL,"
             "  PRIMARY KEY (`unique_id`)"
             ") ENGINE=InnoDB")
         try:
@@ -191,7 +191,7 @@ class SQL_Connection:
             # create a column for that uid
         for uid in dstream['user_ids']:
             # uid dstream['user_ids'][uid]
-            uid_columns += "  `" + uid + "` varchar(50),"
+            uid_columns += "  `" + uid + "` varchar(60),"
         # print("***UID COLUMNS***", uid_columns)
 
         filter_columns = ""
@@ -200,7 +200,7 @@ class SQL_Connection:
         for filt in dstream['filters']:
             # create a column filt for that filter
             # filter_columns += "  `" + filt["filter_name"] + "` varchar(50),"
-            filter_columns += "  `" + filt["filter_name"] + "` varchar(20),"
+            filter_columns += "  `" + filt["filter_name"] + "` varchar(60),"
             # print(filt)
 
         # parse stream_token to stringify and replace hyphens with underscores
@@ -215,8 +215,8 @@ class SQL_Connection:
             "%s"
             "%s"
             "%s"
-            "  `tags` varchar(50),"
-            "  `fields` varchar(50),"
+            "  `tags` varchar(60),"
+            "  `fields` varchar(60),"
             "  PRIMARY KEY (`unique_id`)"
             ") ENGINE=InnoDB" % (stringified_stream_token_uuid, measure_columns, uid_columns, filter_columns))
 
@@ -391,7 +391,7 @@ single_dstream = {
     'version': 0,
     'stream_token': 'test_token',
     'timestamp': 20171117,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
     'fields': {'region-code': 'PDX'},
     'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
     'tags': {},
@@ -406,7 +406,7 @@ second_single_dstream = {
     'version': 0,
     'stream_token': 'test_token',
     'timestamp': 20171118,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
     'fields': {'region-code': 'PDX'},
     'user_ids': {'driver-id': 'Kelson Agnic', 'id': 0},
     'tags': {},
@@ -421,7 +421,7 @@ third_single_dstream = {
     'version': 0,
     'stream_token': 'test_token',
     'timestamp': 20171119,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
     'fields': {'region-code': 'PDX'},
     'user_ids': {'driver-id': 'David Parvizi', 'id': 0},
     'tags': {},
@@ -436,7 +436,7 @@ fourth_single_dstream = {
     'version': 0,
     'stream_token': 'test_token',
     'timestamp': 20171120,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
     'fields': {'region-code': 'PDX'},
     'user_ids': {'driver-id': 'Justine LeCompte', 'id': 0},
     'tags': {},
@@ -451,7 +451,7 @@ fifth_single_dstream = {
     'version': 0,
     'stream_token': 'test_token',
     'timestamp': 20171121,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
     'fields': {'region-code': 'PDX'},
     'user_ids': {'driver-id': 'Adrian Wang', 'id': 0},
     'tags': {},
@@ -466,7 +466,7 @@ sixth_single_dstream = {
     'version': 0,
     'stream_token': 'test_token',
     'timestamp': 20171122,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
     'fields': {'region-code': 'PDX'},
     'user_ids': {'driver-id': 'Parham Nielsen', 'id': 0},
     'tags': {},
@@ -536,9 +536,9 @@ def main():
     # stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
 
     print("~~~~~INSERT FILTER MEASURE COLUMN VALUE~~~~~")
-    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy_data', 1)
-    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'test data', 2)
-    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy data', 3)
+    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy_data sldkfj lksjf lsajdlfj sl', 1)
+    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'test data sdfadsfafwt ergreag erg ', 2)
+    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy data asdga ergawe gedawe erag', 3)
     sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
     sql._select_all_from_stream_lookup_table(dstream)
     sql._select_data_by_column_where(dstream, "`driver-id`", "unique_id", 3)
