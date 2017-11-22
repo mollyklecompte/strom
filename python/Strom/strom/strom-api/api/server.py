@@ -24,7 +24,10 @@ def define():
     """ Route to collect template for DStream init and return stream_token. """
     args = parser.parse_args()
     template = args['template'] #   dstream template
-    cd.process_template(template)
+    dstream_new = DStream()
+    json_template = json.loads(template)
+    dstream_new.load_from_json(json_template)
+    cd.process_template(dstream_new)
     return str(ds['stream_token']), 202
 
 def add_source():
