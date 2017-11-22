@@ -112,6 +112,9 @@ class TestSQL_Connection(unittest.TestCase):
         metadata_table = self.cnx._create_metadata_table()
         stream_lookup_table = self.cnx._create_stream_lookup_table(single_dstream)
 
+        # Check if metadata_table exists
+        self.assertTrue(self.cnx._check_metadata_table_exists())
+
         # Insert rows into metadata_table
         self.cnx._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
         self.cnx._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "filler")
