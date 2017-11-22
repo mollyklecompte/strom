@@ -134,3 +134,6 @@ class Coordinator(object):
         self._store_json(bstream, 'event')
 
         print("whoop WHOOOOP")
+
+    def get_events(self, token):
+        return self.mongo.get_all_coll("event", token)
