@@ -46,3 +46,7 @@ class TestCoordinator(unittest.TestCase):
         self.coordinator.process_template(self.dstream_template)
         qt = self.coordinator._retrieve_current_template(self.dstream_template["stream_token"])
         self.assertEqual(qt["version"], 1)
+
+    def test_process_data_sync(self):
+        self.coordinator.process_template(self.dstream_template)
+        self.coordinator.process_data_sync(self.dstreams, self.dstream_template["stream_token"])
