@@ -2,6 +2,7 @@
 Coordinator class
 
 """
+from copy import deepcopy
 from bson.objectid import ObjectId
 from Strom.strom.dstream.bstream import BStream
 from Strom.strom.database.mongo_management import MongoManager
@@ -70,6 +71,7 @@ class Coordinator(object):
         :param temp_id: template's unique id in mongodb
         :return: template json
         """
+        print("Token: ",token)
         temp_id = ObjectId(self.maria._return_template_id_for_latest_version_of_stream(token))
         template = self.mongo.get_by_id(temp_id, 'template')
 
@@ -90,9 +92,11 @@ class Coordinator(object):
 
 
     def process_template(self, temp_dstream):
+        temp_dstream = deepcopy(temp_dstream)
         token = temp_dstream["stream_token"]
         name = temp_dstream["stream_name"]
         version = temp_dstream["version"]
+        print(token, name, version)
         mongo_id = str(self._store_json(temp_dstream, 'template'))
         metadata_tabel_check =  self.maria._check_metadata_table_exists()
         if not metadata_tabel_check:
