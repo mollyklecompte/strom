@@ -41,6 +41,7 @@ class Coordinator(object):
             for i in val_id_pair_list:
                 val = i[0]
                 id = i[1]
+                print(val)
                 self.maria._insert_filtered_measure_into_stream_lookup_table(token, measure, str(val), id)
 
     def _list_to_bstream(self, template, dstreams, ids):
