@@ -117,13 +117,14 @@ class TestSQL_Connection(unittest.TestCase):
 
         # Insert rows into metadata_table
         self.cnx._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
-        self.cnx._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "filler")
-        self.cnx._insert_row_into_metadata_table("stream_three", "stream_token_three", 1.2, "filler")
+        self.cnx._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "woo")
+        self.cnx._insert_row_into_metadata_table("stream_three", "stream_token_three", 1.2, "great")
+        self.cnx._insert_row_into_metadata_table("stream_three", "stream_token_three", 1.3, "right")
 
         # Retrieve from metadata_table (TEST)
-        self.assertEqual(self.cnx._retrieve_by_id(2), [2, "stream_two", "stream_token_two", 1.1, "filler"])
-        self.assertEqual(self.cnx._retrieve_by_stream_name("stream_three"), [3, "stream_three", "stream_token_three", 1.2, "filler"])
-        self.assertEqual(self.cnx._retrieve_by_stream_token("stream_token_three"), [3, "stream_three", "stream_token_three", 1.2, "filler"])
+        self.assertEqual(self.cnx._retrieve_by_id(2), [2, "stream_two", "stream_token_two", 1.1, "woo"])
+        self.assertEqual(self.cnx._retrieve_by_stream_name("stream_two"), [2, "stream_two", "stream_token_two", 1.1, "woo"])
+        self.assertEqual(self.cnx._retrieve_by_stream_token("stream_token_one"), [1, "stream_one", "stream_token_one", 1.0, "filler"])
         self.assertIsNone(self.cnx._select_all_from_metadata_table())
 
         # Insert rows into stream_lookup_table
@@ -134,12 +135,11 @@ class TestSQL_Connection(unittest.TestCase):
         self.cnx._insert_row_into_stream_lookup_table(fifth_single_dstream)
 
         # Insert value into filtered measure in stream_lookup_table
-        # self.cnx._insert_filtered_measure_into_stream_lookup_table('test_mariadb_stream_lookup_table', 'smoothing', 'dummy data', 1)
         self.assertEqual(self.cnx._insert_filtered_measure_into_stream_lookup_table('test_mariadb_stream_lookup_table', 'smoothing', 'dummy data', 1), "UPDATE test_mariadb_stream_lookup_table SET smoothing = 'dummy data' WHERE unique_id = 1")
 
         # Retrieve from stream_lookup_table
         self.assertTrue(self.cnx._retrieve_by_timestamp_range(single_dstream, 20171117, 20171118))
-        self.assertEqual(self.cnx._return_template_id_for_latest_version_of_stream("stream_token_three"), "filler")
+        self.assertEqual(self.cnx._return_template_id_for_latest_version_of_stream("stream_token_three"), "right")
 
         # Close connection
         gc.collect()
