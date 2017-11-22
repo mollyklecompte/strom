@@ -36,14 +36,14 @@ class Coordinator(object):
         token = bstream['stream_token']
         zippies = {}
         for m,v in bstream['filter_measures'].items():
-            z = zip(m['val'], ids)
+            z = zip(v['val'], ids)
             zippies[m] = list(z)
 
         for measure,val_id_pair_list in zippies.items():
             for i in val_id_pair_list:
                 val = i[0]
                 id = i[1]
-                self.maria._insert_filtered_measure_into_stream_lookup_table(token, measure, val, id)
+                self.maria._insert_filtered_measure_into_stream_lookup_table(token, measure, str(val), id)
 
     def _list_to_bstream(self, template, dstreams, ids):
         bstream = BStream(template, dstreams, ids)
@@ -108,7 +108,6 @@ class Coordinator(object):
     def process_data_sync(self, dstream_list, token):
         # store raw dstream data, return list of ids
         stream_ids = self._store_raw(dstream_list)
-
         # retrieve most recent versioned dstream template
         template = self._retrieve_current_template(token)
 
@@ -132,7 +131,6 @@ class Coordinator(object):
 
         # store events
         self._store_json(bstream, 'event')
-
         print("whoop WHOOOOP")
 
     def get_events(self, token):

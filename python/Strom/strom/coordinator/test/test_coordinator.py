@@ -68,10 +68,9 @@ class TestCoordinator(unittest.TestCase):
     def test_process_data_sync(self):
         print("testing process_data_sync")
         tpds_dstream = deepcopy(self.dstream_template)
-        tpds_dstream["stream_token"] = "we_be_streaming"
         tpds_dstream.pop("_id", None)
         self.coordinator.process_template(tpds_dstream)
-        self.coordinator.process_data_sync(self.dstreams, self.dstream_template["stream_token"])
+        self.coordinator.process_data_sync(self.dstreams, tpds_dstream["stream_token"])
 
 
 if __name__ == "__main__":
