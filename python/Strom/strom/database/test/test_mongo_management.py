@@ -30,9 +30,8 @@ class TestMongoManager(unittest.TestCase):
 
         all_derived = self.manager.get_all_coll('derived', 'abc123')
         all_events = self.manager.get_all_coll('event', 'abc123')
-        print(all_derived)
-        self.assertTrue(len(all_derived) > 2)
-        self.assertTrue(len(all_events) > 2)
+        self.assertTrue(len(all_derived[0]["derived_measures"]) >= 2)
+        self.assertTrue(len(all_events[0]["event_measures"]) >= 2)
 
 
 
