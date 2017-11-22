@@ -37,4 +37,12 @@ class TestCoordinator(unittest.TestCase):
         self.assertEqual(qt, self.queried_template)
 
     def test_process_template(self):
+        self.dstream_template["stream_token"] = "a_token_token"
         self.coordinator.process_template(self.dstream_template)
+        qt = self.coordinator._retrieve_current_template(self.dstream_template["stream_token"])
+        self.assertEqual(qt["stream_token"], self.dstream_template["stream_token"])
+        self.assertEqual(qt["stream_name"], self.dstream_template["stream_name"])
+        self.dstream_template["version"] = 1
+        self.coordinator.process_template(self.dstream_template)
+        qt = self.coordinator._retrieve_current_template(self.dstream_template["stream_token"])
+        self.assertEqual(qt["version"], 1)
