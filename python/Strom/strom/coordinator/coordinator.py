@@ -96,7 +96,7 @@ class Coordinator(object):
         mongo_id = self._store_json(temp_dstream, 'template')
 
         self.maria._insert_row_into_metadata_table(name, token, version, mongo_id)
-        self.maria._stream_lookup_table(temp_dstream)
+        self.maria._create_stream_lookup_table(temp_dstream)
 
 
     def process_data_sync(self, dstream_list, token):
