@@ -532,4 +532,4 @@ def main():
     gc.collect()
     sql._close_connection()
 
-main()
+# main()
