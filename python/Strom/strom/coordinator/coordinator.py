@@ -28,7 +28,7 @@ class Coordinator(object):
             row_id = self.maria._insert_row_into_stream_lookup_table(dstream)
             ids.append(row_id)
 
-        print("Inserted rows: %s-%s") % (ids[0], ids[-1])
+        print("Inserted rows: %s-%s" % (ids[0], ids[-1]))
         return ids
 
     def _store_filtered(self, bstream):

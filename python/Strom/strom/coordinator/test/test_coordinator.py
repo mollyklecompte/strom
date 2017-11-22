@@ -57,12 +57,12 @@ class TestCoordinator(unittest.TestCase):
 
         qt = self.coordinator._retrieve_current_template(tpt_dstream["stream_token"])
         self.assertEqual(qt["stream_token"], tpt_dstream["stream_token"])
-        self.assertEqual(qt["stream_name"], tpt_dstream["stream_token"])
+        self.assertEqual(qt["stream_name"], tpt_dstream["stream_name"])
 
         tpt_dstream["version"] = 1
         tpt_dstream.pop("_id", None)
         self.coordinator.process_template(tpt_dstream)
-        qt = self.coordinator._retrieve_current_template(tpt_dstreame["stream_token"])
+        qt = self.coordinator._retrieve_current_template(tpt_dstream["stream_token"])
         self.assertEqual(qt["version"], 1)
 
     def test_process_data_sync(self):
@@ -71,7 +71,7 @@ class TestCoordinator(unittest.TestCase):
         tpds_dstream["stream_token"] = "we_be_streaming"
         tpds_dstream.pop("_id", None)
         self.coordinator.process_template(tpds_dstream)
-        # self.coordinator.process_data_sync(self.dstreams, self.dstream_template["stream_token"])
+        self.coordinator.process_data_sync(self.dstreams, self.dstream_template["stream_token"])
 
 
 if __name__ == "__main__":
