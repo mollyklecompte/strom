@@ -46,7 +46,7 @@ class SQL_Connection:
             "  `stream_name` varchar(20) NOT NULL,"
             "  `stream_token` varchar(50) NOT NULL,"
             "  `version` decimal(10, 2) NOT NULL,"
-            "  `template_id` varchar(20) NOT NULL,"
+            "  `template_id` varchar(30) NOT NULL,"
             "  PRIMARY KEY (`unique_id`)"
             ") ENGINE=InnoDB")
         try:
