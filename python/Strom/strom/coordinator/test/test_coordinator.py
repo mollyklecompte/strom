@@ -38,3 +38,5 @@ class TestCoordinator(unittest.TestCase):
 
     def test_process_template(self):
         self.coordinator.process_template(self.dstream_template)
+        qt = self.coordinator._retrieve_current_template(self.dstream_template["stream_token"])
+        self.assertEqual(qt, self.queried_template)
