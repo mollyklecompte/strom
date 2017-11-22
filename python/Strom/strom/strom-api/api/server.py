@@ -48,6 +48,8 @@ def get(this):
     time_range = request.args.get('range', '')
     time = request.args.get('time', '')
     token = request.args.get('token', '')
+    if token is None:
+        print("ALERT")
     print(this) #   endpoint: raw, filtered, derived_params, events
     print(time_range)
     print(time)

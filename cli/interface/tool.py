@@ -144,7 +144,7 @@ def load(filepath, token):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
-@click.option('-utc', type=int, multiple=True, help="UTC-formatted time to collect from")
+@click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
 @click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
 def raw(time, utc, a, tk):
@@ -178,7 +178,7 @@ def raw(time, utc, a, tk):
     elif utc:
         if len(utc) == 1:
             try:
-                ret = requests.get(url + "/api/get/raw?time={}".format(utc[0]))
+                ret = requests.get(url + "/api/get/raw?time={}&token={}".format(utc[0], token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -186,7 +186,7 @@ def raw(time, utc, a, tk):
                 click.secho(ret.text, fg='yellow')
         elif len(utc) == 2:
             try:
-                ret = requests.get(url + "/api/get/raw?range={}".format(utc))
+                ret = requests.get(url + "/api/get/raw?range={}&token={}".format(utc, token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -197,7 +197,7 @@ def raw(time, utc, a, tk):
     elif time:
         if len(time) == 1:
             try:
-                ret = requests.get(url + "/api/get/raw?time={}".format(time[0]))
+                ret = requests.get(url + "/api/get/raw?time={}&token={}".format(time[0], token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -205,7 +205,7 @@ def raw(time, utc, a, tk):
                 click.secho(ret.text, fg='yellow')
         elif len(time) == 2:
             try:
-                ret = requests.get(url + "/api/get/raw?range={}".format(time))
+                ret = requests.get(url + "/api/get/raw?range={}&token={}".format(time, token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -218,7 +218,7 @@ def raw(time, utc, a, tk):
 
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
-@click.option('-utc', type=int, multiple=True, help="UTC-formatted time to collect from")
+@click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
 @click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
 def filtered(time, utc, a, tk):
@@ -243,7 +243,7 @@ def filtered(time, utc, a, tk):
             click.secho("Found stream_token: " + token + '\n', fg='white')
     if a:
         try:
-            ret = requests.get(url + "/api/get/filtered?range=ALL")
+            ret = requests.get(url + "/api/get/filtered?range=ALL&token={}".format(token))
         except:
             click.secho("Connection Refused!...", fg='red', reverse=True)
         else:
@@ -252,7 +252,7 @@ def filtered(time, utc, a, tk):
     elif utc:
         if len(utc) == 1:
             try:
-                ret = requests.get(url + "/api/get/filtered?time={}".format(utc[0]))
+                ret = requests.get(url + "/api/get/filtered?time={}&token={}".format(utc[0], token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -260,7 +260,7 @@ def filtered(time, utc, a, tk):
                 click.secho(ret.text, fg='yellow')
         elif len(utc) == 2:
             try:
-                ret = requests.get(url + "/api/get/filtered?range={}".format(utc))
+                ret = requests.get(url + "/api/get/filtered?range={}&token={}".format(utc, token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -271,7 +271,7 @@ def filtered(time, utc, a, tk):
     elif time:
         if len(time) == 1:
             try:
-                ret = requests.get(url + "/api/get/filtered?time={}".format(time[0]))
+                ret = requests.get(url + "/api/get/filtered?time={}&token={}".format(time[0], token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -279,7 +279,7 @@ def filtered(time, utc, a, tk):
                 click.secho(ret.text, fg='yellow')
         elif len(time) == 2:
             try:
-                ret = requests.get(url + "/api/get/filtered?range={}".format(time))
+                ret = requests.get(url + "/api/get/filtered?range={}&token={}".format(time, token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -293,7 +293,7 @@ def filtered(time, utc, a, tk):
 
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
-@click.option('-utc', type=int, multiple=True, help="UTC-formatted time to collect from")
+@click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
 @click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
 def derived_params(time, utc, a, tk):
@@ -318,7 +318,7 @@ def derived_params(time, utc, a, tk):
             click.secho("Found stream_token: " + token + '\n', fg='white')
     if a:
         try:
-            ret = requests.get(url + "/api/get/derived_params?range=ALL")
+            ret = requests.get(url + "/api/get/derived_params?range=ALL&token={}".format(token))
         except:
             click.secho("Connection Refused!...", fg='red', reverse=True)
         else:
@@ -327,7 +327,7 @@ def derived_params(time, utc, a, tk):
     elif utc:
         if len(utc) == 1:
             try:
-                ret = requests.get(url + "/api/get/derived_params?time={}".format(utc[0]))
+                ret = requests.get(url + "/api/get/derived_params?time={}&token={}".format(utc[0], token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -335,7 +335,7 @@ def derived_params(time, utc, a, tk):
                 click.secho(ret.text, fg='yellow')
         elif len(utc) == 2:
             try:
-                ret = requests.get(url + "/api/get/derived_params?range={}".format(utc))
+                ret = requests.get(url + "/api/get/derived_params?range={}&token={}".format(utc, token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -346,7 +346,7 @@ def derived_params(time, utc, a, tk):
     elif time:
         if len(time) == 1:
             try:
-                ret = requests.get(url + "/api/get/derived_params?time={}".format(time[0]))
+                ret = requests.get(url + "/api/get/derived_params?time={}&token={}".format(time[0], token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -354,7 +354,7 @@ def derived_params(time, utc, a, tk):
                 click.secho(ret.text, fg='yellow')
         elif len(time) == 2:
             try:
-                ret = requests.get(url + "/api/get/derived_params?range={}".format(time))
+                ret = requests.get(url + "/api/get/derived_params?range={}&token={}".format(time, token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -393,7 +393,7 @@ def events(time, utc, a, tk):
             click.secho("Found stream_token: " + token + '\n', fg='white')
     if a:
         try:
-            ret = requests.get(url + "/api/get/events?range=ALL")
+            ret = requests.get(url + "/api/get/events?range=ALL&token={}".format(token))
         except:
             click.secho("Connection Refused!...", fg='red', reverse=True)
         else:
@@ -402,7 +402,7 @@ def events(time, utc, a, tk):
     elif utc:
         if len(utc) == 1:
             try:
-                ret = requests.get(url + "/api/get/events?time={}".format(utc[0]))
+                ret = requests.get(url + "/api/get/events?time={}&token={}".format(utc[0], token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -410,7 +410,7 @@ def events(time, utc, a, tk):
                 click.secho(ret.text, fg='yellow')
         elif len(utc) == 2:
             try:
-                ret = requests.get(url + "/api/get/events?range={}".format(utc))
+                ret = requests.get(url + "/api/get/events?range={}&token={}".format(utc, token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -421,7 +421,7 @@ def events(time, utc, a, tk):
     elif time:
         if len(time) == 1:
             try:
-                ret = requests.get(url + "/api/get/events?time={}".format(time[0]))
+                ret = requests.get(url + "/api/get/events?time={}&token={}".format(time[0], token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -429,7 +429,7 @@ def events(time, utc, a, tk):
                 click.secho(ret.text, fg='yellow')
         elif len(time) == 2:
             try:
-                ret = requests.get(url + "/api/get/events?range={}".format(time))
+                ret = requests.get(url + "/api/get/events?range={}&token={}".format(time, token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
