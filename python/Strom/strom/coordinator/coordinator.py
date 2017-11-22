@@ -52,7 +52,7 @@ class Coordinator(object):
     """
      def _apply_filters(self, bstream):
         filtered_bstream = bstream.apply_filters()
-        
+
         return filtered_bstream
 
     def _apply_derived_params(self, bstream):
@@ -74,6 +74,20 @@ class Coordinator(object):
         template = self.mongo.get_by_id(temp_id, 'template')
 
         return template
+
+    def _retrieve_data_by_timestamp(self, dstream, time):
+        """
+        calls mariadb method to query stream lookup table and return the rows that fall within a time range, or just the matching row if the argument is a timestamp
+        """
+        # if time is a number
+        if type(time) == 'str':
+            self.maria._retrieve_by_timestamp_range(dstream, time, time)
+        #  if time is an array or tuple (time range)
+        else:
+            start = time[0]
+            end = time[1]
+            self.maria._retrieve_by_timestamp_range(dstream, start, end)
+
 
     def process_template(self, temp_dstream):
         token = temp_dstream["stream_token"]
@@ -114,11 +128,3 @@ class Coordinator(object):
         self._store_json(bstream, 'event')
 
         print("whoop WHOOOOP")
-
-
-
-
-
-
-
-
