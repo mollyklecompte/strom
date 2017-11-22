@@ -23,7 +23,7 @@ class SQL_Connection:
         dbconfig = {
             "user": 'user',
             "password": '123',
-            "host": '0.0.0.0',
+            "host": '172.17.0.3',
             "database": 'test'
         }
         self.mariadb_connection = mariadb.connect(pool_name = "my_pool", pool_size = 13, **dbconfig)

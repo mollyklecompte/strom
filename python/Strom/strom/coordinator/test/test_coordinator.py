@@ -1,5 +1,6 @@
 import unittest
 import json
+from copy import deepcopy
 from Strom.strom.coordinator.coordinator import Coordinator
 from Strom.strom.dstream.dstream import DStream
 from Strom.strom.dstream.bstream import BStream
@@ -10,6 +11,7 @@ class TestCoordinator(unittest.TestCase):
         self.coordinator = Coordinator()
         demo_data_dir = "Strom/demo_data/"
         self.dstream_template = json.load(open(demo_data_dir + "demo_template.txt"))
+        self.dstream_template["stream_token"] = "abc123"
         self.dstream_template["_id"] = "chadwick666"
         #self.dstream_template = {"stream_name": "driver_data", "version": 0, "stream_token": "abc123", "timestamp": None, "measures": {"location": {"val": None, "dtype": "float"}, "measure2": {"val": None, "dtype": "int"}}, "fields": {"region-code": {}}, "user_ids": {"driver-id": {}, "id": {}}, "tags": {"mood": None}, "foreign_keys": [], "filters": [ {"func_type": "filter_data", "func_name": "WindowAverage", "filter_name": "window_location", "func_params": {"window_len": 2}, "measures": ["location"]}], "dparam_rules": [{"filter_name": "bears", "func_name": "DeriveHeading", "func_type": "derive_param", "func_params": {"window": 1, "units": "deg", "heading_type": "bearing", "swap_lon_lat": True}, "measure_rules": {"spatial_measure": "location", "output_name": "bears"}, "measures": ["location"]}], "event_rules": {"ninety_degree_turn": {"func_type": "detect_event", "func_name": "DetectThreshold", "event_rules": {"measure": "change_in_heading", "threshold_value": 90, "comparison_operator": ">="}, "event_name": "ninety_degree_turn", "stream_token": None, "derived_measures": ["change_in_heading"]}}}
         #self.queried_template = {"stream_name": "driver_data", "version": 0, "stream_token": "abc123", "timestamp": None, "measures": {"location": {"val": None, "dtype": "float"}, "measure2": {"val": None, "dtype": "int"}}, "fields": {"region-code": {}}, "user_ids": {"driver-id": {}, "id": {}}, "tags": {"mood": None}, "foreign_keys": [], "filters": [ {"func_type": "filter_data", "func_name": "WindowAverage", "filter_name": "window_location", "func_params": {"window_len": 2}, "measures": ["location"]}], "dparam_rules": [{"filter_name": "bears", "func_name": "DeriveHeading", "func_type": "derive_param", "func_params": {"window": 1, "units": "deg", "heading_type": "bearing", "swap_lon_lat": True}, "measure_rules": {"spatial_measure": "location", "output_name": "bears"}, "measures": ["location"]}], "event_rules": {"ninety_degree_turn": {"func_type": "detect_event", "func_name": "DetectThreshold", "event_rules": {"measure": "change_in_heading", "threshold_value": 90, "comparison_operator": ">="}, "event_name": "ninety_degree_turn", "stream_token": None, "derived_measures": ["change_in_heading"]}}, "_id": "chadwick666"}
@@ -25,12 +27,6 @@ class TestCoordinator(unittest.TestCase):
         self.bstream.apply_filters()
         self.bstream.apply_dparam_rules()
         self.bstream.find_events()
-
-    def test_data(self):
-        print("Template:\n",self.dstream_template)
-        print("Filled\n",self.dstream)
-        print("BKeys\n",self.bstream["derived_measures"].keys())
-
 
     def test_store_json(self):
         inserted_template_id = self.coordinator._store_json(self.dstream_template, 'template')
@@ -53,26 +49,29 @@ class TestCoordinator(unittest.TestCase):
 
 
     def test_process_template(self):
-        self.dstream_template["stream_token"] = "a_token_token"
-        self.dstream_template.pop("_id")
+        tpt_dstream = deepcopy(self.dstream_template)
+        tpt_dstream["stream_token"] = "a_token_token"
+        tpt_dstream.pop("_id", None)
 
-        self.coordinator.process_template(self.dstream_template)
+        self.coordinator.process_template(tpt_dstream)
 
-        qt = self.coordinator._retrieve_current_template(self.dstream_template["stream_token"])
-        self.assertEqual(qt["stream_token"], self.dstream_template["stream_token"])
-        self.assertEqual(qt["stream_name"], self.dstream_template["stream_name"])
+        qt = self.coordinator._retrieve_current_template(tpt_dstream["stream_token"])
+        self.assertEqual(qt["stream_token"], tpt_dstream["stream_token"])
+        self.assertEqual(qt["stream_name"], tpt_dstream["stream_name"])
 
-        self.dstream_template["version"] = 1
-        self.dstream_template.pop("_id")
-        self.coordinator.process_template(self.dstream_template)
-        qt = self.coordinator._retrieve_current_template(self.dstream_template["stream_token"])
+        tpt_dstream["version"] = 1
+        tpt_dstream.pop("_id", None)
+        self.coordinator.process_template(tpt_dstream)
+        qt = self.coordinator._retrieve_current_template(tpt_dstream["stream_token"])
         self.assertEqual(qt["version"], 1)
-"""
 
     def test_process_data_sync(self):
-        self.coordinator.process_template(self.dstream_template)
-        self.coordinator.process_data_sync(self.dstreams, self.dstream_template["stream_token"])
-"""
+        print("testing process_data_sync")
+        tpds_dstream = deepcopy(self.dstream_template)
+        tpds_dstream.pop("_id", None)
+        self.coordinator.process_template(tpds_dstream)
+        self.coordinator.process_data_sync(self.dstreams, tpds_dstream["stream_token"])
+
 
 if __name__ == "__main__":
     unittest.main()
