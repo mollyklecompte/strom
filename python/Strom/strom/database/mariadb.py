@@ -207,7 +207,7 @@ class SQL_Connection:
         table = ("CREATE TABLE %s ("
             "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
             "  `version` decimal(10, 2) NOT NULL,"
-            "  `time_stamp` decimal(10, 2) NOT NULL,"
+            "  `time_stamp` decimal(20, 5) NOT NULL,"
             "%s"
             "%s"
             "%s"
