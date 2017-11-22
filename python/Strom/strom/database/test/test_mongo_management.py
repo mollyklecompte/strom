@@ -28,7 +28,6 @@ class TestMongoManager(unittest.TestCase):
         self.assertEqual(inserted_id2, queried2["_id"])
         self.assertEqual(inserted_id3, queried3["_id"])
 
-    def test_get_all_coll(self):
         all_derived = self.manager.get_all_coll('derived', 'abc123')
         all_events = self.manager.get_all_coll('event', 'abc123')
 
