@@ -35,3 +35,6 @@ class TestCoordinator(unittest.TestCase):
     def test_retrieve_current_template(self):
         qt = self.coordinator._retrieve_current_template("abc123")
         self.assertEqual(qt, self.queried_template)
+
+    def test_process_template(self):
+        self.coordinator.process_template(self.dstream_template)
