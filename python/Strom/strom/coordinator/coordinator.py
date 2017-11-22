@@ -80,13 +80,13 @@ class Coordinator(object):
         calls mariadb method to query stream lookup table and return the rows that fall within a time range, or just the matching row if the argument is a timestamp
         """
         # if time is a number
-        if type(time) == 'str':
-            self.maria._retrieve_by_timestamp_range(dstream, time, time)
+        if isinstance(time, int) or isinstance(time, float):
+            return self.maria._retrieve_by_timestamp_range(dstream, time, time)
         #  if time is an array or tuple (time range)
         else:
             start = time[0]
             end = time[1]
-            self.maria._retrieve_by_timestamp_range(dstream, start, end)
+            return self.maria._retrieve_by_timestamp_range(dstream, start, end)
 
 
     def process_template(self, temp_dstream):
