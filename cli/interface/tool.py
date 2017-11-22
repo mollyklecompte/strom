@@ -66,7 +66,10 @@ def define(template):
     else:
         click.secho(str(ret.status_code), fg='yellow')
         click.secho(ret.text, fg='yellow')
-        token = ret.text
+        try:
+            token = ret.text
+        except:
+            click.secho("\nServer Error!...\n", fg='red', reverse=True)
         #Try load template as json and set stream_token field, if success...store tokenized template in new file
         try:
             json_template = json.loads(template_data)
