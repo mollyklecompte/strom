@@ -310,6 +310,7 @@ class SQL_Connection:
     def _insert_filtered_measure_into_stream_lookup_table(self, stream_token, filtered_measure, value, unique_id):
         stringified_stream_token_uuid = str(stream_token).replace("-", "_")
         query = ("UPDATE %s SET %s " % (stringified_stream_token_uuid, filtered_measure)) + "= %s WHERE unique_id = %s"
+        print(len(value))
         parameters = (value, unique_id)
         try:
             print("Updating", filtered_measure, "at", unique_id)
