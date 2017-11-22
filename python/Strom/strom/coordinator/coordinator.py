@@ -71,6 +71,7 @@ class Coordinator(object):
         :return: template json
         """
         temp_id = self.maria._return_template_id_for_latest_version_of_stream(token)
+        print(temp_id)
         template = self.mongo.get_by_id(temp_id, 'template')
 
         return template
