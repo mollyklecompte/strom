@@ -41,3 +41,4 @@ class TestCoordinator(unittest.TestCase):
         self.coordinator.process_template(self.dstream_template)
         qt = self.coordinator._retrieve_current_template(self.dstream_template["stream_token"])
         self.assertEqual(qt["stream_token"], self.dstream_template["stream_token"])
+        self.assertEqual(qt["stream_name"], self.dstream_template["stream_name"])
