@@ -23,7 +23,7 @@ class SQL_Connection:
         dbconfig = {
             "user": 'user',
             "password": '123',
-            "host": '172.17.0.3',
+            "host": '0.0.0.0',
             "database": 'test'
         }
         self.mariadb_connection = mariadb.connect(pool_name = "my_pool", pool_size = 13, **dbconfig)
@@ -211,7 +211,7 @@ class SQL_Connection:
         table = ("CREATE TABLE %s ("
             "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
             "  `version` decimal(10, 2) NOT NULL,"
-            "  `time_stamp` decimal(10, 2) NOT NULL,"
+            "  `time_stamp` decimal(20, 5) NOT NULL,"
             "%s"
             "%s"
             "%s"
