@@ -94,9 +94,11 @@ class Coordinator(object):
         token = temp_dstream["stream_token"]
         name = temp_dstream["stream_name"]
         version = temp_dstream["version"]
-        mongo_id = self._store_json(temp_dstream, 'template')
-
+        print("let's put it in mongo")
+        mongo_id = str(self._store_json(temp_dstream, 'template'))
+        print("now in maria")
         self.maria._insert_row_into_metadata_table(name, token, version, mongo_id)
+        print("now making lookup")
         self.maria._create_stream_lookup_table(temp_dstream)
 
 
