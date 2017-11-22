@@ -93,18 +93,12 @@ class Coordinator(object):
         token = temp_dstream["stream_token"]
         name = temp_dstream["stream_name"]
         version = temp_dstream["version"]
-        print("let's put it in mongo")
         mongo_id = str(self._store_json(temp_dstream, 'template'))
-        print("now in maria")
         metadata_tabel_check =  self.maria._check_metadata_table_exists()
         if not metadata_tabel_check:
-            print("need to make metadata table")
             self.maria._create_metadata_table()
-        print("inserting into the table", mongo_id)
         self.maria._insert_row_into_metadata_table(name, token, version, mongo_id)
-        print("now making stream lookup")
         self.maria._create_stream_lookup_table(temp_dstream)
-        print("done processing")
 
 
     def process_data_sync(self, dstream_list, token):
