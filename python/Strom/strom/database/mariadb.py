@@ -119,19 +119,23 @@ class SQL_Connection:
 
     def _return_template_id_for_latest_version_of_stream(self, stream_token):
         stringified_stream_token_uuid = str(stream_token).replace("-", "_")
-        query = ("SELECT `template_id` FROM template_metadata WHERE version = ("
+        query = ("SELECT `template_id` FROM template_metadata WHERE stream_token = %s AND version = ("
                 "SELECT MAX(version) FROM template_metadata WHERE stream_token = %s)")
         try:
             print("Returning template_id for latest version of stream by stream_token")
-            self.cursor.execute(query, [stringified_stream_token_uuid])
+            self.cursor.execute(query, [stringified_stream_token_uuid, stringified_stream_token_uuid])
             # for (template_id) in self.cursor:
             #     print("template_id: {}".format(template_id))
             #     return template_id
-            result = self.cursor.fetchone()
-            print(result[0])
-            return result[0]
+            result = self.cursor.fetchall()
+            if len(result) == 1:
+                print(result[0][0])
+                return result[0][0]
+            else:
+                raise mariadb.Error
         except mariadb.Error as err:
             print(err.msg)
+            raise err
         else:
             print("OK")
 
@@ -475,9 +479,15 @@ def main():
     sql = SQL_Connection()
     sql._create_metadata_table()
     sql._check_metadata_table_exists()
-    sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
-    sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "filler")
-    sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
+    sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "temp_id_one")
+    sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "temp_id_two")
+    sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "temp_id_three")
+    # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
+    # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
+    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "filler")
+    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
+    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
+    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
     sql._retrieve_by_stream_name("stream_one")
     sql._retrieve_by_id(1)
     sql._retrieve_by_stream_token("stream_token_two")
