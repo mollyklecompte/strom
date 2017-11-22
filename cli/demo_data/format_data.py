@@ -26,7 +26,6 @@ for in_json in data_log:
     out_json["user_ids"]["driver-id"] = in_json["driver-id"]
     out_list.append(copy.deepcopy(out_json))
     if in_json["id"] == 26:
-        print(in_json["id"])
         out_single_trip.append(copy.deepcopy(out_json))
 print(len(out_list))
 
