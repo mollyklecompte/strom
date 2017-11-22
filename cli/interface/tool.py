@@ -3,6 +3,7 @@ import click
 import requests
 import json
 import os
+import datetime
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
@@ -18,6 +19,19 @@ def _print_ver(ctx, param, value):
 def _abort_if_false(ctx, param, value):
     if not value:
         ctx.abort()
+
+def _convert_to_utc(date_string):
+    """ Expected input: YYYY-MM-DD-HH:MM:SS """
+    big_time_tmp = date_string.split("-")
+    year = int(big_time_tmp[0])
+    month = int(big_time_tmp[1])
+    day = int(big_time_tmp[2])
+    time_arr = big_time_tmp[3].split(":")
+    hours = int(time_arr[0])
+    minutes = int(time_arr[1])
+    seconds = int(time_arr[2])
+    dt = datetime.datetime(year, month, day, hours, minutes, seconds)
+    return dt.timestamp()
 
 @click.group()
 @click.option('--version', '--v', 'version', is_flag=True, callback=_print_ver, expose_value=False, is_eager=True, help="Current version")
@@ -196,16 +210,20 @@ def raw(time, utc, a, tk):
             click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
     elif time:
         if len(time) == 1:
+            utime = _convert_to_utc(time[0])
             try:
-                ret = requests.get(url + "/api/get/raw?time={}&token={}".format(time[0], token))
+                ret = requests.get(url + "/api/get/raw?time={}&token={}".format(utime, token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
                 click.secho(str(ret.status_code), fg='yellow')
                 click.secho(ret.text, fg='yellow')
         elif len(time) == 2:
+            utime_zero = _convert_to_utc(time[0])
+            utime_one = _convert_to_utc(time[1])
+            utime = [utime_zero, utime_one]
             try:
-                ret = requests.get(url + "/api/get/raw?range={}&token={}".format(time, token))
+                ret = requests.get(url + "/api/get/raw?range={}&token={}".format(utime, token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -270,16 +288,20 @@ def filtered(time, utc, a, tk):
             click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
     elif time:
         if len(time) == 1:
+            utime = _convert_to_utc(time[0])
             try:
-                ret = requests.get(url + "/api/get/filtered?time={}&token={}".format(time[0], token))
+                ret = requests.get(url + "/api/get/filtered?time={}&token={}".format(utime, token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
                 click.secho(str(ret.status_code), fg='yellow')
                 click.secho(ret.text, fg='yellow')
         elif len(time) == 2:
+            utime_zero = _convert_to_utc(time[0])
+            utime_one = _convert_to_utc(time[1])
+            utime = [utime_zero, utime_one]
             try:
-                ret = requests.get(url + "/api/get/filtered?range={}&token={}".format(time, token))
+                ret = requests.get(url + "/api/get/filtered?range={}&token={}".format(utime, token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -345,16 +367,20 @@ def derived_params(time, utc, a, tk):
             click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
     elif time:
         if len(time) == 1:
+            utime = _convert_to_utc(time[0])
             try:
-                ret = requests.get(url + "/api/get/derived_params?time={}&token={}".format(time[0], token))
+                ret = requests.get(url + "/api/get/derived_params?time={}&token={}".format(utime, token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
                 click.secho(str(ret.status_code), fg='yellow')
                 click.secho(ret.text, fg='yellow')
         elif len(time) == 2:
+            utime_zero = _convert_to_utc(time[0])
+            utime_one = _convert_to_utc(time[1])
+            utime = [utime_zero, utime_one]
             try:
-                ret = requests.get(url + "/api/get/derived_params?range={}&token={}".format(time, token))
+                ret = requests.get(url + "/api/get/derived_params?range={}&token={}".format(utime, token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
@@ -420,16 +446,20 @@ def events(time, utc, a, tk):
             click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
     elif time:
         if len(time) == 1:
+            utime = _convert_to_utc(time[0])
             try:
-                ret = requests.get(url + "/api/get/events?time={}&token={}".format(time[0], token))
+                ret = requests.get(url + "/api/get/events?time={}&token={}".format(utime, token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
                 click.secho(str(ret.status_code), fg='yellow')
                 click.secho(ret.text, fg='yellow')
         elif len(time) == 2:
+            utime_zero = _convert_to_utc(time[0])
+            utime_one = _convert_to_utc(time[1])
+            utime = [utime_zero, utime_one]
             try:
-                ret = requests.get(url + "/api/get/events?range={}&token={}".format(time, token))
+                ret = requests.get(url + "/api/get/events?range={}&token={}".format(utime, token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
