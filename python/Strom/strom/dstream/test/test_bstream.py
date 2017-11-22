@@ -124,3 +124,5 @@ class TestBStream(unittest.TestCase):
         self.assertIsInstance(bstream["events"][event_params["event_name"]][0], dict)
 
 
+if __name__ == "__main__":
+    unittest.main()

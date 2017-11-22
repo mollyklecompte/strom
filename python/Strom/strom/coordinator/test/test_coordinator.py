@@ -50,3 +50,7 @@ class TestCoordinator(unittest.TestCase):
     def test_process_data_sync(self):
         self.coordinator.process_template(self.dstream_template)
         self.coordinator.process_data_sync(self.dstreams, self.dstream_template["stream_token"])
+
+
+if __name__ == "__main__":
+    unittest.main()
