@@ -8,7 +8,7 @@ class TestDStream(unittest.TestCase):
         self.dstream = DStream()
 
     def test_init(self):
-        init_keys = ['device_id', 'version', 'stream_token', 'sources', 'storage_rules',
+        init_keys = ['stream_name', 'version', 'stream_token', 'sources', 'storage_rules',
                      'ingest_rules', 'engine_rules', 'timestamp', 'measures', 'fields',
                      'user_ids', 'tags', 'foreign_keys', 'filters', 'dparam_rules', 'event_rules']
         self.assertEqual(init_keys, list(self.dstream.keys()))
@@ -34,8 +34,9 @@ class TestDStream(unittest.TestCase):
         self.assertTrue(uid_name in self.dstream["user_ids"].keys())
 
         tag_name = "Really good sensor"
+
         self.dstream._add_tag(tag_name)
-        self.assertEqual(tag_name, self.dstream["tags"][0])
+        self.assertIn(tag_name, self.dstream["tags"])
 
         fk = "key to the city"
         self.dstream._add_fk(fk)

@@ -60,13 +60,13 @@ def define(template):
             template_filename = os.path.basename(template.name) # NOTE: TEMP, REFACTOR OUT OF TRY
             path_list = template_filename.split('.')
             template_name = path_list[0]
-            template_ext = path_list[1] #!!!!!!!!!!!!! NOTE: TEMP, FILE UPLOAD EXTENSION
+            template_ext = path_list[1] # NOTE: TEMP, FILE UPLOAD EXTENSION
             print("Found File Extension: .{}".format(template_ext))  # NOTE: TEMP
         except:
             click.secho("\nProblem parsing template file!...\n", fg='red', reverse=True)
         else:
             click.secho("\nTemplate has been tokenized with...{}".format(json_template['stream_token']), fg='white')
-            template_file = open("{}_template.txt".format(template_name), "w")
+            template_file = open("{}_token.txt".format(template_name), "w")
             template_file.write(json.dumps(json_template))
             template_file.close()
             click.secho("New template stored locally as '{}_token.txt'.\n".format(template_name))
@@ -144,18 +144,32 @@ def load(filepath, token):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
-@click.option('-utc', type=int, multiple=True, help="UTC-formatted time to collect from")
+@click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
-def raw(time, utc, a):
+@click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
+def raw(time, utc, a, tk):
     """
     \b
      Collect all raw data for specified datetime or time-range*.
-     *Options can be supplied twice to indicate a range to collect from.
+     *Options can be supplied twice to indicate a range.
     """
-    if a:
-        #Try GET request to server
+    cert = tk.read()
+    try:
+        json_cert = json.loads(cert)
+    except:
+        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
+    else:
         try:
-            ret = requests.get(url + "/api/get/raw?range=ALL")
+            token = json_cert['stream_token']
+            if token is None:
+                raise ValueError
+        except:
+            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
+        else:
+            click.secho("Found stream_token: " + token + '\n', fg='white')
+    if a:
+        try:
+            ret = requests.get(url + "/api/get/raw?range=ALL&token={}".format(token))
         except:
             click.secho("Connection Refused!...", fg='red', reverse=True)
         else:
@@ -163,44 +177,268 @@ def raw(time, utc, a):
             click.secho(ret.text, fg='yellow')
     elif utc:
         if len(utc) == 1:
-            #Try GET request to server
             try:
-                ret = requests.get(url + "/api/get/raw?time={}".format(utc[0]))
+                ret = requests.get(url + "/api/get/raw?time={}&token={}".format(utc[0], token))
             except:
                 click.secho("Connection Refused!...", fg='red', reverse=True)
             else:
                 click.secho(str(ret.status_code), fg='yellow')
                 click.secho(ret.text, fg='yellow')
         elif len(utc) == 2:
-            ret = requests.get(url + "/api/get/raw?range={}".format(utc))
-            click.secho(str(ret.status_code), fg='yellow')
-            click.secho(ret.text, fg='yellow')
+            try:
+                ret = requests.get(url + "/api/get/raw?range={}&token={}".format(utc, token))
+            except:
+                click.secho("Connection Refused!...", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text, fg='yellow')
         else:
-            click.secho("Too many arguments given!...", fg='yellow', reverse=True)
+            click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
     elif time:
         if len(time) == 1:
-            pass
+            try:
+                ret = requests.get(url + "/api/get/raw?time={}&token={}".format(time[0], token))
+            except:
+                click.secho("Connection Refused!...", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text, fg='yellow')
         elif len(time) == 2:
-            pass
+            try:
+                ret = requests.get(url + "/api/get/raw?range={}&token={}".format(time, token))
+            except:
+                click.secho("Connection Refused!...", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text, fg='yellow')
         else:
-            pass
+            click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
     else:
-        pass
+        click.secho("No options given, try '--all'...", fg='white')
 
 @click.command()
-def filtered(timestamp, range):
-    """ Collect all filtered data for specified time-range. """
-    pass
+@click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
+@click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
+@click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
+@click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
+def filtered(time, utc, a, tk):
+    """
+    \b
+     Collect all filtered data for specified datetime or time-range*.
+     *Options can be supplied twice to indicate a range.
+    """
+    cert = tk.read()
+    try:
+        json_cert = json.loads(cert)
+    except:
+        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
+    else:
+        try:
+            token = json_cert['stream_token']
+            if token is None:
+                raise ValueError
+        except:
+            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
+        else:
+            click.secho("Found stream_token: " + token + '\n', fg='white')
+    if a:
+        try:
+            ret = requests.get(url + "/api/get/filtered?range=ALL&token={}".format(token))
+        except:
+            click.secho("Connection Refused!...", fg='red', reverse=True)
+        else:
+            click.secho(str(ret.status_code), fg='yellow')
+            click.secho(ret.text, fg='yellow')
+    elif utc:
+        if len(utc) == 1:
+            try:
+                ret = requests.get(url + "/api/get/filtered?time={}&token={}".format(utc[0], token))
+            except:
+                click.secho("Connection Refused!...", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text, fg='yellow')
+        elif len(utc) == 2:
+            try:
+                ret = requests.get(url + "/api/get/filtered?range={}&token={}".format(utc, token))
+            except:
+                click.secho("Connection Refused!...", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text, fg='yellow')
+        else:
+            click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
+    elif time:
+        if len(time) == 1:
+            try:
+                ret = requests.get(url + "/api/get/filtered?time={}&token={}".format(time[0], token))
+            except:
+                click.secho("Connection Refused!...", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text, fg='yellow')
+        elif len(time) == 2:
+            try:
+                ret = requests.get(url + "/api/get/filtered?range={}&token={}".format(time, token))
+            except:
+                click.secho("Connection Refused!...", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text, fg='yellow')
+        else:
+            click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
+    else:
+        click.secho("No options given, try '--all'...", fg='white')
+
 
 @click.command()
-def derived_params(timestamp, range):
-    """ Collect all derived parameters from specified time-range. """
-    pass
+@click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
+@click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
+@click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
+@click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
+def derived_params(time, utc, a, tk):
+    """
+    \b
+     Collect all derived parameters for specified datetime or time-range*.
+     *Options can be supplied twice to indicate a range.
+    """
+    cert = tk.read()
+    try:
+        json_cert = json.loads(cert)
+    except:
+        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
+    else:
+        try:
+            token = json_cert['stream_token']
+            if token is None:
+                raise ValueError
+        except:
+            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
+        else:
+            click.secho("Found stream_token: " + token + '\n', fg='white')
+    if a:
+        try:
+            ret = requests.get(url + "/api/get/derived_params?range=ALL&token={}".format(token))
+        except:
+            click.secho("Connection Refused!...", fg='red', reverse=True)
+        else:
+            click.secho(str(ret.status_code), fg='yellow')
+            click.secho(ret.text, fg='yellow')
+    elif utc:
+        if len(utc) == 1:
+            try:
+                ret = requests.get(url + "/api/get/derived_params?time={}&token={}".format(utc[0], token))
+            except:
+                click.secho("Connection Refused!...", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text, fg='yellow')
+        elif len(utc) == 2:
+            try:
+                ret = requests.get(url + "/api/get/derived_params?range={}&token={}".format(utc, token))
+            except:
+                click.secho("Connection Refused!...", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text, fg='yellow')
+        else:
+            click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
+    elif time:
+        if len(time) == 1:
+            try:
+                ret = requests.get(url + "/api/get/derived_params?time={}&token={}".format(time[0], token))
+            except:
+                click.secho("Connection Refused!...", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text, fg='yellow')
+        elif len(time) == 2:
+            try:
+                ret = requests.get(url + "/api/get/derived_params?range={}&token={}".format(time, token))
+            except:
+                click.secho("Connection Refused!...", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text, fg='yellow')
+        else:
+            click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
+    else:
+        click.secho("No options given, try '--all'...", fg='white')
+
 
 @click.command()
-def events(timestamp, range):
-    """ Collect all events fired in specified time-range. """
-    pass
+@click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
+@click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
+@click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
+@click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
+def events(time, utc, a, tk):
+    """
+    \b
+     Collect all event data for specified datetime or time-range*.
+     *Options can be supplied twice to indicate a range.
+    """
+    cert = tk.read()
+    try:
+        json_cert = json.loads(cert)
+    except:
+        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
+    else:
+        try:
+            token = json_cert['stream_token']
+            if token is None:
+                raise ValueError
+        except:
+            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
+        else:
+            click.secho("Found stream_token: " + token + '\n', fg='white')
+    if a:
+        try:
+            ret = requests.get(url + "/api/get/events?range=ALL&token={}".format(token))
+        except:
+            click.secho("Connection Refused!...", fg='red', reverse=True)
+        else:
+            click.secho(str(ret.status_code), fg='yellow')
+            click.secho(ret.text, fg='yellow')
+    elif utc:
+        if len(utc) == 1:
+            try:
+                ret = requests.get(url + "/api/get/events?time={}&token={}".format(utc[0], token))
+            except:
+                click.secho("Connection Refused!...", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text, fg='yellow')
+        elif len(utc) == 2:
+            try:
+                ret = requests.get(url + "/api/get/events?range={}&token={}".format(utc, token))
+            except:
+                click.secho("Connection Refused!...", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text, fg='yellow')
+        else:
+            click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
+    elif time:
+        if len(time) == 1:
+            try:
+                ret = requests.get(url + "/api/get/events?time={}&token={}".format(time[0], token))
+            except:
+                click.secho("Connection Refused!...", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text, fg='yellow')
+        elif len(time) == 2:
+            try:
+                ret = requests.get(url + "/api/get/events?range={}&token={}".format(time, token))
+            except:
+                click.secho("Connection Refused!...", fg='red', reverse=True)
+            else:
+                click.secho(str(ret.status_code), fg='yellow')
+                click.secho(ret.text, fg='yellow')
+        else:
+            click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
+    else:
+        click.secho("No options given, try '--all'...", fg='white')
 
 # d-stream group
 dstream.add_command(locate)
@@ -208,7 +446,7 @@ dstream.add_command(welcome)
 dstream.add_command(define)
 dstream.add_command(add_source)
 dstream.add_command(load)
-# testing
+#
 dstream.add_command(raw)
 dstream.add_command(filtered)
 dstream.add_command(derived_params)
