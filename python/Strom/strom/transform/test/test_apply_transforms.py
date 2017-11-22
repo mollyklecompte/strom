@@ -59,3 +59,7 @@ class TestApplyTransformer(unittest.TestCase):
         for event in event_list:
             self.assertIsInstance(event, dict)
             self.assertEqual(event["event_name"], event_params["event_name"])
+
+
+if __name__ == "__main__":
+    unittest.main()
