@@ -148,7 +148,7 @@ def load(filepath, token):
             except:
                 click.secho("Data file not correctly formatted!...\n", fg='red', reverse=True)
             else:
-                click.secho("\nSending tokenized data...", fg='white')
+                click.secho("\nSending data...", fg='white')
                 #Try send data with token to server, if success...return status_code
                 try:
                     ret = requests.post(url + "/api/load", data={'data':json.dumps(json_data)})

@@ -16,7 +16,6 @@ parser = reqparse.RequestParser()
 for word in arguments:
     parser.add_argument(word)
 
-ds = DStream()# NOTE: TEMP
 cd = Coordinator() # NOTE: TEMP
 
 
@@ -24,8 +23,11 @@ def define():
     """ Route to collect template for DStream init and return stream_token. """
     args = parser.parse_args()
     template = args['template'] #   dstream template
-    cd.process_template(template)
-    return str(ds['stream_token']), 202
+    dstream_new = DStream()
+    json_template = json.loads(template)
+    dstream_new.load_from_json(json_template)
+    cd.process_template(dstream_new)
+    return str(dstream_new['stream_token']), 202
 
 def add_source():
     """ Route to collect data source and set in DStream field """
@@ -44,8 +46,9 @@ def load():
     args = parser.parse_args()
     data = args['data'] #   data with token
     json_data = json.loads(data)
-    token = json_data['stream_token']
-    cd.process_data_sync(data, token)
+    token = json_data[0]['stream_token']
+    print(token)
+    cd.process_data_sync(json_data, token)
     return 'Success.', 202
 
 def get(this):
