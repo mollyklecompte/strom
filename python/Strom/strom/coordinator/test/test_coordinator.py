@@ -71,7 +71,10 @@ class TestCoordinator(unittest.TestCase):
         tpds_dstream.pop("_id", None)
         self.coordinator.process_template(tpds_dstream)
         self.coordinator.process_data_sync(self.dstreams, tpds_dstream["stream_token"])
-
+        stored_events = self.coordinator.get_events(tpds_dstream["stream_token"])
+        self.assertIn("events", stored_events[0])
+        for event in tpds_dstream["event_rules"].keys():
+            self.assertIn(event, stored_events[0]["events"])
 
 if __name__ == "__main__":
     unittest.main()
