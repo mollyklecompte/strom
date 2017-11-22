@@ -2,7 +2,7 @@
 Coordinator class
 
 """
-
+from pymongo.objectid import ObjectId
 from Strom.strom.dstream.bstream import BStream
 from Strom.strom.database.mongo_management import MongoManager
 from Strom.strom.database.mariadb import SQL_Connection
@@ -70,8 +70,7 @@ class Coordinator(object):
         :param temp_id: template's unique id in mongodb
         :return: template json
         """
-        temp_id = self.maria._return_template_id_for_latest_version_of_stream(token)
-        print(temp_id)
+        temp_id = ObjectId(self.maria._return_template_id_for_latest_version_of_stream(token))
         template = self.mongo.get_by_id(temp_id, 'template')
 
         return template
@@ -90,16 +89,20 @@ class Coordinator(object):
             return self.maria._retrieve_by_timestamp_range(dstream, start, end)
 
 
-    def process_template(self, temp_dstream):
+    def process_template(self, temp_dstream, create_metadata_table=False):
         token = temp_dstream["stream_token"]
         name = temp_dstream["stream_name"]
         version = temp_dstream["version"]
         print("let's put it in mongo")
         mongo_id = str(self._store_json(temp_dstream, 'template'))
         print("now in maria")
+        if create_metadata_table:
+            self.maria._create_metadata_table()
+        print("inserting into the table", mongo_id)
         self.maria._insert_row_into_metadata_table(name, token, version, mongo_id)
-        print("now making lookup")
+        print("now making stream lookup")
         self.maria._create_stream_lookup_table(temp_dstream)
+        print("done processing")
 
 
     def process_data_sync(self, dstream_list, token):
