@@ -128,7 +128,7 @@ class Coordinator(object):
 
         # apply event transforms
         bstream.find_events()
-
+        print(bstream['events'])
         # store events
         self._store_json(bstream, 'event')
         print("whoop WHOOOOP")

@@ -60,7 +60,7 @@ def get(this):
     if time_range:
         if time_range == 'ALL':
             result = cd.get_events(token)
-    return str(result), 200
+    return ("\n" + str(result) + "\n"), 200
 
 #   POST
 app.add_url_rule('/api/define', 'define', define, methods=['POST'])
