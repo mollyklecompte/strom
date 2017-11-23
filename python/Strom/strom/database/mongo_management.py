@@ -2,14 +2,13 @@
 
 This class contains methods for inserting and reading from Mongodb
 """
-
 from pymongo import MongoClient
 
 __version__  = "0.1"
 __author__ = "Molly <molly@tura.io>"
 
 # temporary config
-config = {'mongo_host' : '172.17.0.2', 'mongo_port' : 27017, 'template_coll' : 'templates', 'derived_coll_suf' : 'derived_params', 'event_coll_suf' : 'events', 'db' : 'strom'}
+config = {'mongo_host' : '172.17.0.4', 'mongo_port' : 27017, 'template_coll' : 'templates', 'derived_coll_suf' : 'derived_measures', 'event_coll_suf' : 'events', 'db' : 'strom'}
 
 
 class MongoManager(object):
@@ -30,11 +29,11 @@ class MongoManager(object):
         elif dtype == 'derived':
             coll_name = '%s_%s' % (token, self.derived_coll_suffix)
             coll = self.db[coll_name]
-            inserted = coll.insert_one({"derived_measures": doc["derived_measures"], "timestamp_min": min(doc["timestamp"]), "timestamp_max": max(doc["timestamp"])})
+            inserted = coll.insert_one({self.derived_coll_suffix: doc[self.derived_coll_suffix], "timestamp_min": min(doc["timestamp"]), "timestamp_max": max(doc["timestamp"])})
         elif dtype == 'event':
             coll_name = '%s_%s' % (token, self.event_coll_suffix)
             coll = self.db[coll_name]
-            inserted = coll.insert_one({"event_measures": doc["event_measures"], "timestamp_min": min(doc["timestamp"]), "timestamp_max": max(doc["timestamp"])})
+            inserted = coll.insert_one({self.event_coll_suffix: doc[self.event_coll_suffix], "timestamp_min": min(doc["timestamp"]), "timestamp_max": max(doc["timestamp"])})
         else:
             raise ValueError('Invalid d-stream type.')
 

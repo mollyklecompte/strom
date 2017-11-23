@@ -42,40 +42,34 @@ class SQL_Connection:
 
     def _create_metadata_table(self):
         table = ("CREATE TABLE template_metadata ("
-            "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
-            "  `stream_name` varchar(20) NOT NULL,"
-            "  `stream_token` varchar(50) NOT NULL,"
+            "  `unique_id` int(50) NOT NULL AUTO_INCREMENT,"
+            "  `stream_name` varchar(60) NOT NULL,"
+            "  `stream_token` varchar(60) NOT NULL,"
             "  `version` decimal(10, 2) NOT NULL,"
-            "  `template_id` varchar(20) NOT NULL,"
+            "  `template_id` varchar(60) NOT NULL,"
             "  PRIMARY KEY (`unique_id`)"
             ") ENGINE=InnoDB")
+        print("Creating table")
         try:
-            print("Creating table")
             self.cursor.execute(table)
         except mariadb.Error as err:
             if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-                print("already exists")
-            else:
-                print(err.msg)
-        else:
-            print("OK")
+                print("table already exists")
+            raise err
 
     def _insert_row_into_metadata_table(self, stream_name, stream_token, version, template_id):
         add_row = ("INSERT INTO template_metadata "
         "(stream_name, stream_token, version, template_id) "
         "VALUES (%s, %s, %s, %s)")
-
-        row_columns = (stream_name, stream_token, version, template_id)
-
+        stringified_stream_token_uuid = str(stream_token).replace("-", "_")
+        row_columns = (stream_name, stringified_stream_token_uuid, version, template_id)
         try:
             print("Inserting row")
             self.cursor.execute(add_row, row_columns)
             self.mariadb_connection.commit()
             print("Row inserted")
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
     def _retrieve_by_stream_name(self, stream_name):
         query = ('SELECT * FROM template_metadata WHERE stream_name = %s')
@@ -86,9 +80,7 @@ class SQL_Connection:
                 print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
                 return [unique_id, stream_name, stream_token, float(version), template_id]
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
     def _retrieve_by_id(self, unique_id):
         query = ("SELECT * FROM template_metadata WHERE unique_id = %s")
@@ -99,39 +91,38 @@ class SQL_Connection:
                 print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
                 return [unique_id, stream_name, stream_token, float(version), template_id]
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
     def _retrieve_by_stream_token(self, stream_token):
+        stringified_stream_token_uuid = str(stream_token).replace("-", "_")
         query = ("SELECT * FROM template_metadata WHERE stream_token = %s")
         try:
             print("Querying by stream token")
-            self.cursor.execute(query, [stream_token])
+            self.cursor.execute(query, [stringified_stream_token_uuid])
             for (unique_id, stream_name, stream_token, version, template_id) in self.cursor:
                 print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
                 return [unique_id, stream_name, stream_token, float(version), template_id]
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
     def _return_template_id_for_latest_version_of_stream(self, stream_token):
-        query = ("SELECT `template_id` FROM template_metadata WHERE version = ("
+        stringified_stream_token_uuid = str(stream_token).replace("-", "_")
+        query = ("SELECT `template_id` FROM template_metadata WHERE stream_token = %s AND version = ("
                 "SELECT MAX(version) FROM template_metadata WHERE stream_token = %s)")
         try:
             print("Returning template_id for latest version of stream by stream_token")
-            self.cursor.execute(query, [stream_token])
+            self.cursor.execute(query, [stringified_stream_token_uuid, stringified_stream_token_uuid])
             # for (template_id) in self.cursor:
             #     print("template_id: {}".format(template_id))
             #     return template_id
-            result = self.cursor.fetchone()
-            print(result[0])
-            return result[0]
+            result = self.cursor.fetchall()
+            if len(result) == 1:
+                print(result[0][0])
+                return result[0][0]
+            else:
+                raise mariadb.Error
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
     def _select_all_from_metadata_table(self):
         query = ("SELECT * FROM template_metadata")
@@ -145,10 +136,21 @@ class SQL_Connection:
             for row in results:
                 print(row)
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
+    def _check_metadata_table_exists(self):
+        query = ("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'test' AND table_name = 'template_metadata'")
+        try:
+            print("Checking if template_metadata table exists")
+            self.cursor.execute(query)
+            results = self.cursor.fetchall()
+            # print(results[0][0])
+            if results[0][0] == 1:
+                return True
+            else:
+                return False
+        except mariadb.Error as err:
+            raise err
 
 # ***** Stream Token Table and Methods *****
 
@@ -169,7 +171,7 @@ class SQL_Connection:
             # create a column for that uid
         for uid in dstream['user_ids']:
             # uid dstream['user_ids'][uid]
-            uid_columns += "  `" + uid + "` varchar(50),"
+            uid_columns += "  `" + uid + "` varchar(60),"
         # print("***UID COLUMNS***", uid_columns)
 
         filter_columns = ""
@@ -178,7 +180,7 @@ class SQL_Connection:
         for filt in dstream['filters']:
             # create a column filt for that filter
             # filter_columns += "  `" + filt["filter_name"] + "` varchar(50),"
-            filter_columns += "  `" + filt["filter_name"] + "` varchar(20),"
+            filter_columns += "  `" + filt["filter_name"] + "` varchar(60),"
             # print(filt)
 
         # parse stream_token to stringify and replace hyphens with underscores
@@ -189,27 +191,24 @@ class SQL_Connection:
         table = ("CREATE TABLE %s ("
             "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
             "  `version` decimal(10, 2) NOT NULL,"
-            "  `time_stamp` decimal(10, 2) NOT NULL,"
+            "  `time_stamp` decimal(20, 5) NOT NULL,"
             "%s"
             "%s"
             "%s"
-            "  `tags` varchar(50),"
-            "  `fields` varchar(50),"
+            "  `tags` varchar(60),"
+            "  `fields` varchar(60),"
             "  PRIMARY KEY (`unique_id`)"
             ") ENGINE=InnoDB" % (stringified_stream_token_uuid, measure_columns, uid_columns, filter_columns))
 
         dstream_particulars = (measure_columns, uid_columns, filter_columns)
-
         try:
             print("Creating table")
             self.cursor.execute(table)
         except mariadb.Error as err:
             if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-                print("already exists")
+                print("table already exists")
             else:
-                print(err.msg)
-        else:
-            print("OK")
+                raise err
 
     def _insert_row_into_stream_lookup_table(self, dstream):
         # print("*** INPUT DSTREAM ***", dstream)
@@ -269,7 +268,6 @@ class SQL_Connection:
 
         query = ("INSERT INTO %s %s VALUES %s" % (stringified_stream_token_uuid, columns, values))
         # print("~~~~~~~~ QUERY ~~~~~~~~", query);
-
         try:
             print("Inserting row into table ", stringified_stream_token_uuid)
             self.cursor.execute(query)
@@ -281,12 +279,12 @@ class SQL_Connection:
             print(self.cursor.lastrowid)
             return self.cursor.lastrowid
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
     def _insert_filtered_measure_into_stream_lookup_table(self, stream_token, filtered_measure, value, unique_id):
-        query = ("UPDATE %s SET %s " % (stream_token, filtered_measure)) + "= %s WHERE unique_id = %s"
+        stringified_stream_token_uuid = str(stream_token).replace("-", "_")
+        query = ("UPDATE %s SET %s " % (stringified_stream_token_uuid, filtered_measure)) + "= %s WHERE unique_id = %s"
+        print(len(value))
         parameters = (value, unique_id)
         try:
             print("Updating", filtered_measure, "at", unique_id)
@@ -297,11 +295,11 @@ class SQL_Connection:
             #     print("IN FOR LOOP")
             #     return [stream_token, filtered_measure, value, unique_id]
             print("Executed", self.cursor.statement)
+            if (self.cursor.rowcount != 1):
+                raise KeyError
             return self.cursor.statement
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
     def _retrieve_by_timestamp_range(self, dstream, start, end):
         stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
@@ -318,9 +316,7 @@ class SQL_Connection:
                 print(row)
             return results
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
     def _select_all_from_stream_lookup_table(self, dstream):
         stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
@@ -335,10 +331,7 @@ class SQL_Connection:
                 print(row)
             return results
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
-
+            raise err
 
     def _select_data_by_column_where(self, dstream, data_column, filter_column, value):
         # Method created for testing purposes. Not intended for use by the coordinator (for now).
@@ -355,19 +348,14 @@ class SQL_Connection:
             print(results)
             return results
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
-
-
-
+            raise err
 
 single_dstream = {
     'stream_name': 'driver_data',
     'version': 0,
     'stream_token': 'test_token',
     'timestamp': 20171117,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
     'fields': {'region-code': 'PDX'},
     'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
     'tags': {},
@@ -382,7 +370,7 @@ second_single_dstream = {
     'version': 0,
     'stream_token': 'test_token',
     'timestamp': 20171118,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
     'fields': {'region-code': 'PDX'},
     'user_ids': {'driver-id': 'Kelson Agnic', 'id': 0},
     'tags': {},
@@ -397,7 +385,7 @@ third_single_dstream = {
     'version': 0,
     'stream_token': 'test_token',
     'timestamp': 20171119,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
     'fields': {'region-code': 'PDX'},
     'user_ids': {'driver-id': 'David Parvizi', 'id': 0},
     'tags': {},
@@ -412,7 +400,7 @@ fourth_single_dstream = {
     'version': 0,
     'stream_token': 'test_token',
     'timestamp': 20171120,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
     'fields': {'region-code': 'PDX'},
     'user_ids': {'driver-id': 'Justine LeCompte', 'id': 0},
     'tags': {},
@@ -427,7 +415,7 @@ fifth_single_dstream = {
     'version': 0,
     'stream_token': 'test_token',
     'timestamp': 20171121,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
     'fields': {'region-code': 'PDX'},
     'user_ids': {'driver-id': 'Adrian Wang', 'id': 0},
     'tags': {},
@@ -442,7 +430,7 @@ sixth_single_dstream = {
     'version': 0,
     'stream_token': 'test_token',
     'timestamp': 20171122,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(50)'}},
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
     'fields': {'region-code': 'PDX'},
     'user_ids': {'driver-id': 'Parham Nielsen', 'id': 0},
     'tags': {},
@@ -455,9 +443,16 @@ sixth_single_dstream = {
 def main():
     sql = SQL_Connection()
     sql._create_metadata_table()
-    sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
-    sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "filler")
-    sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
+    sql._check_metadata_table_exists()
+    sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "temp_id_one")
+    sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "temp_id_two")
+    sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "temp_id_three")
+    # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
+    # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
+    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "filler")
+    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
+    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
+    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
     sql._retrieve_by_stream_name("stream_one")
     sql._retrieve_by_id(1)
     sql._retrieve_by_stream_token("stream_token_two")
@@ -505,9 +500,9 @@ def main():
     # stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
 
     print("~~~~~INSERT FILTER MEASURE COLUMN VALUE~~~~~")
-    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy_data', 1)
-    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'test data', 2)
-    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy data', 3)
+    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy_data sldkfj lksjf lsajdlfj sl', 1)
+    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'test data sdfadsfafwt ergreag erg ', 2)
+    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy data asdga ergawe gedawe erag', 3)
     sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
     sql._select_all_from_stream_lookup_table(dstream)
     sql._select_data_by_column_where(dstream, "`driver-id`", "unique_id", 3)

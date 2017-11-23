@@ -2,7 +2,8 @@
 Coordinator class
 
 """
-
+from copy import deepcopy
+from bson.objectid import ObjectId
 from Strom.strom.dstream.bstream import BStream
 from Strom.strom.database.mongo_management import MongoManager
 from Strom.strom.database.mariadb import SQL_Connection
@@ -20,25 +21,14 @@ class Coordinator(object):
 
         return insert_id
 
-    def _store_template_metadata(self, mongo_id, stream_token, stream_name, version):
-        """
-        stores template metadata in mariadb by calling mariadb insert_row method
-        :param mongo_id: the template's mongodb ib
-        :param stream_token: stream token
-        :param stream_name: stream name
-        :param version: stream version
-        :return: sql id for metadata
-        """
-        pass
-
     def _store_raw(self, data_list):
         ids = []
-        fake_id = 1
-        for i in data_list:
-            ids.append(fake_id)
-            fake_id += 1
 
-        print("Inserted rows: %s-%s") % (ids[0], ids[-1])
+        for dstream in data_list:
+            row_id = self.maria._insert_row_into_stream_lookup_table(dstream)
+            ids.append(row_id)
+
+        print("Inserted rows: %s-%s" % (ids[0], ids[-1]))
         return ids
 
     def _store_filtered(self, bstream):
@@ -46,17 +36,14 @@ class Coordinator(object):
         token = bstream['stream_token']
         zippies = {}
         for m,v in bstream['filter_measures'].items():
-            z = zip(m['val'], ids)
+            z = zip(v['val'], ids)
             zippies[m] = list(z)
 
         for measure,val_id_pair_list in zippies.items():
             for i in val_id_pair_list:
                 val = i[0]
                 id = i[1]
-                store(token, measure, val, id)
-
-        print("Filtered measures added")
-
+                self.maria._insert_filtered_measure_into_stream_lookup_table(token, measure, str(val), id)
 
     def _list_to_bstream(self, template, dstreams, ids):
         bstream = BStream(template, dstreams, ids)
@@ -66,7 +53,7 @@ class Coordinator(object):
     """
      def _apply_filters(self, bstream):
         filtered_bstream = bstream.apply_filters()
-        
+
         return filtered_bstream
 
     def _apply_derived_params(self, bstream):
@@ -84,24 +71,43 @@ class Coordinator(object):
         :param temp_id: template's unique id in mongodb
         :return: template json
         """
-        temp_id = "this will be a mariadb method for query"
+        print("Token: ",token)
+        temp_id = ObjectId(self.maria._return_template_id_for_latest_version_of_stream(token))
         template = self.mongo.get_by_id(temp_id, 'template')
 
         return template
 
+    def _retrieve_data_by_timestamp(self, dstream, time):
+        """
+        calls mariadb method to query stream lookup table and return the rows that fall within a time range, or just the matching row if the argument is a timestamp
+        """
+        # if time is a number
+        if isinstance(time, int) or isinstance(time, float):
+            return self.maria._retrieve_by_timestamp_range(dstream, time, time)
+        #  if time is an array or tuple (time range)
+        else:
+            start = time[0]
+            end = time[1]
+            return self.maria._retrieve_by_timestamp_range(dstream, start, end)
+
+
     def process_template(self, temp_dstream):
+        temp_dstream = deepcopy(temp_dstream)
         token = temp_dstream["stream_token"]
         name = temp_dstream["stream_name"]
         version = temp_dstream["version"]
-        mongo_id = self._store_json(temp_dstream, 'template')
-        inserted = self._store_template_metadata(mongo_id, token, name, version)
+        print(token, name, version)
+        mongo_id = str(self._store_json(temp_dstream, 'template'))
+        metadata_tabel_check =  self.maria._check_metadata_table_exists()
+        if not metadata_tabel_check:
+            self.maria._create_metadata_table()
+        self.maria._insert_row_into_metadata_table(name, token, version, mongo_id)
+        self.maria._create_stream_lookup_table(temp_dstream)
 
-        print("Template inserted into template table. Id: %s") % inserted
 
     def process_data_sync(self, dstream_list, token):
         # store raw dstream data, return list of ids
         stream_ids = self._store_raw(dstream_list)
-
         # retrieve most recent versioned dstream template
         template = self._retrieve_current_template(token)
 
@@ -121,15 +127,11 @@ class Coordinator(object):
         self._store_json(bstream, 'derived')
 
         # apply event transforms
+        bstream.find_events()
+        print(bstream['events'])
         # store events
-        # self._store_json(bstream, 'event')
-
+        self._store_json(bstream, 'event')
         print("whoop WHOOOOP")
 
-
-
-
-
-
-
-
+    def get_events(self, token):
+        return self.mongo.get_all_coll("event", token)

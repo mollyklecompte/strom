@@ -78,6 +78,11 @@ def apply_transformation(param_dict, bstream):
 
     if param_dict["func_type"] == "detect_event":
         transformer.add_timestamp(bstream["timestamp"])
+        transformer.load_measures(bstream["measures"])
+        if "filter_measures" in bstream:
+            transformer.load_measures(bstream["filter_measures"])
+        if "derived_measures" in bstream:
+            transformer.load_measures(bstream["derived_measures"])
         return transformer.transform_data()
     else:
         return map_to_measure(transformer.transform_data())
