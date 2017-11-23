@@ -295,6 +295,8 @@ class SQL_Connection:
             #     print("IN FOR LOOP")
             #     return [stream_token, filtered_measure, value, unique_id]
             print("Executed", self.cursor.statement)
+            if (self.cursor.rowcount != 1):
+                raise KeyError
             return self.cursor.statement
         except mariadb.Error as err:
             raise err
