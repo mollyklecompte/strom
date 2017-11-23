@@ -40,13 +40,22 @@ class TestCoordinator(unittest.TestCase):
         storeage_ids = self.coordinator._store_raw(self.dstreams)
         self.assertEqual(len(storeage_ids), len(self.dstreams))
         self.assertFalse(None in storeage_ids)
-        bstream = selfcoordinator._list_to_bstream(tsrf_dstream, self.dstreams, storeage_ids)
+        qt = self.coordinator._retrieve_current_template(tsrf_dstream["stream_token"])
+        bstream = self.coordinator._list_to_bstream(qt, self.dstreams, storeage_ids)
+        bstream.apply_filters()
+        self.coordinator._store_filtered(bstream)
+        bstream['stream_token'] = "this_token_is_bad"
+        self.assertRaises(ProgrammingError,lambda: self.coordinator._store_filtered(bstream))
+        bstream['stream_token'] = cur_stream_token
+        bstream.ids = ["a","b"]
+        self.coordinator._store_filtered(bstream)
+
 
         for ds in self.dstreams:
             ds["stream_token"] = "not_a_real_token"
         self.assertRaises(ProgrammingError, lambda: self.coordinator._store_raw(self.dstreams))
 
-
+"""
     def test_store_json(self):
         inserted_template_id = self.coordinator._store_json(self.dstream_template, 'template')
         inserted_derived_id = self.coordinator._store_json(self.bstream, 'derived')
@@ -94,6 +103,6 @@ class TestCoordinator(unittest.TestCase):
         self.assertIn("events", stored_events[0])
         for event in tpds_dstream["event_rules"].keys():
             self.assertIn(event, stored_events[0]["events"])
-
+"""
 if __name__ == "__main__":
     unittest.main()
