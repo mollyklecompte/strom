@@ -23,7 +23,7 @@ class SQL_Connection:
         dbconfig = {
             "user": 'user',
             "password": '123',
-            "host": '172.17.0.3',
+            "host": '0.0.0.0',
             "database": 'test'
         }
         self.mariadb_connection = mariadb.connect(pool_name = "my_pool", pool_size = 13, **dbconfig)
@@ -295,6 +295,8 @@ class SQL_Connection:
             #     print("IN FOR LOOP")
             #     return [stream_token, filtered_measure, value, unique_id]
             print("Executed", self.cursor.statement)
+            if (self.cursor.rowcount != 1):
+                raise KeyError
             return self.cursor.statement
         except mariadb.Error as err:
             raise err

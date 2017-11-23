@@ -57,13 +57,10 @@ def get(this):
     time = request.args.get('time', '')
     token = request.args.get('token', '')
     print(this) #   endpoint: raw, filtered, derived_params, events
-    print(time_range)
-    print(time)
-    print(token)
     if time_range:
         if time_range == 'ALL':
-            print("10 x 10^10") #   TEMP
-    return '', 200
+            result = cd.get_events(token)
+    return str(result), 200
 
 #   POST
 app.add_url_rule('/api/define', 'define', define, methods=['POST'])
