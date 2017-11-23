@@ -59,8 +59,8 @@ def get(this):
     print(this) #   endpoint: raw, filtered, derived_params, events
     if time_range:
         if time_range == 'ALL':
-            pass
-    return '', 200
+            result = cd.get_events(token)
+    return str(result), 200
 
 #   POST
 app.add_url_rule('/api/define', 'define', define, methods=['POST'])
