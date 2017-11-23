@@ -49,16 +49,13 @@ class SQL_Connection:
             "  `template_id` varchar(60) NOT NULL,"
             "  PRIMARY KEY (`unique_id`)"
             ") ENGINE=InnoDB")
+        print("Creating table")
         try:
-            print("Creating table")
             self.cursor.execute(table)
         except mariadb.Error as err:
             if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-                print("already exists")
-            else:
-                print(err.msg)
-        else:
-            print("OK")
+                print("table already exists")
+            raise err
 
     def _insert_row_into_metadata_table(self, stream_name, stream_token, version, template_id):
         add_row = ("INSERT INTO template_metadata "
@@ -66,16 +63,13 @@ class SQL_Connection:
         "VALUES (%s, %s, %s, %s)")
         stringified_stream_token_uuid = str(stream_token).replace("-", "_")
         row_columns = (stream_name, stringified_stream_token_uuid, version, template_id)
-
         try:
             print("Inserting row")
             self.cursor.execute(add_row, row_columns)
             self.mariadb_connection.commit()
             print("Row inserted")
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
     def _retrieve_by_stream_name(self, stream_name):
         query = ('SELECT * FROM template_metadata WHERE stream_name = %s')
@@ -86,9 +80,7 @@ class SQL_Connection:
                 print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
                 return [unique_id, stream_name, stream_token, float(version), template_id]
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
     def _retrieve_by_id(self, unique_id):
         query = ("SELECT * FROM template_metadata WHERE unique_id = %s")
@@ -99,9 +91,7 @@ class SQL_Connection:
                 print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
                 return [unique_id, stream_name, stream_token, float(version), template_id]
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
     def _retrieve_by_stream_token(self, stream_token):
         stringified_stream_token_uuid = str(stream_token).replace("-", "_")
@@ -113,9 +103,7 @@ class SQL_Connection:
                 print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
                 return [unique_id, stream_name, stream_token, float(version), template_id]
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
     def _return_template_id_for_latest_version_of_stream(self, stream_token):
         stringified_stream_token_uuid = str(stream_token).replace("-", "_")
@@ -134,10 +122,7 @@ class SQL_Connection:
             else:
                 raise mariadb.Error
         except mariadb.Error as err:
-            print(err.msg)
             raise err
-        else:
-            print("OK")
 
     def _select_all_from_metadata_table(self):
         query = ("SELECT * FROM template_metadata")
@@ -151,9 +136,7 @@ class SQL_Connection:
             for row in results:
                 print(row)
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
     def _check_metadata_table_exists(self):
         query = ("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'test' AND table_name = 'template_metadata'")
@@ -167,10 +150,7 @@ class SQL_Connection:
             else:
                 return False
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
-
+            raise err
 
 # ***** Stream Token Table and Methods *****
 
@@ -221,17 +201,14 @@ class SQL_Connection:
             ") ENGINE=InnoDB" % (stringified_stream_token_uuid, measure_columns, uid_columns, filter_columns))
 
         dstream_particulars = (measure_columns, uid_columns, filter_columns)
-
         try:
             print("Creating table")
             self.cursor.execute(table)
         except mariadb.Error as err:
             if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-                print("already exists")
+                print("table already exists")
             else:
-                print(err.msg)
-        else:
-            print("OK")
+                raise err
 
     def _insert_row_into_stream_lookup_table(self, dstream):
         # print("*** INPUT DSTREAM ***", dstream)
@@ -291,7 +268,6 @@ class SQL_Connection:
 
         query = ("INSERT INTO %s %s VALUES %s" % (stringified_stream_token_uuid, columns, values))
         # print("~~~~~~~~ QUERY ~~~~~~~~", query);
-
         try:
             print("Inserting row into table ", stringified_stream_token_uuid)
             self.cursor.execute(query)
@@ -303,9 +279,7 @@ class SQL_Connection:
             print(self.cursor.lastrowid)
             return self.cursor.lastrowid
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
     def _insert_filtered_measure_into_stream_lookup_table(self, stream_token, filtered_measure, value, unique_id):
         stringified_stream_token_uuid = str(stream_token).replace("-", "_")
@@ -323,9 +297,7 @@ class SQL_Connection:
             print("Executed", self.cursor.statement)
             return self.cursor.statement
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
     def _retrieve_by_timestamp_range(self, dstream, start, end):
         stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
@@ -342,9 +314,7 @@ class SQL_Connection:
                 print(row)
             return results
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
+            raise err
 
     def _select_all_from_stream_lookup_table(self, dstream):
         stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
@@ -359,10 +329,7 @@ class SQL_Connection:
                 print(row)
             return results
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
-
+            raise err
 
     def _select_data_by_column_where(self, dstream, data_column, filter_column, value):
         # Method created for testing purposes. Not intended for use by the coordinator (for now).
@@ -379,12 +346,7 @@ class SQL_Connection:
             print(results)
             return results
         except mariadb.Error as err:
-            print(err.msg)
-        else:
-            print("OK")
-
-
-
+            raise err
 
 single_dstream = {
     'stream_name': 'driver_data',
