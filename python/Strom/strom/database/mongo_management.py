@@ -2,7 +2,6 @@
 
 This class contains methods for inserting and reading from Mongodb
 """
-
 from pymongo import MongoClient
 
 __version__  = "0.1"

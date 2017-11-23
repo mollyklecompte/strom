@@ -1,1 +1,0 @@
-{"id": 0, "location": [-122.69081962885704, 45.52110054870811], "timestamp": 1510603538107, "region-code": "PDX", "driver-id": "Molly Mora", "stream_token": "bf45d432-cbe9-11e7-b7b6-f8a96333e4a9"}
