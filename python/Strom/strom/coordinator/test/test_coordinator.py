@@ -5,7 +5,7 @@ from Strom.strom.coordinator.coordinator import Coordinator
 from Strom.strom.dstream.dstream import DStream
 from Strom.strom.dstream.bstream import BStream
 from Strom.strom.transform.event import Event
-
+from mysql.connector.errors import ProgrammingError
 class TestCoordinator(unittest.TestCase):
     def setUp(self):
         self.coordinator = Coordinator()
@@ -27,6 +27,25 @@ class TestCoordinator(unittest.TestCase):
         self.bstream.apply_filters()
         self.bstream.apply_dparam_rules()
         self.bstream.find_events()
+
+    def test_store_raw_filtered(self):
+        tsrf_dstream = deepcopy(self.dstream_template)
+        tsrf_dstream.pop("_id", None)
+        cur_stream_token = "storing_token"
+        tsrf_dstream["stream_token"] = cur_stream_token
+        for ds in self.dstreams:
+            ds["stream_token"] = cur_stream_token
+
+        self.coordinator.process_template(tsrf_dstream)
+        storeage_ids = self.coordinator._store_raw(self.dstreams)
+        self.assertEqual(len(storeage_ids), len(self.dstreams))
+        self.assertFalse(None in storeage_ids)
+        bstream = selfcoordinator._list_to_bstream(tsrf_dstream, self.dstreams, storeage_ids)
+
+        for ds in self.dstreams:
+            ds["stream_token"] = "not_a_real_token"
+        self.assertRaises(ProgrammingError, lambda: self.coordinator._store_raw(self.dstreams))
+
 
     def test_store_json(self):
         inserted_template_id = self.coordinator._store_json(self.dstream_template, 'template')
