@@ -99,8 +99,8 @@ class SQL_Connection:
             self.cursor.execute(query, [unique_id])
             for (unique_id, stream_name, stream_token, version, template_id) in self.cursor:
                 print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
-                # return [unique_id, stream_name, stream_token, float(version), template_id]
-            return self.cursor.rowcount
+                return [unique_id, stream_name, stream_token, float(version), template_id]
+            # return self.cursor.rowcount
         except mariadb.Error as err:
             raise err
 
@@ -310,14 +310,15 @@ class SQL_Connection:
             print("Executed", self.cursor.statement)
             if (self.cursor.rowcount != 1):
                 raise KeyError
-            return self.cursor.statement
+            # return self.cursor.statement
+            return self.cursor.rowcount
         except mariadb.Error as err:
             raise err
 
     def _retrieve_by_timestamp_range(self, dstream, start, end):
         stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
         dstream_particulars = (stringified_stream_token_uuid, start, end)
-        query = ("SELECT * FROM %s WHERE CAST(time_stamp AS DATE) BETWEEN %s AND %s" % (stringified_stream_token_uuid, start, end))
+        query = ("SELECT * FROM %s WHERE time_stamp BETWEEN %s AND %s" % (stringified_stream_token_uuid, start, end))
         # query = ("SELECT * FROM %s WHERE time_stamp >= %s AND time_stamp <= %s" % (stringified_stream_token_uuid, start, end))
         # print("~~~~~~~~ QUERY ~~~~~~~~", query);
         try:
