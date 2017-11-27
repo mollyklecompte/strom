@@ -11,7 +11,6 @@ class TestSQL_Connection(unittest.TestCase):
         self.cursor = self.cnx.cursor
         self.pool_name = self.cnx.pool_name
         demo_data_dir = "demo_data/"
-        # self.dstream_template = json.load(open(demo_data_dir + "demo_template.txt"))
         self.dstream = json.load(open(demo_data_dir+"demo_template.txt"))
         self.dstreams = json.load(open(demo_data_dir+"first_seven_from_demo_trip.txt"))
 
@@ -51,11 +50,6 @@ class TestSQL_Connection(unittest.TestCase):
         # Insert rows into stream_lookup_table
         for dstream in self.dstreams:
             self.cnx._insert_row_into_stream_lookup_table(dstream)
-        # self.cnx._insert_row_into_stream_lookup_table(single_dstream)
-        # self.cnx._insert_row_into_stream_lookup_table(second_single_dstream)
-        # self.cnx._insert_row_into_stream_lookup_table(third_single_dstream)
-        # self.cnx._insert_row_into_stream_lookup_table(fourth_single_dstream)
-        # self.cnx._insert_row_into_stream_lookup_table(fifth_single_dstream)
 
         # Insert value into filtered measure in stream_lookup_table
         # self.assertEqual(self.cnx._insert_filtered_measure_into_stream_lookup_table("abc123", "buttery_location", "dummy data dummy data dummy data dummy data", 1), "UPDATE abc123 SET buttery_location = 'dummy data dummy data dummy data dummy data' WHERE unique_id = 1")
