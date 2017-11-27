@@ -67,7 +67,12 @@ class SQL_Connection:
             print("Inserting row")
             self.cursor.execute(add_row, row_columns)
             self.mariadb_connection.commit()
-            print("Row inserted")
+            # rowcount property should == 1 for this single row insert method
+            if (self.cursor.rowcount != 1):
+                raise KeyError
+            else:
+                return self.cursor.rowcount
+                print("Row inserted")
         except mariadb.Error as err:
             raise err
 
@@ -76,9 +81,14 @@ class SQL_Connection:
         try:
             print("Querying by stream name")
             self.cursor.execute(query, [stream_name])
-            for (unique_id, stream_name, stream_token, version, template_id) in self.cursor:
-                print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
-                return [unique_id, stream_name, stream_token, float(version), template_id]
+            # for (unique_id, stream_name, stream_token, version, template_id) in self.cursor:
+            #     print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
+            #     return [unique_id, stream_name, stream_token, float(version), template_id]
+            results = self.cursor.fetchall()
+            for row in results:
+                # print(row)
+                print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(row[0], row[1], row[2], row[3], row[4]))
+            return self.cursor.rowcount
         except mariadb.Error as err:
             raise err
 
@@ -89,7 +99,8 @@ class SQL_Connection:
             self.cursor.execute(query, [unique_id])
             for (unique_id, stream_name, stream_token, version, template_id) in self.cursor:
                 print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
-                return [unique_id, stream_name, stream_token, float(version), template_id]
+                # return [unique_id, stream_name, stream_token, float(version), template_id]
+            return self.cursor.rowcount
         except mariadb.Error as err:
             raise err
 
@@ -101,7 +112,8 @@ class SQL_Connection:
             self.cursor.execute(query, [stringified_stream_token_uuid])
             for (unique_id, stream_name, stream_token, version, template_id) in self.cursor:
                 print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
-                return [unique_id, stream_name, stream_token, float(version), template_id]
+                # return [unique_id, stream_name, stream_token, float(version), template_id]
+            return self.cursor.rowcount
         except mariadb.Error as err:
             raise err
 
@@ -135,6 +147,7 @@ class SQL_Connection:
             results = self.cursor.fetchall()
             for row in results:
                 print(row)
+            return self.cursor.rowcount
         except mariadb.Error as err:
             raise err
 
@@ -314,7 +327,8 @@ class SQL_Connection:
             results = self.cursor.fetchall()
             for row in results:
                 print(row)
-            return results
+            # return results
+            return self.cursor.rowcount
         except mariadb.Error as err:
             raise err
 
@@ -329,7 +343,8 @@ class SQL_Connection:
             results = self.cursor.fetchall()
             for row in results:
                 print(row)
-            return results
+            # return results
+            return self.cursor.rowcount
         except mariadb.Error as err:
             raise err
 
@@ -346,7 +361,8 @@ class SQL_Connection:
             # for row in results:
             #     print(row)
             print(results)
-            return results
+            # return results
+            return self.cursor.rowcount
         except mariadb.Error as err:
             raise err
 
@@ -445,6 +461,7 @@ def main():
     sql._create_metadata_table()
     sql._check_metadata_table_exists()
     sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "temp_id_one")
+    # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "temp_id_one")
     sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "temp_id_two")
     sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "temp_id_three")
     # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
@@ -453,8 +470,10 @@ def main():
     # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
     # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
     # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
+    print("RETRIEVE BY STREAM NAME")
     sql._retrieve_by_stream_name("stream_one")
     sql._retrieve_by_id(1)
+    # print("RETRIEVE ONE stream_two ROW")
     sql._retrieve_by_stream_token("stream_token_two")
     sql._return_template_id_for_latest_version_of_stream("stream_token_two")
     sql._select_all_from_metadata_table()
