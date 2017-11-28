@@ -59,6 +59,7 @@ def select_transform(func_type, func_name):
     return func
 
 def apply_transformation(param_dict, bstream):
+    param_dict["stream_token"] = bstream["stream_token"]
     if "func_name" in param_dict and "func_type" in param_dict:
         transformer = select_transform(param_dict["func_type"], param_dict["func_name"])
     else:
