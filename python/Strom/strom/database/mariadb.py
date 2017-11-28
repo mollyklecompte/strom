@@ -14,6 +14,12 @@ from mysql.connector import errorcode
 from ..dstream.dstream import DStream
 from ..dstream.filter_rules import FilterRules
 
+def _add_quotes_to_dictionary(dict):
+    return '"' + str(dict) + '"'
+
+def _stringify_uuid(uuid):
+    return str(uuid).replace("-", "_")
+
 class SQL_Connection:
     def __init__(self):
         # Prevent connection leakage by manually invoking the Python garbage collector to avoid
@@ -62,13 +68,12 @@ class SQL_Connection:
         add_row = ("INSERT INTO template_metadata "
         "(stream_name, stream_token, version, template_id) "
         "VALUES (%s, %s, %s, %s)")
-        stringified_stream_token_uuid = str(stream_token).replace("-", "_")
+        stringified_stream_token_uuid = _stringify_uuid(stream_token)
         row_columns = (stream_name, stringified_stream_token_uuid, version, template_id)
         try:
             logging.info("Inserting row")
             self.cursor.execute(add_row, row_columns)
             self.mariadb_connection.commit()
-            # rowcount property should == 1 for this single row insert method
             if (self.cursor.rowcount != 1):
                 raise KeyError
             else:
@@ -82,12 +87,8 @@ class SQL_Connection:
         try:
             logging.info("Querying by stream name")
             self.cursor.execute(query, [stream_name])
-            # for (unique_id, stream_name, stream_token, version, template_id) in self.cursor:
-            #     print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
-            #     return [unique_id, stream_name, stream_token, float(version), template_id]
             results = self.cursor.fetchall()
             for row in results:
-                # print(row)
                 logging.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(row[0], row[1], row[2], row[3], row[4]))
             return self.cursor.rowcount
         except mariadb.Error as err:
@@ -101,33 +102,28 @@ class SQL_Connection:
             for (unique_id, stream_name, stream_token, version, template_id) in self.cursor:
                 logging.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
                 return [unique_id, stream_name, stream_token, float(version), template_id]
-            # return self.cursor.rowcount
         except mariadb.Error as err:
             raise err
 
     def _retrieve_by_stream_token(self, stream_token):
-        stringified_stream_token_uuid = str(stream_token).replace("-", "_")
+        stringified_stream_token_uuid = _stringify_uuid(stream_token)
         query = ("SELECT * FROM template_metadata WHERE stream_token = %s")
         try:
             logging.info("Querying by stream token")
             self.cursor.execute(query, [stringified_stream_token_uuid])
             for (unique_id, stream_name, stream_token, version, template_id) in self.cursor:
                 logging.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
-                # return [unique_id, stream_name, stream_token, float(version), template_id]
             return self.cursor.rowcount
         except mariadb.Error as err:
             raise err
 
     def _return_template_id_for_latest_version_of_stream(self, stream_token):
-        stringified_stream_token_uuid = str(stream_token).replace("-", "_")
+        stringified_stream_token_uuid = _stringify_uuid(stream_token)
         query = ("SELECT `template_id` FROM template_metadata WHERE stream_token = %s AND version = ("
                 "SELECT MAX(version) FROM template_metadata WHERE stream_token = %s)")
         try:
             logging.info("Returning template_id for latest version of stream by stream_token")
             self.cursor.execute(query, [stringified_stream_token_uuid, stringified_stream_token_uuid])
-            # for (template_id) in self.cursor:
-            #     logging.info("template_id: {}".format(template_id))
-            #     return template_id
             result = self.cursor.fetchall()
             if len(result) == 1:
                 logging.info(result[0][0])
@@ -142,9 +138,6 @@ class SQL_Connection:
         try:
             logging.info("Returning all data from template_metadata table")
             self.cursor.execute(query)
-            # for (unique_id, stream_name, stream_token, version, template_id, derived_id, events_id) in self.cursor:
-            #     logging.info("uid: {}, name: {}, stream: {}, version: {}, template id: {}, derived id: {}, events id: {}".format(unique_id, stream_name, stream_token, version, template_id, derived_id, events_id))
-            #     return [unique_id, stream_name, stream_token, version, template_id, derived_id, events_id]
             results = self.cursor.fetchall()
             for row in results:
                 logging.info(row)
@@ -158,7 +151,6 @@ class SQL_Connection:
             logging.info("Checking if template_metadata table exists")
             self.cursor.execute(query)
             results = self.cursor.fetchall()
-            # logging.info(results[0][0])
             if results[0][0] == 1:
                 return True
             else:
@@ -173,7 +165,6 @@ class SQL_Connection:
             logging.info("Checking if table", stringified_table_name, "exists")
             self.cursor.execute(query, [stringified_table_name])
             results = self.cursor.fetchall()
-            # logging.info(results[0][0])
             if results[0][0] == 1:
                 return True
             else:
@@ -184,7 +175,6 @@ class SQL_Connection:
 # ***** Stream Token Table and Methods *****
 
     def _create_stream_lookup_table(self, dstream):
-        # take in a dstream python object
 
         measure_columns = ""
         # for each item in the measures dictionary
@@ -214,8 +204,6 @@ class SQL_Connection:
 
         # parse stream_token to stringify and replace hyphens with underscores
         stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
-        # print("***STREAM TOKEN WITH UNDERSCORES***", stringified_stream_token_uuid)
-        # stringified_stream_token_uuid = "stream_token_standin"
 
         table = ("CREATE TABLE %s ("
             "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
@@ -243,7 +231,6 @@ class SQL_Connection:
         # print("*** INPUT DSTREAM ***", dstream)
         # parse stream_token to stringify and replace hyphens with underscores
         stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
-        # print("***STREAM TOKEN WITH UNDERSCORES***", stringified_stream_token_uuid)
 
         measure_columns = ""
         # for each item in the measures dictionary
@@ -279,9 +266,6 @@ class SQL_Connection:
         for key, value in dstream["user_ids"].items():
             uid_values += ' "' + str(value) + '",'
 
-        def _dictionary_to_string(dict):
-            return '"' + str(dict) + '"'
-
         values = (
             "(%s, "
             "%s,"
@@ -289,7 +273,7 @@ class SQL_Connection:
             "%s"
             "%s,"
             "%s)"
-        % (dstream["version"], dstream["timestamp"], measure_values, uid_values, _dictionary_to_string(dstream["tags"]), _dictionary_to_string(dstream["fields"])))
+        % (dstream["version"], dstream["timestamp"], measure_values, uid_values, _add_quotes_to_dictionary(dstream["tags"]), _add_quotes_to_dictionary(dstream["fields"])))
 
         # print("****** COLUMNS ******", columns)
         # print("****** VALUES ******", values)
@@ -310,63 +294,51 @@ class SQL_Connection:
             raise err
 
     def _insert_filtered_measure_into_stream_lookup_table(self, stream_token, filtered_measure, value, unique_id):
-        stringified_stream_token_uuid = str(stream_token).replace("-", "_")
+        stringified_stream_token_uuid = _stringify_uuid(stream_token)
         query = ("UPDATE %s SET %s " % (stringified_stream_token_uuid, filtered_measure)) + "= %s WHERE unique_id = %s"
-        # print(len(value))
         parameters = (value, unique_id)
         try:
             logging.info("Updating", filtered_measure, "at", unique_id)
             self.cursor.execute(query, parameters)
             self.mariadb_connection.commit()
-            # for (stream_token, filtered_measure, value, version, unique_id) in self.cursor:
-            #     logging.info("Inserted {} into column {} where unique_id = {} into table {}".format(value, filtered_measure, unique_id, stream_token))
-            #     logging.info("IN FOR LOOP")
-            #     return [stream_token, filtered_measure, value, unique_id]
             logging.info("Executed", self.cursor.statement)
             if (self.cursor.rowcount != 1):
                 raise KeyError
-            # return self.cursor.statement
             return self.cursor.rowcount
         except mariadb.Error as err:
             raise err
 
     def _retrieve_by_timestamp_range(self, dstream, start, end):
-        stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
+        stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
         dstream_particulars = (stringified_stream_token_uuid, start, end)
-        query = ("SELECT * FROM %s WHERE time_stamp BETWEEN %s AND %s" % (stringified_stream_token_uuid, start, end))
-        # query = ("SELECT * FROM %s WHERE time_stamp >= %s AND time_stamp <= %s" % (stringified_stream_token_uuid, start, end))
-        # print("~~~~~~~~ QUERY ~~~~~~~~", query);
+        query = ("SELECT * FROM %s " % (stringified_stream_token_uuid)) + "WHERE time_stamp BETWEEN %s AND %s"
         try:
             logging.info("Returning all records within timestamp range")
-            # self.cursor.execute(query, dstream_particulars)
-            self.cursor.execute(query)
+            self.cursor.execute(query, [start, end])
             results = self.cursor.fetchall()
             for row in results:
                 logging.info(row)
-            # return results
             return self.cursor.rowcount
         except mariadb.Error as err:
             raise err
 
     def _select_all_from_stream_lookup_table(self, dstream):
-        stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
+        stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
         query = ("SELECT * FROM %s" % stringified_stream_token_uuid)
         # logging.info("~~~~~~~~ QUERY ~~~~~~~~", query);
         try:
             logging.info("Returning all records from stream lookup table ", stringified_stream_token_uuid)
-            # self.cursor.execute(query, dstream_particulars)
             self.cursor.execute(query)
             results = self.cursor.fetchall()
             for row in results:
                 logging.info(row)
-            # return results
             return self.cursor.rowcount
         except mariadb.Error as err:
             raise err
 
     def _select_data_by_column_where(self, dstream, data_column, filter_column, value):
         # Method created for testing purposes. Not intended for use by the coordinator (for now).
-        stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
+        stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
         query = ("SELECT %s FROM %s WHERE %s = %s" % (data_column, stringified_stream_token_uuid, filter_column, value))
         # logging.info("~~~~~~~~ QUERY ~~~~~~~~", query);
         try:
@@ -374,10 +346,171 @@ class SQL_Connection:
             # self.cursor.execute(query, dstream_particulars)
             self.cursor.execute(query)
             results = self.cursor.fetchall()
-            # for row in results:
-            #     logging.info(row)
             logging.info(results)
-            # return results
             return self.cursor.rowcount
         except mariadb.Error as err:
             raise err
+
+single_dstream = {
+    'stream_name': 'driver_data',
+    'version': 0,
+    'stream_token': 'test_token',
+    'timestamp': 20171117,
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
+    'fields': {'region-code': 'PDX'},
+    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
+    'tags': {},
+    'foreign_keys': [],
+    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
+    'dparam_rules': [],
+    'event_rules': {}
+}
+
+second_single_dstream = {
+    'stream_name': 'driver_data',
+    'version': 0,
+    'stream_token': 'test_token',
+    'timestamp': 20171118,
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
+    'fields': {'region-code': 'PDX'},
+    'user_ids': {'driver-id': 'Kelson Agnic', 'id': 0},
+    'tags': {},
+    'foreign_keys': [],
+    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
+    'dparam_rules': [],
+    'event_rules': {}
+}
+
+third_single_dstream = {
+    'stream_name': 'driver_data',
+    'version': 0,
+    'stream_token': 'test_token',
+    'timestamp': 20171119,
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
+    'fields': {'region-code': 'PDX'},
+    'user_ids': {'driver-id': 'David Parvizi', 'id': 0},
+    'tags': {},
+    'foreign_keys': [],
+    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
+    'dparam_rules': [],
+    'event_rules': {}
+}
+
+fourth_single_dstream = {
+    'stream_name': 'driver_data',
+    'version': 0,
+    'stream_token': 'test_token',
+    'timestamp': 20171120,
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
+    'fields': {'region-code': 'PDX'},
+    'user_ids': {'driver-id': 'Justine LeCompte', 'id': 0},
+    'tags': {},
+    'foreign_keys': [],
+    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
+    'dparam_rules': [],
+    'event_rules': {}
+}
+
+fifth_single_dstream = {
+    'stream_name': 'driver_data',
+    'version': 0,
+    'stream_token': 'test_token',
+    'timestamp': 20171121,
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
+    'fields': {'region-code': 'PDX'},
+    'user_ids': {'driver-id': 'Adrian Wang', 'id': 0},
+    'tags': {},
+    'foreign_keys': [],
+    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
+    'dparam_rules': [],
+    'event_rules': {}
+}
+
+sixth_single_dstream = {
+    'stream_name': 'driver_data',
+    'version': 0,
+    'stream_token': 'test_token',
+    'timestamp': 20171122,
+    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
+    'fields': {'region-code': 'PDX'},
+    'user_ids': {'driver-id': 'Parham Nielsen', 'id': 0},
+    'tags': {},
+    'foreign_keys': [],
+    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
+    'dparam_rules': [],
+    'event_rules': {}
+}
+
+def main():
+    sql = SQL_Connection()
+    sql._create_metadata_table()
+    sql._check_metadata_table_exists()
+    sql._check_table_exists('template_metadata')
+    sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "temp_id_one")
+    # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "temp_id_one")
+    sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "temp_id_two")
+    sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "temp_id_three")
+    # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
+    # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
+    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "filler")
+    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
+    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
+    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
+    sql._retrieve_by_stream_name("stream_one")
+    sql._retrieve_by_id(1)
+    # print("RETRIEVE ONE stream_two ROW")
+    sql._retrieve_by_stream_token("stream_token_two")
+    sql._return_template_id_for_latest_version_of_stream("stream_token_two")
+    sql._select_all_from_metadata_table()
+
+
+
+# STREAM LOOKUP TABLE PRELIMINARY TESTS
+
+    dstream = DStream()
+    # print("***DSTREAM INITIALIZED***:", dstream)
+
+    dstream["stream_token"] = "gosh_darn"
+
+    second_row = copy.deepcopy(dstream)
+    third_row = copy.deepcopy(dstream)
+    fourth_row = copy.deepcopy(dstream)
+    fifth_row = copy.deepcopy(dstream)
+
+
+    dstream.load_from_json(single_dstream)
+
+    # print("@@@@ DSTREAM WITH DATA @@@@", dstream)
+
+    sql._create_stream_lookup_table(dstream)
+    sql._check_table_exists('gosh_darn')
+
+    second_row.load_from_json(second_single_dstream)
+    # print("@@@@ DSTREAM WITH second_single_dstream @@@@", second_row)
+    third_row.load_from_json(third_single_dstream)
+    # print("@@@@ DSTREAM WITH third_single_dstream @@@@", third_row)
+    fourth_row.load_from_json(fourth_single_dstream)
+    # print("@@@@ DSTREAM WITH fourth_single_dstream @@@@", fourth_row)
+    fifth_row.load_from_json(fifth_single_dstream)
+    # print("@@@@ DSTREAM WITH fifth_single_dstream @@@@", fifth_row)
+
+    sql._insert_row_into_stream_lookup_table(dstream)
+
+
+    sql._insert_row_into_stream_lookup_table(second_row)
+    sql._insert_row_into_stream_lookup_table(third_row)
+    sql._insert_row_into_stream_lookup_table(fourth_row)
+    sql._insert_row_into_stream_lookup_table(fifth_row)
+
+    # stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
+    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy_data sldkfj lksjf lsajdlfj sl', 1)
+    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'test data sdfadsfafwt ergreag erg ', 2)
+    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy data asdga ergawe gedawe erag', 3)
+    sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
+    sql._select_all_from_stream_lookup_table(dstream)
+    sql._select_data_by_column_where(dstream, "`driver-id`", "unique_id", 3)
+
+    gc.collect()
+    sql._close_connection()
+
+main()
