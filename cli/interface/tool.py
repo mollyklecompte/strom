@@ -202,28 +202,7 @@ def raw(time, utc, a, tk):
     """
     cert = tk.read()
     token = _collect_token(cert)
-    if a:
-        result = _api_GET("raw", "range", "ALL", token)
-    elif utc:
-        if len(utc) == 1:
-            result = _api_GET("raw", "time", utc[0], token)
-        elif len(utc) == 2:
-            result = _api_GET("raw", "range", utc, token)
-        else:
-            click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
-    elif time:
-        if len(time) == 1:
-            utime = _convert_to_utc(time[0])
-            result = _api_GET("raw", "time", utime, token)
-        elif len(time) == 2:
-            utime_zero = _convert_to_utc(time[0])
-            utime_one = _convert_to_utc(time[1])
-            utime = [utime_zero, utime_one]
-            result = _api_GET("raw", "range", utime, token)
-        else:
-            click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
-    else:
-        click.secho("No options given, try '--all'...", fg='white')
+    _check_options("raw", time, utc, a)
 
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
@@ -238,28 +217,7 @@ def filtered(time, utc, a, tk):
     """
     cert = tk.read()
     token = _collect_token(cert)
-    if a:
-        results = _api_GET("filtered", "range", "ALL", token)
-    elif utc:
-        if len(utc) == 1:
-            result = _api_GET("filtered", "time", utc[0], token)
-        elif len(utc) == 2:
-            result = _api_GET("filtered", "range", utc, token)
-        else:
-            click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
-    elif time:
-        if len(time) == 1:
-            utime = _convert_to_utc(time[0])
-            results = _api_GET("filtered", "time", utime, token)
-        elif len(time) == 2:
-            utime_zero = _convert_to_utc(time[0])
-            utime_one = _convert_to_utc(time[1])
-            utime = [utime_zero, utime_one]
-            results = _api_GET("filtered", "range", utime. token)
-        else:
-            click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
-    else:
-        click.secho("No options given, try '--all'...", fg='white')
+    _check_options("filtered", time, utc, a)
 
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
@@ -274,28 +232,7 @@ def derived_params(time, utc, a, tk):
     """
     cert = tk.read()
     token = _collect_token(cert)
-    if a:
-        result = _api_GET("derived_params", "range", "ALL", token)
-    elif utc:
-        if len(utc) == 1:
-            result = _api_GET("derived_params", "time", utc[0], token)
-        elif len(utc) == 2:
-            result = _api_GET("derived_params", "range", utc, token)
-        else:
-            click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
-    elif time:
-        if len(time) == 1:
-            utime = _convert_to_utc(time[0])
-            result = _api_GET("derived_params", "time", utime, token)
-        elif len(time) == 2:
-            utime_zero = _convert_to_utc(time[0])
-            utime_one = _convert_to_utc(time[1])
-            utime = [utime_zero, utime_one]
-            result = _api_GET("derived_params", "range", utime, token)
-        else:
-            click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
-    else:
-        click.secho("No options given, try '--all'...", fg='white')
+    _check_options("derived_params", time, utc, a)
 
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
@@ -310,28 +247,7 @@ def events(time, utc, a, tk):
     """
     cert = tk.read()
     token = _collect_token(cert)
-    if a:
-        result = _api_GET("events", "range", "ALL", token)
-    elif utc:
-        if len(utc) == 1:
-            result = _api_GET("events", "time", utc[0], token)
-        elif len(utc) == 2:
-            result = _api_GET("events", "range", utc, token)
-        else:
-            click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
-    elif time:
-        if len(time) == 1:
-            utime = _convert_to_utc(time[0])
-            result = _api_GET("events", "time", utime, token)
-        elif len(time) == 2:
-            utime_zero = _convert_to_utc(time[0])
-            utime_one = _convert_to_utc(time[1])
-            utime = [utime_zero, utime_one]
-            result = _api_GET("events", "range", utime, token)
-        else:
-            click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
-    else:
-        click.secho("No options given, try '--all'...", fg='white')
+    _check_options("events", time, utc, a)
 
 # d-stream group
 dstream.add_command(locate)
