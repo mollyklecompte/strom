@@ -6,6 +6,7 @@ from Strom.strom.dstream.dstream import DStream
 from Strom.strom.dstream.bstream import BStream
 from Strom.strom.transform.event import Event
 from mysql.connector.errors import ProgrammingError
+from pymongo.errors import DuplicateKeyError
 class TestCoordinator(unittest.TestCase):
     def setUp(self):
         self.coordinator = Coordinator()
@@ -91,6 +92,8 @@ class TestCoordinator(unittest.TestCase):
 
         tpt_dstream["version"] = 1
         ### TODO test with id, raises error ###
+        tpt_dstream["_id"] = qt["_id"]
+        self.assertRaises(DuplicateKeyError, lambda: self.coordinator.process_template(tpt_dstream))
 
         tpt_dstream.pop("_id", None)
         self.coordinator.process_template(tpt_dstream)
