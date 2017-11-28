@@ -7,8 +7,6 @@ __author__ = "Justine <justine@tura.io>"
 import copy
 import gc
 import logging
-# import mysql.connector as mariadb
-# from mysql.connector import errorcode
 
 import pymysql.cursors
 # from pymysql.err import pymysql.err.ProgrammingError, pymysql.err.InternalError
@@ -105,13 +103,7 @@ class SQL_Connection:
             logging.info("Querying by unique id")
             self.cursor.execute(query, [unique_id])
             result = self.cursor.fetchone()
-            print("_retrieve_by_id", result)
-            # for (unique_id, stream_name, stream_token, version, template_id) in self.cursor:
-            #     logging.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
-            #     print("_retrieve_by_id", unique_id, stream_name, stream_token, version, template_id)
-            #     return [unique_id, stream_name, stream_token, version, template_id]
             logging.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(result["unique_id"], result["stream_name"], result["stream_token"], result["version"], result["template_id"]))
-            print("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(result["unique_id"], result["stream_name"], result["stream_token"], result["version"], result["template_id"]))
             return result
         except pymysql.err.ProgrammingError as err:
             raise err
@@ -122,8 +114,6 @@ class SQL_Connection:
         try:
             logging.info("Querying by stream token")
             self.cursor.execute(query, [stringified_stream_token_uuid])
-            # for (unique_id, stream_name, stream_token, version, template_id) in self.cursor:
-            #     logging.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(unique_id, stream_name, stream_token, version, template_id))
             results = self.cursor.fetchall()
             for dictionary in results:
                 logging.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(dictionary["unique_id"], dictionary["stream_name"], dictionary["stream_token"], dictionary["version"], dictionary["template_id"]))
