@@ -47,7 +47,7 @@ class Coordinator(object):
 
     def _list_to_bstream(self, template, dstreams, ids):
         bstream = BStream(template, dstreams, ids)
-        bstream.aggregate()
+        bstream.aggregate
 
         return bstream
     """

@@ -59,6 +59,7 @@ class BStream(DStream):
         tags = [s["tags"] for s in self.dstreams]
         self["tags"] = {tagkey: [i[tagkey] for i in tags] for tagkey, v in self["tags"].items()}
 
+    @property
     def aggregate(self):
         self._aggregate_uids()
         self._aggregate_measures()
@@ -73,7 +74,6 @@ class BStream(DStream):
         for filter_rule in self["filters"]:
             self["filter_measures"][filter_rule["filter_name"]] = apply_transformation(filter_rule, self)[filter_rule["filter_name"]]
 
-
     def apply_dparam_rules(self):
         self["derived_measures"] = {}
         for dparam_rule in self["dparam_rules"]:
@@ -83,3 +83,4 @@ class BStream(DStream):
         self["events"] = {}
         for event_rule in self["event_rules"].values():
             self["events"][event_rule["event_name"]] = apply_transformation(event_rule, self)
+

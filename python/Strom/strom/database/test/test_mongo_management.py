@@ -1,21 +1,21 @@
 import unittest
+import json
 from Strom.strom.database.mongo_management import MongoManager
-from Strom.strom.dstream.dstream import DStream
 
 
 class TestMongoManager(unittest.TestCase):
     def setUp(self):
+        demo_data_dir = "Strom/demo_data/"
         self.manager = MongoManager()
-        self.dstream = DStream()
-        self.dstream["stream_name"] = 'driver_data'
-        self.dstream["stream_token"] = 'abc123'
+        self.dstream_template = json.load(open(demo_data_dir + "demo_template.txt"))
+        self.dstream_template["stream_token"] = "abc123"
         self.derived = {"stream_name": "driver_data", "version": 0, "stream_token": "abc123", "sources": {},'storage_rules': {}, 'ingest_rules': {}, 'engine_rules': {}, "timestamp": [1510603538107, 1510603538108, 1510603538109], "derived_measures":{"location": {"val": [[-122.69081962885704, 45.52110054870811], [-132.69081962885704, 55.52110054870811], [-142.69081962885704, 65.52110054870811]], "dtype": "float"}, "measure2": {"val": [13, 9, 4], "dtype": "int"}}, "fields": {"region-code": ["PDX", "PDX", "PDX"]}, "user_ids": {"driver-id": ["Molly Mora", "Molly Mora", "Molly Mora"], "id": [0, 0, 0]}, "tags": {"mood": ["chill", "big mood", "the last big mood"]}, "foreign_keys": [], "filters": [], "dparam_rules": [], "event_rules": {}, "template_id": "chadwick666"}
         self.events = {"stream_name": "driver_data", "version": 0, "stream_token": "abc123", "sources": {},'storage_rules': {}, 'ingest_rules': {}, 'engine_rules': {}, "timestamp": [1510603538107, 1510603538108, 1510603538109], "events":{"location": {"val": [[-122.69081962885704, 45.52110054870811], [-132.69081962885704, 55.52110054870811], [-142.69081962885704, 65.52110054870811]], "dtype": "float"}, "measure2": {"val": [13, 9, 4], "dtype": "int"}}, "fields": {"region-code": ["PDX", "PDX", "PDX"]}, "user_ids": {"driver-id": ["Molly Mora", "Molly Mora", "Molly Mora"], "id": [0, 0, 0]}, "tags": {"mood": ["chill", "big mood", "the last big mood"]}, "foreign_keys": [], "filters": [], "dparam_rules": [], "event_rules": {}, "template_id": "chadwick666"}
 
     def test_insert_retrieve(self):
-        token = self.dstream["stream_token"]
+        token = self.dstream_template["stream_token"]
 
-        inserted_id = self.manager.insert(self.dstream, 'template')
+        inserted_id = self.manager.insert(self.dstream_template, 'template')
         queried = self.manager.get_by_id(inserted_id, 'template')
 
         inserted_id2 = self.manager.insert(self.derived, 'derived')
