@@ -34,6 +34,7 @@ def _convert_to_utc(date_string):
     return dt.timestamp()
 
 def _api_POST(function, data_dict):
+    """ Takes name of endpoint and dict of data to post. """
     try:
         ret = requests.post(url + "/api/{}".format(function), data=data_dict)
     except:
@@ -44,6 +45,7 @@ def _api_POST(function, data_dict):
         return [ret.status_code, ret.text]
 
 def _api_GET(function, param, value, token):
+    """ Takes name of endpoint, time/range and its value, as well as token. """
     try:
         ret = requests.get(url + "/api/get/{}?".format(function) + "{}={}".format(param, value) + "&token={}".format(token))
     except:
@@ -52,6 +54,22 @@ def _api_GET(function, param, value, token):
         click.secho(str(ret.status_code), fg='yellow')
         click.secho(ret.text, fg='yellow')
         return [ret.status_code, ret.text]
+
+def _collect_token(cert):
+    try:
+        json_cert = json.loads(cert)
+    except:
+        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
+    else:
+        try:
+            token = json_cert["stream_token"]
+            if token is None:
+                raise ValueError
+        except:
+            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
+        else:
+            click.secho("Found stream_token: " + token + '\n', fg='white')
+            return token
 
 @click.group()
 @click.option('--version', '--v', 'version', is_flag=True, callback=_print_ver, expose_value=False, is_eager=True, help="Current version")
@@ -114,16 +132,10 @@ def add_source(source, kafka_topic, token):
     else:
         cert = token.read()
         #Try loading template as json and retrieving token, if success...pass
-        try:
-            json_cert = json.loads(cert)
-            tk = json_cert['stream_token']
-        except:
-            click.secho("\nThere was an error parsing that file and/or the token was not found!...\n", fg='yellow', reverse=True)
-        else:
-            click.secho("\nFound stream_token: " + tk, fg='white')
-            click.secho("\nSending source for this DStream...\n", fg='white')
-            #Try posting data to server, if success...return status_code
-            result = _api_POST("add-source", {'source':source, 'topic':kafka_topic, 'token':tk})
+        tk = _collect_token(cert)
+        click.secho("\nSending source for this DStream...\n", fg='white')
+        #Try posting data to server, if success...return status_code
+        result = _api_POST("add-source", {'source':source, 'topic':kafka_topic, 'token':tk})
 
 @click.command()
 @click.option('-filepath', '-f', 'filepath', prompt=True, type=click.Path(exists=True), help="File-path of data file to upload")
@@ -135,30 +147,22 @@ def load(filepath, token):
     #Try load client files as json, if success...pass
     try:
         json_data = json.load(open(filepath))
-        json_cert = json.loads(cert)
     except:
         click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
     else:
         #Try collect stream_token, if success...pass
+        tk = _collect_token(cert)
+        #Try set stream_token fields to collected token, if success...pass
         try:
-            tk = json_cert['stream_token']
-            if tk is None:
-                raise ValueError
+            with click.progressbar(json_data) as bar:
+                for obj in bar:
+                    obj['stream_token'] = tk
         except:
-            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
+            click.secho("Data file not correctly formatted!...\n", fg='red', reverse=True)
         else:
-            click.secho("Found stream_token: " + tk + '\n', fg='white')
-            #Try set stream_token fields to collected token, if success...pass
-            try:
-                with click.progressbar(json_data) as bar:
-                    for obj in bar:
-                        obj['stream_token'] = tk
-            except:
-                click.secho("Data file not correctly formatted!...\n", fg='red', reverse=True)
-            else:
-                click.secho("\nSending data...", fg='white')
-                #Try send data with token to server, if success...return status_code
-                result = _api_POST("load", {'data':json.dumps(json_data)})
+            click.secho("\nSending data...", fg='white')
+            #Try send data with token to server, if success...return status_code
+            result = _api_POST("load", {'data':json.dumps(json_data)})
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.command()
@@ -173,19 +177,7 @@ def raw(time, utc, a, tk):
      *Options can be supplied twice to indicate a range.
     """
     cert = tk.read()
-    try:
-        json_cert = json.loads(cert)
-    except:
-        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
-    else:
-        try:
-            token = json_cert['stream_token']
-            if token is None:
-                raise ValueError
-        except:
-            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
-        else:
-            click.secho("Found stream_token: " + token + '\n', fg='white')
+    token = _collect_token(cert)
     if a:
         result = _api_GET("raw", "range", "ALL", token)
     elif utc:
@@ -221,19 +213,7 @@ def filtered(time, utc, a, tk):
      *Options can be supplied twice to indicate a range.
     """
     cert = tk.read()
-    try:
-        json_cert = json.loads(cert)
-    except:
-        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
-    else:
-        try:
-            token = json_cert['stream_token']
-            if token is None:
-                raise ValueError
-        except:
-            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
-        else:
-            click.secho("Found stream_token: " + token + '\n', fg='white')
+    token = _collect_token(cert)
     if a:
         results = _api_GET("filtered", "range", "ALL", token)
     elif utc:
@@ -269,19 +249,7 @@ def derived_params(time, utc, a, tk):
      *Options can be supplied twice to indicate a range.
     """
     cert = tk.read()
-    try:
-        json_cert = json.loads(cert)
-    except:
-        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
-    else:
-        try:
-            token = json_cert['stream_token']
-            if token is None:
-                raise ValueError
-        except:
-            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
-        else:
-            click.secho("Found stream_token: " + token + '\n', fg='white')
+    token = _collect_token(cert)
     if a:
         result = _api_GET("derived_params", "range", "ALL", token)
     elif utc:
@@ -305,7 +273,6 @@ def derived_params(time, utc, a, tk):
     else:
         click.secho("No options given, try '--all'...", fg='white')
 
-
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
 @click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
@@ -318,19 +285,7 @@ def events(time, utc, a, tk):
      *Options can be supplied twice to indicate a range.
     """
     cert = tk.read()
-    try:
-        json_cert = json.loads(cert)
-    except:
-        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
-    else:
-        try:
-            token = json_cert['stream_token']
-            if token is None:
-                raise ValueError
-        except:
-            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
-        else:
-            click.secho("Found stream_token: " + token + '\n', fg='white')
+    token = _collect_token(cert)
     if a:
         result = _api_GET("events", "range", "ALL", token)
     elif utc:
@@ -361,7 +316,7 @@ dstream.add_command(define)
 dstream.add_command(add_source)
 dstream.add_command(load)
 #
-dstream.add_command(raw)
-dstream.add_command(filtered)
-dstream.add_command(derived_params)
+# dstream.add_command(raw)
+# dstream.add_command(filtered)
+# dstream.add_command(derived_params)
 dstream.add_command(events)
