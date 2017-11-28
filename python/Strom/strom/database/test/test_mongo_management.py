@@ -28,16 +28,15 @@ class TestMongoManager(unittest.TestCase):
 
 
     def test_get_all_coll(self):
-        self.manager.insert(self.bstream, 'derived')
-        self.manager.insert(self.bstream, 'derived')
-        self.manager.insert(self.bstream, 'event')
-        self.manager.insert(self.bstream, 'event')
-
         all_derived = self.manager.get_all_coll('derived', 'abc123')
         all_events = self.manager.get_all_coll('event', 'abc123')
 
         self.assertTrue(len(all_derived) >= 2)
         self.assertTrue(len(all_events) >= 2)
+        self.assertIn(self.manager.derived_coll_suffix, all_derived[-1].keys())
+        self.assertIn(self.manager.event_coll_suffix, all_events[-1].keys())
+        self.assertNotIn(self.manager.event_coll_suffix, all_derived[-1].keys())
+        self.assertNotIn(self.manager.derived_coll_suffix, all_events[-1].keys())
 
 
 if __name__ == "__main__":
