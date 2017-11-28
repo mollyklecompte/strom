@@ -59,6 +59,9 @@ class TestDStream(unittest.TestCase):
         self.dstream._publish_version()
         self.assertEqual(old_version+1, self.dstream["version"])
 
+    def test_load_from_json(self):
+        pass
+
     def test_define(self):
         storage_rules = {"store":"yes"}
         ingestion_rules = {"frequency":"Not too fast, you don't want to upset your tummy"}

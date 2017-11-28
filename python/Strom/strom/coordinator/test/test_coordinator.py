@@ -36,6 +36,9 @@ class TestCoordinator(unittest.TestCase):
         for ds in self.dstreams:
             ds["stream_token"] = cur_stream_token
 
+        self.assertRaises(ProgrammingError, lambda: self.coordinator._store_raw(self.dstreams))
+
+
         self.coordinator.process_template(tsrf_dstream)
         storeage_ids = self.coordinator._store_raw(self.dstreams)
         self.assertEqual(len(storeage_ids), len(self.dstreams))
@@ -87,13 +90,14 @@ class TestCoordinator(unittest.TestCase):
         self.assertEqual(qt["stream_name"], tpt_dstream["stream_name"])
 
         tpt_dstream["version"] = 1
+        ### TODO test with id, raises error ###
+
         tpt_dstream.pop("_id", None)
         self.coordinator.process_template(tpt_dstream)
         qt = self.coordinator._retrieve_current_template(tpt_dstream["stream_token"])
         self.assertEqual(qt["version"], 1)
 
     def test_process_data_sync(self):
-        print("testing process_data_sync")
         tpds_dstream = deepcopy(self.dstream_template)
         tpds_dstream.pop("_id", None)
         self.coordinator.process_template(tpds_dstream)
