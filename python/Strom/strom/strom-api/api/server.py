@@ -57,6 +57,8 @@ def get(this):
     time = request.args.get('time', '')
     token = request.args.get('token', '')
     print(this) #   endpoint: raw, filtered, derived_params, events
+    print(time)
+    print(time_range)
     if time_range:
         if time_range == 'ALL':
             result = cd.get_events(token)
