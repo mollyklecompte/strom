@@ -34,6 +34,7 @@ class TestApplyTransformer(unittest.TestCase):
         self.assertIsInstance(butter, ButterLowpass)
 
     def test_apply_transformation(self):
+        ### TODO: Update to demo data ###
         bstream = json.load(open("Strom/strom/transform/bstream.txt"))
         heading_params = {}
         heading_params["func_name"] = "DeriveHeading"
