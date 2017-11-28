@@ -33,6 +33,26 @@ def _convert_to_utc(date_string):
     dt = datetime.datetime(year, month, day, hours, minutes, seconds)
     return dt.timestamp()
 
+def _api_POST(function, data_dict):
+    try:
+        ret = requests.post(url + "/api/{}".format(function), data=data_dict)
+    except:
+        click.secho("\nConnection Refused!...\n", fg='red', reverse=True)
+    else:
+        click.secho(str(ret.status_code), fg='yellow')
+        click.secho(ret.text, fg='yellow')
+        return [ret.status_code, ret.text]
+
+def _api_GET(function, param, value, token):
+    try:
+        ret = requests.get(url + "/api/get/{}?".format(function) + "{}={}".format(param, value) + "&token={}".format(token))
+    except:
+        click.secho("\nConnection Refused!...\n", fg='red', reverse=True)
+    else:
+        click.secho(str(ret.status_code), fg='yellow')
+        click.secho(ret.text, fg='yellow')
+        return [ret.status_code, ret.text]
+
 @click.group()
 @click.option('--version', '--v', 'version', is_flag=True, callback=_print_ver, expose_value=False, is_eager=True, help="Current version")
 def dstream():
@@ -59,34 +79,28 @@ def define(template):
     template_data = template.read()
     click.secho("\nSending template file...", fg='white')
     #Try send template to server, if success...collect stream_token
-    try:
-        ret = requests.post(url + "/api/define", data={'template':template_data})
-    except:
-        click.secho("\nConnection Refused!...\n", fg='red', reverse=True)
+    result = _api_POST("define", {'template':template_data})
+    if result[0] == 202:
+        token = result[1]
     else:
-        click.secho(str(ret.status_code), fg='yellow')
-        click.secho(ret.text, fg='yellow')
-        if ret.status_code == 202:
-            token = ret.text
-        else:
-            click.secho("\nServer Error!...\n", fg='red', reverse=True)
-        #Try load template as json and set stream_token field, if success...store tokenized template in new file
-        try:
-            json_template = json.loads(template_data)
-            json_template['stream_token'] = token
-            template_filename = os.path.basename(template.name) # NOTE: TEMP, REFACTOR OUT OF TRY
-            path_list = template_filename.split('.')
-            template_name = path_list[0]
-            template_ext = path_list[1] # NOTE: TEMP, FILE UPLOAD EXTENSION
-            print("Found File Extension: .{}".format(template_ext))  # NOTE: TEMP
-        except:
-            click.secho("\nProblem parsing template file!...\n", fg='red', reverse=True)
-        else:
-            click.secho("\nTemplate has been tokenized with...{}".format(json_template['stream_token']), fg='white')
-            template_file = open("{}_token.txt".format(template_name), "w")
-            template_file.write(json.dumps(json_template))
-            template_file.close()
-            click.secho("New template stored locally as '{}_token.txt'.\n".format(template_name))
+        click.secho("\nServer Error!...\n", fg='red', reverse=True)
+    #Try load template as json and set stream_token field, if success...store tokenized template in new file
+    try:
+        json_template = json.loads(template_data)
+        json_template['stream_token'] = token
+        template_filename = os.path.basename(template.name) # NOTE: TEMP, REFACTOR OUT OF TRY
+        path_list = template_filename.split('.')
+        template_name = path_list[0]
+        template_ext = path_list[1] # NOTE: TEMP, FILE UPLOAD EXTENSION
+        print("Found File Extension: .{}".format(template_ext))  # NOTE: TEMP
+    except:
+        click.secho("\nProblem parsing template file!...\n", fg='red', reverse=True)
+    else:
+        click.secho("\nTemplate has been tokenized with...{}".format(json_template['stream_token']), fg='white')
+        template_file = open("{}_token.txt".format(template_name), "w")
+        template_file.write(json.dumps(json_template))
+        template_file.close()
+        click.secho("New template stored locally as '{}_token.txt'.\n".format(template_name))
 
 @click.command()
 @click.option('-source', '-s', 'source', prompt=True, type=click.Choice(['kafka', 'file']), help="Specify source of data")
@@ -109,13 +123,7 @@ def add_source(source, kafka_topic, token):
             click.secho("\nFound stream_token: " + tk, fg='white')
             click.secho("\nSending source for this DStream...\n", fg='white')
             #Try posting data to server, if success...return status_code
-            try:
-                ret = requests.post(url + "/api/add-source", data={'source':source, 'topic':kafka_topic, 'token':tk})
-            except:
-                click.secho("\nConnection Refused!...\n", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text + '\n', fg='yellow')
+            result = _api_POST("add-source", {'source':source, 'topic':kafka_topic, 'token':tk})
 
 @click.command()
 @click.option('-filepath', '-f', 'filepath', prompt=True, type=click.Path(exists=True), help="File-path of data file to upload")
@@ -150,13 +158,7 @@ def load(filepath, token):
             else:
                 click.secho("\nSending data...", fg='white')
                 #Try send data with token to server, if success...return status_code
-                try:
-                    ret = requests.post(url + "/api/load", data={'data':json.dumps(json_data)})
-                except:
-                    click.secho("Connection Refused!...\n", fg='red', reverse=True)
-                else:
-                    click.secho(str(ret.status_code), fg='yellow')
-                    click.secho(ret.text + '\n', fg='yellow')
+                result = _api_POST("load", {'data':json.dumps(json_data)})
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.command()
@@ -185,53 +187,23 @@ def raw(time, utc, a, tk):
         else:
             click.secho("Found stream_token: " + token + '\n', fg='white')
     if a:
-        try:
-            ret = requests.get(url + "/api/get/raw?range=ALL&token={}".format(token))
-        except:
-            click.secho("Connection Refused!...", fg='red', reverse=True)
-        else:
-            click.secho(str(ret.status_code), fg='yellow')
-            click.secho(ret.text, fg='yellow')
+        result = _api_GET("raw", "range", "ALL", token)
     elif utc:
         if len(utc) == 1:
-            try:
-                ret = requests.get(url + "/api/get/raw?time={}&token={}".format(utc[0], token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
+            result = _api_GET("raw", "time", utc[0], token)
         elif len(utc) == 2:
-            try:
-                ret = requests.get(url + "/api/get/raw?range={}&token={}".format(utc, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
+            result = _api_GET("raw", "range", utc, token)
         else:
             click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
     elif time:
         if len(time) == 1:
             utime = _convert_to_utc(time[0])
-            try:
-                ret = requests.get(url + "/api/get/raw?time={}&token={}".format(utime, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
+            result = _api_GET("raw", "time", utime, token)
         elif len(time) == 2:
             utime_zero = _convert_to_utc(time[0])
             utime_one = _convert_to_utc(time[1])
             utime = [utime_zero, utime_one]
-            try:
-                ret = requests.get(url + "/api/get/raw?range={}&token={}".format(utime, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
+            result = _api_GET("raw", "range", utime, token)
         else:
             click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
     else:
@@ -263,58 +235,27 @@ def filtered(time, utc, a, tk):
         else:
             click.secho("Found stream_token: " + token + '\n', fg='white')
     if a:
-        try:
-            ret = requests.get(url + "/api/get/filtered?range=ALL&token={}".format(token))
-        except:
-            click.secho("Connection Refused!...", fg='red', reverse=True)
-        else:
-            click.secho(str(ret.status_code), fg='yellow')
-            click.secho(ret.text, fg='yellow')
+        results = _api_GET("filtered", "range", "ALL", token)
     elif utc:
         if len(utc) == 1:
-            try:
-                ret = requests.get(url + "/api/get/filtered?time={}&token={}".format(utc[0], token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
+            result = _api_GET("filtered", "time", utc[0], token)
         elif len(utc) == 2:
-            try:
-                ret = requests.get(url + "/api/get/filtered?range={}&token={}".format(utc, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
+            result = _api_GET("filtered", "range", utc, token)
         else:
             click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
     elif time:
         if len(time) == 1:
             utime = _convert_to_utc(time[0])
-            try:
-                ret = requests.get(url + "/api/get/filtered?time={}&token={}".format(utime, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
+            results = _api_GET("filtered", "time", utime, token)
         elif len(time) == 2:
             utime_zero = _convert_to_utc(time[0])
             utime_one = _convert_to_utc(time[1])
             utime = [utime_zero, utime_one]
-            try:
-                ret = requests.get(url + "/api/get/filtered?range={}&token={}".format(utime, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
+            results = _api_GET("filtered", "range", utime. token)
         else:
             click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
     else:
         click.secho("No options given, try '--all'...", fg='white')
-
 
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
@@ -342,53 +283,23 @@ def derived_params(time, utc, a, tk):
         else:
             click.secho("Found stream_token: " + token + '\n', fg='white')
     if a:
-        try:
-            ret = requests.get(url + "/api/get/derived_params?range=ALL&token={}".format(token))
-        except:
-            click.secho("Connection Refused!...", fg='red', reverse=True)
-        else:
-            click.secho(str(ret.status_code), fg='yellow')
-            click.secho(ret.text, fg='yellow')
+        result = _api_GET("derived_params", "range", "ALL", token)
     elif utc:
         if len(utc) == 1:
-            try:
-                ret = requests.get(url + "/api/get/derived_params?time={}&token={}".format(utc[0], token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
+            result = _api_GET("derived_params", "time", utc[0], token)
         elif len(utc) == 2:
-            try:
-                ret = requests.get(url + "/api/get/derived_params?range={}&token={}".format(utc, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
+            result = _api_GET("derived_params", "range", utc, token)
         else:
             click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
     elif time:
         if len(time) == 1:
             utime = _convert_to_utc(time[0])
-            try:
-                ret = requests.get(url + "/api/get/derived_params?time={}&token={}".format(utime, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
+            result = _api_GET("derived_params", "time", utime, token)
         elif len(time) == 2:
             utime_zero = _convert_to_utc(time[0])
             utime_one = _convert_to_utc(time[1])
             utime = [utime_zero, utime_one]
-            try:
-                ret = requests.get(url + "/api/get/derived_params?range={}&token={}".format(utime, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
+            result = _api_GET("derived_params", "range", utime, token)
         else:
             click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
     else:
@@ -421,53 +332,23 @@ def events(time, utc, a, tk):
         else:
             click.secho("Found stream_token: " + token + '\n', fg='white')
     if a:
-        try:
-            ret = requests.get(url + "/api/get/events?range=ALL&token={}".format(token))
-        except:
-            click.secho("Connection Refused!...", fg='red', reverse=True)
-        else:
-            click.secho(str(ret.status_code), fg='yellow')
-            click.secho(ret.text, fg='yellow')
+        result = _api_GET("events", "range", "ALL", token)
     elif utc:
         if len(utc) == 1:
-            try:
-                ret = requests.get(url + "/api/get/events?time={}&token={}".format(utc[0], token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
+            result = _api_GET("events", "time", utc[0], token)
         elif len(utc) == 2:
-            try:
-                ret = requests.get(url + "/api/get/events?range={}&token={}".format(utc, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
+            result = _api_GET("events", "range", utc, token)
         else:
             click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
     elif time:
         if len(time) == 1:
             utime = _convert_to_utc(time[0])
-            try:
-                ret = requests.get(url + "/api/get/events?time={}&token={}".format(utime, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
+            result = _api_GET("events", "time", utime, token)
         elif len(time) == 2:
             utime_zero = _convert_to_utc(time[0])
             utime_one = _convert_to_utc(time[1])
             utime = [utime_zero, utime_one]
-            try:
-                ret = requests.get(url + "/api/get/events?range={}&token={}".format(utime, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
+            result = _api_GET("events", "range", utime, token)
         else:
             click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
     else:
