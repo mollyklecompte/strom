@@ -56,6 +56,7 @@ def _api_GET(function, param, value, token):
         return [ret.status_code, ret.text]
 
 def _collect_token(cert):
+    """ Function to load json-formatted input and return stream_token, if found. """
     try:
         json_cert = json.loads(cert)
     except:
@@ -71,7 +72,8 @@ def _collect_token(cert):
             click.secho("Found stream_token: " + token + '\n', fg='white')
             return token
 
-def _check_options(function, time, utc, a):
+def _check_options(function, time, utc, a, token):
+    """ Function to check options given for GET methods before send. """
     if a:
         result = _api_GET("{}".format(function), "range", "ALL", token)
     elif utc:
@@ -202,7 +204,7 @@ def raw(time, utc, a, tk):
     """
     cert = tk.read()
     token = _collect_token(cert)
-    _check_options("raw", time, utc, a)
+    _check_options("raw", time, utc, a, token)
 
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
@@ -217,7 +219,7 @@ def filtered(time, utc, a, tk):
     """
     cert = tk.read()
     token = _collect_token(cert)
-    _check_options("filtered", time, utc, a)
+    _check_options("filtered", time, utc, a, token)
 
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
@@ -232,7 +234,7 @@ def derived_params(time, utc, a, tk):
     """
     cert = tk.read()
     token = _collect_token(cert)
-    _check_options("derived_params", time, utc, a)
+    _check_options("derived_params", time, utc, a, token)
 
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
@@ -247,7 +249,7 @@ def events(time, utc, a, tk):
     """
     cert = tk.read()
     token = _collect_token(cert)
-    _check_options("events", time, utc, a)
+    _check_options("events", time, utc, a, token)
 
 # d-stream group
 dstream.add_command(locate)
