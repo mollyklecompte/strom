@@ -165,6 +165,21 @@ class SQL_Connection:
         except mariadb.Error as err:
             raise err
 
+    def _check_table_exists(self, table_name):
+        stringified_table_name = str(table_name).replace("-", "_")
+        query = ("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'test' AND table_name = %s")
+        try:
+            print("Checking if table", stringified_table_name, "exists")
+            self.cursor.execute(query, [stringified_table_name])
+            results = self.cursor.fetchall()
+            # print(results[0][0])
+            if results[0][0] == 1:
+                return True
+            else:
+                return False
+        except mariadb.Error as err:
+            raise err
+
 # ***** Stream Token Table and Methods *****
 
     def _create_stream_lookup_table(self, dstream):
@@ -461,6 +476,7 @@ def main():
     sql = SQL_Connection()
     sql._create_metadata_table()
     sql._check_metadata_table_exists()
+    sql._check_table_exists('template_metadata')
     sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "temp_id_one")
     # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "temp_id_one")
     sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "temp_id_two")
@@ -499,6 +515,7 @@ def main():
     # print("@@@@ DSTREAM WITH DATA @@@@", dstream)
 
     sql._create_stream_lookup_table(dstream)
+    sql._check_table_exists('gosh_darn')
 
     second_row.load_from_json(second_single_dstream)
     # print("@@@@ DSTREAM WITH second_single_dstream @@@@", second_row)

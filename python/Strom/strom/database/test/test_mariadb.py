@@ -27,6 +27,8 @@ class TestSQL_Connection(unittest.TestCase):
 
         # Check if metadata_table exists
         self.assertTrue(self.cnx._check_metadata_table_exists())
+        self.assertTrue(self.cnx._check_table_exists('template_metadata'))
+        self.assertTrue(self.cnx._check_table_exists('abc123'))
 
         # Insert rows into metadata_table
         self.assertEqual(self.cnx._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler"), 1)
@@ -35,12 +37,6 @@ class TestSQL_Connection(unittest.TestCase):
         self.assertEqual(self.cnx._insert_row_into_metadata_table("stream_three", "stream_token_three", 1.3, "right"), 1)
 
         # Retrieve from metadata_table (TEST)
-
-        # self.assertEqual(self.cnx._retrieve_by_id(2), [2, "stream_two", "stream_token_two", 1.1, "woo"])
-        # self.assertEqual(self.cnx._retrieve_by_stream_name("stream_two"), [2, "stream_two", "stream_token_two", 1.1, "woo"])
-        # self.assertEqual(self.cnx._retrieve_by_stream_token("stream_token_one"), [1, "stream_one", "stream_token_one", 1.0, "filler"])
-        # self.assertIsNone(self.cnx._select_all_from_metadata_table())
-
         self.assertEqual(self.cnx._retrieve_by_id(2), [2, "stream_two", "stream_token_two", 1.1, "woo"])
         self.assertEqual(self.cnx._retrieve_by_stream_name("stream_two"), 1)
         self.assertEqual(self.cnx._retrieve_by_stream_token("stream_token_one"), 1)
@@ -52,7 +48,6 @@ class TestSQL_Connection(unittest.TestCase):
             self.cnx._insert_row_into_stream_lookup_table(dstream)
 
         # Insert value into filtered measure in stream_lookup_table
-        # self.assertEqual(self.cnx._insert_filtered_measure_into_stream_lookup_table("abc123", "buttery_location", "dummy data dummy data dummy data dummy data", 1), "UPDATE abc123 SET buttery_location = 'dummy data dummy data dummy data dummy data' WHERE unique_id = 1")
         self.assertEqual(self.cnx._insert_filtered_measure_into_stream_lookup_table("abc123", "buttery_location", "dummy data dummy data dummy data dummy data", 1), 1)
 
         # Retrieve from stream_lookup_table
