@@ -12,6 +12,7 @@ import pymysql.cursors
 # from pymysql.err import pymysql.err.ProgrammingError, pymysql.err.InternalError
 from pymysql.constants import ER
 # relative path works when running mariadb.py as a module
+from .maria_config import dbconfig
 from ..dstream.dstream import DStream
 from ..dstream.filter_rules import FilterRules
 
@@ -27,19 +28,8 @@ class SQL_Connection:
         # running out of database connections.
         gc.collect()
         # Set up connection to 'test' database in the MariaDB instance on Docker
-        # Implicit connection pool creation
-        dbconfig = {
-            "user": 'user',
-            "password": '123',
-            "host": '172.17.0.3',
-            "database": 'test'
-        }
-        self.mariadb_connection = pymysql.connect(charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor, autocommit=True, **dbconfig)
+        self.mariadb_connection = pymysql.connect(**dbconfig)
         self.cursor = self.mariadb_connection.cursor()
-        # self.mariadb_connection = mariadb.connect(pool_name = "my_pool", pool_size = 13, **dbconfig)
-        # Create a cursor object to execute SQL commands
-        # self.cursor = self.mariadb_connection.cursor(buffered=True)
-        # self.pool_name = self.mariadb_connection.pool_name
 
     def _close_connection(self):
         # close pooled connection and return it to the connection pool as an available connection
