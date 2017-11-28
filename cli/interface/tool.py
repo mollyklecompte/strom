@@ -71,6 +71,30 @@ def _collect_token(cert):
             click.secho("Found stream_token: " + token + '\n', fg='white')
             return token
 
+def _check_options(function, time, utc, a):
+    if a:
+        result = _api_GET("{}".format(function), "range", "ALL", token)
+    elif utc:
+        if len(utc) == 1:
+            result = _api_GET("{}".format(function), "time", utc[0], token)
+        elif len(utc) == 2:
+            result = _api_GET("{}".format(function), "range", utc, token)
+        else:
+            click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
+    elif time:
+        if len(time) == 1:
+            utime = _convert_to_utc(time[0])
+            result = _api_GET("{}".format(function), "time", utime, token)
+        elif len(time) == 2:
+            utime_zero = _convert_to_utc(time[0])
+            utime_one = _convert_to_utc(time[1])
+            utime = [utime_zero, utime_one]
+            result = _api_GET("{}".format(function), "range", utime, token)
+        else:
+            click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
+    else:
+        click.secho("No options given, try '--all'...", fg='white')
+
 @click.group()
 @click.option('--version', '--v', 'version', is_flag=True, callback=_print_ver, expose_value=False, is_eager=True, help="Current version")
 def dstream():
