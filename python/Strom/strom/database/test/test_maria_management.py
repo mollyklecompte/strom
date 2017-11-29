@@ -2,16 +2,13 @@ import unittest
 import json
 import gc
 import collections
-from strom.database.mariadb import SQL_Connection
-from strom.dstream.dstream import DStream
-from strom.dstream.bstream import BStream
+from Strom.strom.database.mariadb import SQL_Connection
 
 class TestSQL_Connection(unittest.TestCase):
     def setUp(self):
         self.cnx = SQL_Connection()
         self.cursor = self.cnx.cursor
-        # self.pool_name = self.cnx.pool_name
-        demo_data_dir = "demo_data/"
+        demo_data_dir = "Strom/demo_data/"
         self.dstream = json.load(open(demo_data_dir+"demo_template.txt"))
         self.dstreams = json.load(open(demo_data_dir+"first_seven_from_demo_trip.txt"))
         self.bstream = json.load(open(demo_data_dir+"demo_bstream_trip26.txt"))
@@ -19,7 +16,6 @@ class TestSQL_Connection(unittest.TestCase):
     def test_init(self):
         self.assertIsInstance(self.cnx, SQL_Connection)
         self.assertIs(self.cursor, self.cnx.cursor)
-        # self.assertEqual(self.pool_name, "my_pool")
 
     def test_mariadb(self):
 

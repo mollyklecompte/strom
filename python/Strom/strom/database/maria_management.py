@@ -8,15 +8,18 @@ import copy
 import gc
 import logging
 import itertools
+import json
+from logging import (DEBUG, INFO)
+from Strom.strom.utils.logger.logger import logger
 
 import pymysql.cursors
 # from pymysql.err import pymysql.err.ProgrammingError, pymysql.err.InternalError
 from pymysql.constants import ER
 # relative path works when running mariadb.py as a module
-from .maria_config import dbconfig
-from ..dstream.dstream import DStream
-from ..dstream.bstream import BStream
-from ..dstream.filter_rules import FilterRules
+from Strom.strom.database.maria_config import dbconfig
+from Strom.strom.dstream.dstream import DStream
+# from Strom.strom.dstream.bstream import BStream
+from Strom.strom.dstream.filter_rules import FilterRules
 
 def _stringify_by_adding_quotes(dict):
     return '"' + str(dict) + '"'
@@ -35,7 +38,7 @@ class SQL_Connection:
 
     def _close_connection(self):
         # close pooled connection and return it to the connection pool as an available connection
-        logging.info("Closing connection")
+        logger.info("Closing connection")
         self.mariadb_connection.close()
         gc.collect()
 
@@ -50,12 +53,12 @@ class SQL_Connection:
             "  `template_id` varchar(60) NOT NULL,"
             "  PRIMARY KEY (`unique_id`)"
             ") ENGINE=InnoDB")
-        logging.info("Creating table")
+        logger.info("Creating table")
         try:
             self.cursor.execute(table)
         except pymysql.err.InternalError as err:
             if ER.TABLE_EXISTS_ERROR:
-                logging.error("table already exists")
+                logger.error("table already exists")
             raise err
 
     def _insert_row_into_metadata_table(self, stream_name, stream_token, version, template_id):
@@ -65,26 +68,26 @@ class SQL_Connection:
         stringified_stream_token_uuid = _stringify_uuid(stream_token)
         row_columns = (stream_name, stringified_stream_token_uuid, version, template_id)
         try:
-            logging.info("Inserting row")
+            logger.info("Inserting row")
             self.cursor.execute(add_row, row_columns)
             self.mariadb_connection.commit()
             if (self.cursor.rowcount != 1):
                 raise KeyError
             else:
                 return self.cursor.rowcount
-                logging.info("Row inserted")
+                logger.info("Row inserted")
         except pymysql.err.ProgrammingError as err:
             raise err
 
     def _retrieve_by_stream_name(self, stream_name):
         query = ('SELECT * FROM template_metadata WHERE stream_name = %s')
         try:
-            logging.info("Querying by stream name")
+            logger.info("Querying by stream name")
             self.cursor.execute(query, [stream_name])
             results = self.cursor.fetchall()
             print("results for stream_name", results)
             for dictionary in results:
-                logging.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(dictionary["unique_id"], dictionary["stream_name"], dictionary["stream_token"], dictionary["version"], dictionary["template_id"]))
+                logger.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(dictionary["unique_id"], dictionary["stream_name"], dictionary["stream_token"], dictionary["version"], dictionary["template_id"]))
             return self.cursor.rowcount
         except pymysql.err.ProgrammingError as err:
             raise err
@@ -92,10 +95,10 @@ class SQL_Connection:
     def _retrieve_by_id(self, unique_id):
         query = ("SELECT * FROM template_metadata WHERE unique_id = %s")
         try:
-            logging.info("Querying by unique id")
+            logger.info("Querying by unique id")
             self.cursor.execute(query, [unique_id])
             result = self.cursor.fetchone()
-            logging.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(result["unique_id"], result["stream_name"], result["stream_token"], result["version"], result["template_id"]))
+            logger.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(result["unique_id"], result["stream_name"], result["stream_token"], result["version"], result["template_id"]))
             return result
         except pymysql.err.ProgrammingError as err:
             raise err
@@ -104,11 +107,11 @@ class SQL_Connection:
         stringified_stream_token_uuid = _stringify_uuid(stream_token)
         query = ("SELECT * FROM template_metadata WHERE stream_token = %s")
         try:
-            logging.info("Querying by stream token")
+            logger.info("Querying by stream token")
             self.cursor.execute(query, [stringified_stream_token_uuid])
             results = self.cursor.fetchall()
             for dictionary in results:
-                logging.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(dictionary["unique_id"], dictionary["stream_name"], dictionary["stream_token"], dictionary["version"], dictionary["template_id"]))
+                logger.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(dictionary["unique_id"], dictionary["stream_name"], dictionary["stream_token"], dictionary["version"], dictionary["template_id"]))
             return self.cursor.rowcount
         except pymysql.err.ProgrammingError as err:
             raise err
@@ -118,12 +121,12 @@ class SQL_Connection:
         query = ("SELECT `template_id` FROM template_metadata WHERE stream_token = %s AND version = ("
                 "SELECT MAX(version) FROM template_metadata WHERE stream_token = %s)")
         try:
-            logging.info("Returning template_id for latest version of stream by stream_token")
+            logger.info("Returning template_id for latest version of stream by stream_token")
             self.cursor.execute(query, [stringified_stream_token_uuid, stringified_stream_token_uuid])
             result = self.cursor.fetchall()
             print('template_id result', result)
             if len(result) == 1:
-                logging.info(result[0]["template_id"])
+                logger.info(result[0]["template_id"])
                 return result[0]["template_id"]
             else:
                 raise pymysql.err.ProgrammingError
@@ -133,11 +136,11 @@ class SQL_Connection:
     def _select_all_from_metadata_table(self):
         query = ("SELECT * FROM template_metadata")
         try:
-            logging.info("Returning all data from template_metadata table")
+            logger.info("Returning all data from template_metadata table")
             self.cursor.execute(query)
             results = self.cursor.fetchall()
             for row in results:
-                logging.info(row)
+                logger.info(row)
             return self.cursor.rowcount
         except pymysql.err.ProgrammingError as err:
             raise err
@@ -145,7 +148,7 @@ class SQL_Connection:
     def _check_metadata_table_exists(self):
         query = ("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'test' AND table_name = 'template_metadata'")
         try:
-            logging.info("Checking if template_metadata table exists")
+            logger.info("Checking if template_metadata table exists")
             self.cursor.execute(query)
             results = self.cursor.fetchall()
             print("results", results)
@@ -161,7 +164,7 @@ class SQL_Connection:
         stringified_table_name = str(table_name).replace("-", "_")
         query = ("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'test' AND table_name = %s")
         try:
-            logging.info("Checking if table", stringified_table_name, "exists")
+            logger.info("Checking if table " + stringified_table_name + " exists")
             self.cursor.execute(query, [stringified_table_name])
             results = self.cursor.fetchall()
             if results[0]['COUNT(*)'] == 1:
@@ -209,11 +212,11 @@ class SQL_Connection:
 
         dstream_particulars = (measure_columns, uid_columns, filter_columns)
         try:
-            logging.info("Creating table")
+            logger.info("Creating stream lookup table")
             self.cursor.execute(table)
         except pymysql.err.ProgrammingError as err:
             if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-                logging.error("table already exists")
+                logger.error("table already exists")
             else:
                 raise err
 
@@ -266,11 +269,11 @@ class SQL_Connection:
         query = ("INSERT INTO %s %s VALUES %s" % (stringified_stream_token_uuid, columns, values))
         # print("~~~~~~~~ QUERY ~~~~~~~~", query);
         try:
-            logging.info("Inserting row into table ", stringified_stream_token_uuid)
+            logger.info("Inserting row into table " + stringified_stream_token_uuid)
             self.cursor.execute(query)
             self.mariadb_connection.commit()
-            logging.info("Inserted row")
-            logging.info(self.cursor.lastrowid)
+            logger.info("Inserted row")
+            logger.info(self.cursor.lastrowid)
             return self.cursor.lastrowid
         except pymysql.err.ProgrammingError as err:
             raise err
@@ -299,38 +302,29 @@ class SQL_Connection:
             " `fields`)"
         % (measure_columns, uid_columns))
 
-        measure_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["measures"].values()) ]
+        measure_dict_array = list(bstream["measures"].values())
+        measure_matrix = [ m['val'] for m in measure_dict_array ]
+        measure_values = [ [str(item) for item in group] for group in measure_matrix ]
 
-        uid_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["user_ids"].values()) ]
+        uid_values = [ [str(item) for item in group] for group in list(bstream["user_ids"].values()) ]
 
-        tag_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["tags"].values()) ]
+        tag_values = [ tag for tag in bstream["tags"].values() ]
 
         field_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["fields"].values()) ]
+        field_values = [ f for f in list(bstream["fields"].values()) ]
 
-        value_tuples = zip(itertools.repeat(bstream["version"]), bstream["timestamp"], measure_values, uid_values, tag_values, field_values)
+        value_tuples = list(itertools.zip_longest(itertools.repeat(str(bstream["version"])), str(bstream["timestamp"]), measure_values, uid_values, tag_values, field_values))
 
-        print("VALUE_TUPLES", value_tuples)
+        # print("VALUE_TUPLES", value_tuples)
 
-        # values = (
-        #     "(%s, "
-        #     "%s,"
-        #     "%s"
-        #     "%s"
-        #     "%s,"
-        #     "%s)"
-        # % (dstream["version"], dstream["timestamp"], measure_values, uid_values, _stringify_by_adding_quotes(dstream["tags"]), _stringify_by_adding_quotes(dstream["fields"])))
-
-        # print("****** COLUMNS ******", columns)
-        # print("****** VALUES ******", values)
-
-        query = ("INSERT INTO %s %s VALUES (%s, " % (stringified_stream_token_uuid, columns))
+        query = ("INSERT INTO %s %s " % (stringified_stream_token_uuid, columns)) + "VALUES (%s)"
         # print("~~~~~~~~ QUERY ~~~~~~~~", query);
         try:
-            logging.info("Inserting row into table ", stringified_stream_token_uuid)
+            logger.info("Inserting rows into table " + stringified_stream_token_uuid)
             self.cursor.executemany(query, value_tuples)
             self.mariadb_connection.commit()
-            logging.info("Inserted row")
-            logging.info(self.cursor.lastrowid)
+            logger.info("Inserted rows")
+            logger.info(self.cursor.lastrowid)
             return self.cursor.lastrowid
         except pymysql.err.ProgrammingError as err:
             raise err
@@ -340,10 +334,10 @@ class SQL_Connection:
         query = ("UPDATE %s SET %s " % (stringified_stream_token_uuid, filtered_measure)) + "= %s WHERE unique_id = %s"
         parameters = (value, unique_id)
         try:
-            logging.info("Updating", filtered_measure, "at", unique_id)
+            logger.info("Updating", filtered_measure, "at", unique_id)
             self.cursor.execute(query, parameters)
             self.mariadb_connection.commit()
-            logging.info("Updated", filtered_measure, "at", unique_id)
+            logger.info("Updated", filtered_measure, "at", unique_id)
             if (self.cursor.rowcount != 1):
                 raise KeyError
             return self.cursor.rowcount
@@ -355,11 +349,11 @@ class SQL_Connection:
         dstream_particulars = (stringified_stream_token_uuid, start, end)
         query = ("SELECT * FROM %s " % (stringified_stream_token_uuid)) + "WHERE time_stamp BETWEEN %s AND %s"
         try:
-            logging.info("Returning all records within timestamp range")
+            logger.info("Returning all records within timestamp range")
             self.cursor.execute(query, [start, end])
             results = self.cursor.fetchall()
             for row in results:
-                logging.info(row)
+                logger.info(row)
             return self.cursor.rowcount
         except pymysql.err.ProgrammingError as err:
             raise err
@@ -368,11 +362,11 @@ class SQL_Connection:
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
         query = ("SELECT * FROM %s" % stringified_stream_token_uuid)
         try:
-            logging.info("Returning all records from stream lookup table ", stringified_stream_token_uuid)
+            logger.info("Returning all records from stream lookup table " + stringified_stream_token_uuid)
             self.cursor.execute(query)
             results = self.cursor.fetchall()
             for row in results:
-                logging.info(row)
+                logger.info(row)
             return self.cursor.rowcount
         except pymysql.err.ProgrammingError as err:
             raise err
@@ -382,10 +376,10 @@ class SQL_Connection:
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
         query = ("SELECT %s FROM %s WHERE %s = %s" % (data_column, stringified_stream_token_uuid, filter_column, value))
         try:
-            logging.info("Returning data")
+            logger.info("Returning data")
             self.cursor.execute(query)
             results = self.cursor.fetchall()
-            logging.info(results)
+            logger.info(results)
             return self.cursor.rowcount
         except pymysql.err.ProgrammingError as err:
             raise err
@@ -482,74 +476,120 @@ sixth_single_dstream = {
 
 def main():
     sql = SQL_Connection()
-    sql._create_metadata_table()
-    sql._check_metadata_table_exists()
-    sql._check_table_exists('template_metadata')
-    sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "temp_id_one")
+    # sql._create_metadata_table()
+    # sql._check_metadata_table_exists()
+    # sql._check_table_exists('template_metadata')
     # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "temp_id_one")
-    sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "temp_id_two")
-    sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "temp_id_three")
-    # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
-    # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
-    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "filler")
-    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
-    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
-    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
-    sql._retrieve_by_stream_name("stream_one")
-    sql._retrieve_by_id(1)
-    # print("RETRIEVE ONE stream_two ROW")
-    sql._retrieve_by_stream_token("stream_token_two")
-    sql._return_template_id_for_latest_version_of_stream("stream_token_two")
-    sql._select_all_from_metadata_table()
+    # # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "temp_id_one")
+    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "temp_id_two")
+    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "temp_id_three")
+    # sql._retrieve_by_stream_name("stream_one")
+    # sql._retrieve_by_id(1)
+    # # print("RETRIEVE ONE stream_two ROW")
+    # sql._retrieve_by_stream_token("stream_token_two")
+    # sql._return_template_id_for_latest_version_of_stream("stream_token_two")
+    # sql._select_all_from_metadata_table()
 
 
 
 # STREAM LOOKUP TABLE PRELIMINARY TESTS
 
-    dstream = DStream()
-    # print("***DSTREAM INITIALIZED***:", dstream)
-
-    dstream["stream_token"] = "gosh_darn"
-
-    second_row = copy.deepcopy(dstream)
-    third_row = copy.deepcopy(dstream)
-    fourth_row = copy.deepcopy(dstream)
-    fifth_row = copy.deepcopy(dstream)
+    demo_data_dir = "Strom/demo_data/"
+    dstream_template = json.load(open(demo_data_dir + "demo_template.txt"))
+    dstream_template["stream_token"] = "abc123"
+    bstream = json.load(open(demo_data_dir+"demo_bstream_trip26.txt"))
 
 
-    dstream.load_from_json(single_dstream)
+    # measure_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["measures"].values()) ]
+    # print(measure_values)
+
+    # print(list(bstream["measures"].values()))
+
+    # measure_dict_array = list(bstream["measures"].values())
+    # # print(measure_dict_array[0]['val'])
+    #
+    # # measure_matrix = []
+    # # for measure_arrays in measure_dict_array:
+    # #     measure_matrix.append(measure_arrays['val'])
+    # # print(measure_matrix)
+    #
+    # measure_matrix = [ m['val'] for m in measure_dict_array ]
+    # # for subarray in measure_matrix:
+    # #     for item in subarray:
+    # #         str(item)
+    #
+    # strings = [ [str(item) for item in group] for group in measure_matrix ]
+    # # print(measure_matrix)
+    # print(strings)
+
+
+    # # uid_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["user_ids"].values()) ]
+    # # print(uid_values)
+    # print(list(bstream["user_ids"].values()))
+
+    # uid_stringified = [ [str(item) for item in group] for group in list(bstream["user_ids"].values()) ]
+    # print(uid_stringified)
+
+    # # tag_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["tags"].values()) ]
+    # # print(tag_values)
+    # print(list(bstream["tags"].values()))
+
+    # tags = [ tag for tag in bstream["tags"].values() ]
+    # print(tags)
+
+    # # field_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["fields"].values()) ]
+    # # print(field_values)
+    # print(list(bstream["fields"].values()))
+
+    # fields_arrays = [ f for f in list(bstream["fields"].values()) ]
+    # print(fields_arrays)
+
+    # dstream = DStream()
+    # # print("***DSTREAM INITIALIZED***:", dstream)
+    #
+    # dstream["stream_token"] = "abc123"
+    #
+    # second_row = copy.deepcopy(dstream)
+    # third_row = copy.deepcopy(dstream)
+    # fourth_row = copy.deepcopy(dstream)
+    # fifth_row = copy.deepcopy(dstream)
+    #
+    #
+    # dstream.load_from_json(single_dstream)
 
     # print("@@@@ DSTREAM WITH DATA @@@@", dstream)
 
-    sql._create_stream_lookup_table(dstream)
-    sql._check_table_exists('gosh_darn')
+    sql._create_stream_lookup_table(dstream_template)
+    sql._check_table_exists('abc123')
 
-    second_row.load_from_json(second_single_dstream)
-    # print("@@@@ DSTREAM WITH second_single_dstream @@@@", second_row)
-    third_row.load_from_json(third_single_dstream)
-    # print("@@@@ DSTREAM WITH third_single_dstream @@@@", third_row)
-    fourth_row.load_from_json(fourth_single_dstream)
-    # print("@@@@ DSTREAM WITH fourth_single_dstream @@@@", fourth_row)
-    fifth_row.load_from_json(fifth_single_dstream)
-    # print("@@@@ DSTREAM WITH fifth_single_dstream @@@@", fifth_row)
+    # second_row.load_from_json(second_single_dstream)
+    # # print("@@@@ DSTREAM WITH second_single_dstream @@@@", second_row)
+    # third_row.load_from_json(third_single_dstream)
+    # # print("@@@@ DSTREAM WITH third_single_dstream @@@@", third_row)
+    # fourth_row.load_from_json(fourth_single_dstream)
+    # # print("@@@@ DSTREAM WITH fourth_single_dstream @@@@", fourth_row)
+    # fifth_row.load_from_json(fifth_single_dstream)
+    # # print("@@@@ DSTREAM WITH fifth_single_dstream @@@@", fifth_row)
+    #
+    # sql._insert_row_into_stream_lookup_table(dstream)
+    #
+    #
+    # sql._insert_row_into_stream_lookup_table(second_row)
+    # sql._insert_row_into_stream_lookup_table(third_row)
+    # sql._insert_row_into_stream_lookup_table(fourth_row)
+    # sql._insert_row_into_stream_lookup_table(fifth_row)
 
-    sql._insert_row_into_stream_lookup_table(dstream)
-
-
-    sql._insert_row_into_stream_lookup_table(second_row)
-    sql._insert_row_into_stream_lookup_table(third_row)
-    sql._insert_row_into_stream_lookup_table(fourth_row)
-    sql._insert_row_into_stream_lookup_table(fifth_row)
+    sql._insert_rows_into_stream_lookup_table(bstream)
 
     # stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
-    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy_data sldkfj lksjf lsajdlfj sl', 1)
-    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'test data sdfadsfafwt ergreag erg ', 2)
-    sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy data asdga ergawe gedawe erag', 3)
-    sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
-    sql._select_all_from_stream_lookup_table(dstream)
-    sql._select_data_by_column_where(dstream, "`driver-id`", "unique_id", 3)
+    # sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy_data sldkfj lksjf lsajdlfj sl', 1)
+    # sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'test data sdfadsfafwt ergreag erg ', 2)
+    # sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy data asdga ergawe gedawe erag', 3)
+    # sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
+    # sql._select_all_from_stream_lookup_table(dstream)
+    # sql._select_data_by_column_where(dstream, "`driver-id`", "unique_id", 3)
 
     gc.collect()
     sql._close_connection()
 
-# main()
+main()
