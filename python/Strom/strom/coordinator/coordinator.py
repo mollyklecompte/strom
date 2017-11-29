@@ -47,7 +47,7 @@ class Coordinator(object):
 
     def _list_to_bstream(self, template, dstreams, ids):
         bstream = BStream(template, dstreams, ids)
-        bstream.aggregate()
+        bstream.aggregate
 
         return bstream
     """
@@ -71,7 +71,6 @@ class Coordinator(object):
         :param temp_id: template's unique id in mongodb
         :return: template json
         """
-        print("Token: ",token)
         temp_id = ObjectId(self.maria._return_template_id_for_latest_version_of_stream(token))
         template = self.mongo.get_by_id(temp_id, 'template')
 
@@ -96,7 +95,6 @@ class Coordinator(object):
         token = temp_dstream["stream_token"]
         name = temp_dstream["stream_name"]
         version = temp_dstream["version"]
-        print(token, name, version)
         mongo_id = str(self._store_json(temp_dstream, 'template'))
         metadata_tabel_check =  self.maria._check_metadata_table_exists()
         if not metadata_tabel_check:
@@ -128,7 +126,6 @@ class Coordinator(object):
 
         # apply event transforms
         bstream.find_events()
-        print(bstream['events'])
         # store events
         self._store_json(bstream, 'event')
         print("whoop WHOOOOP")

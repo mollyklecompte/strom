@@ -6,6 +6,7 @@ from Strom.strom.dstream.dstream import DStream
 from Strom.strom.dstream.bstream import BStream
 from Strom.strom.transform.event import Event
 from mysql.connector.errors import ProgrammingError
+from pymongo.errors import DuplicateKeyError
 class TestCoordinator(unittest.TestCase):
     def setUp(self):
         self.coordinator = Coordinator()
@@ -23,7 +24,7 @@ class TestCoordinator(unittest.TestCase):
         self.dstreams = json.load(open(demo_data_dir+"demo_trip26.txt"))
         #self.bstream = {"stream_name": "driver_data", "version": 0, "stream_token": "abc123", "sources": {},'storage_rules': {}, 'ingest_rules': {}, 'engine_rules': {}, "timestamp": [1510603538107, 1510603538108, 1510603538109], "measures":{"location": {"val": [[-122.69081962885704, 45.52110054870811], [-132.69081962885704, 55.52110054870811], [-142.69081962885704, 65.52110054870811]], "dtype": "float"}, "measure2": {"val": [13, 9, 4], "dtype": "int"}}, "fields": {"region-code": ["PDX", "PDX", "PDX"]}, "user_ids": {"driver-id": ["Molly Mora", "Molly Mora", "Molly Mora"], "id": [0, 0, 0]}, "tags": {"mood": ["chill", "big mood", "the last big mood"]}, "foreign_keys": [],"filters": [{"func_type": "filter_data", "func_name": "WindowAverage", "filter_name": "window_location", "func_params": {"window_len": 2}, "measures": ["location"]}], "dparam_rules": [{"filter_name": "bears", "func_name": "DeriveHeading", "func_type": "derive_param", "func_params": {"window": 1, "units": "deg", "heading_type": "bearing", "swap_lon_lat": True}, "measure_rules": {"spatial_measure": "location", "output_name": "bears"}, "measures": ["location"]}], "event_rules": {"ninety_degree_turn": {"func_type": "detect_event", "func_name": "DetectThreshold", "event_rules": {"measure": "change_in_heading", "threshold_value": 90, "comparison_operator": ">="}, "event_name": "ninety_degree_turn", "stream_token": None, "derived_measures": ["change_in_heading"]}}, "template_id": "chadwick666"}
         self.bstream = BStream(self.dstream_template, self.dstreams, [1,2,3])
-        self.bstream = self.bstream.aggregate()
+        self.bstream = self.bstream.aggregate
         self.bstream.apply_filters()
         self.bstream.apply_dparam_rules()
         self.bstream.find_events()
@@ -91,6 +92,8 @@ class TestCoordinator(unittest.TestCase):
 
         tpt_dstream["version"] = 1
         ### TODO test with id, raises error ###
+        tpt_dstream["_id"] = qt["_id"]
+        self.assertRaises(DuplicateKeyError, lambda: self.coordinator.process_template(tpt_dstream))
 
         tpt_dstream.pop("_id", None)
         self.coordinator.process_template(tpt_dstream)
