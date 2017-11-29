@@ -111,8 +111,9 @@ def dstream():
 @click.command()
 def welcome():
     """ Usage instructions for first time users. """
-    f = Figlet(font='slant')
-    click.secho(f.renderText("Strom-C.L.I.\n"), fg='cyan')
+    if Figlet:
+        f = Figlet(font='slant')
+        click.secho(f.renderText("Strom-C.L.I.\n"), fg='cyan')
     click.secho("USAGE INSTRUCTIONS:\n", fg='cyan', underline=True)
     click.secho("1. dstream define -template [template filepath]\n", fg='green')
     click.secho("2. dstream load -filepath [data filepath] -token [template token file]\n", fg='green')
