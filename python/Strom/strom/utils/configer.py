@@ -29,7 +29,8 @@ __author__ = "Parham <parham@tura.io>"
 SECTION_SEPARATOR = '/'
 
 # default config files to load
-DEFAULT_CONFIG_FILES = [expanduser('~/.strom/strom.ini'),
+DEFAULT_FILE = expanduser('~/.strom/strom.ini')
+DEFAULT_CONFIG_FILES = [DEFAULT_FILE,
                         './strom.ini']
 
 
@@ -199,7 +200,7 @@ class Configer(dict):
         # check if special action is required for this option
         self._parse_special_options(option, value)
 
-    def store(self, file_name):
+    def store(self, file_name=DEFAULT_FILE):
         logger.info("Saving configuration to file: %s" % file_name)
         with open(file_name, 'w') as f:
             self._cfg.write(f)
