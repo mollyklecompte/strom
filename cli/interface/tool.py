@@ -7,7 +7,7 @@ import datetime
 try:
     from pyfiglet import Figlet
 except:
-    click.secho("Pyfiglet failed to import! You don't get any pretty fonts.", fg='red', reverse=True)
+    click.secho("Pyfiglet failed to import! You don't get any pretty fonts.", fg='yellow', reverse=True)
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
