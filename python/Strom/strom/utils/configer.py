@@ -17,7 +17,7 @@ from argparse import (ArgumentParser,
                       ArgumentTypeError)
 from sys import argv as sysargs
 from os.path import expanduser
-from logging import (DEBUG, INFO)
+from logging import (NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL)
 
 from strom.utils.logger.logger import logger
 
@@ -185,6 +185,7 @@ class Configer(dict):
             if section is None:
                 option, section = self.__get_option_name(option)
             self._cfg.set(section, option, value)
+
         except NoSectionError:
             logger.debug("config section '%s' didn't exist. Section was created." % section)
             self.add_section(section)
@@ -194,6 +195,9 @@ class Configer(dict):
                 logger.warn("Unexpected error while setting the configuration parameter. %s" % err.message)
         except (InterpolationError, ConfigParserGeneralError, ValueError) as err:
             logger.warn("Unexpected error while setting the configuration parameter. %s" % err.message)
+
+        # check if special action is required for this option
+        self._parse_special_options(option, value)
 
     def store(self, file_name):
         logger.info("Saving configuration to file: %s" % file_name)
@@ -219,12 +223,40 @@ class Configer(dict):
                 logger.log(level, "   %s = %s" % (option, cfg.get(section, option)))
 
     def __setitem__(self, key, value):
-        option, section = self.__get_option_name(key)
-        self.set(option, str(value), section)
+        # option, section = self.__get_option_name(key)
+        # self.set(option, str(value), section)
+        self.set(str(key), str(value))
 
-    def __getitem__(self, item):
-        option, section = self.__get_option_name(item)
-        return self.get(option, section)
+    def __getitem__(self, key):
+        # option, section = self.__get_option_name(key)
+        # return self.get(option, section)
+        return self.get(str(key))
+
+    def _parse_special_options(self, key, value):
+        # set logger level if option is set
+        if str(key).lower() == 'log.level':
+            if isinstance(value, str):
+                level_map = {'NOTSET': NOTSET,
+                             'NONE': NOTSET,
+                             'DEBUG' : DEBUG,
+                             'INFO': INFO,
+                             'WARN': WARNING,
+                             'WARNING': WARNING,
+                             'ERROR': ERROR,
+                             'FATAL': CRITICAL,
+                             'CRITICAL': CRITICAL}
+                if value.upper() in level_map:
+                    logger.level = level_map[value.upper()]
+                else:
+                    try:
+                        logger.level = int(value)
+                    except ValueError:
+                        logger.warn("Invalid log.level value: %s" % value)
+            else:
+                try:
+                    logger.level = int(value)
+                except ValueError:
+                    logger.warn("Invalid log.level value: %s" % value)
 
     @staticmethod
     def __get_option_name(option_str):
