@@ -46,7 +46,9 @@ class StopWatch:
         return value
 
     def lap(self, timer):
-        pass
+        value = self.clock(timer)
+        self.timers[timer] = time()
+        return value
 
     @staticmethod
     def sleep(seconds):
