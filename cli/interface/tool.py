@@ -4,6 +4,10 @@ import requests
 import json
 import os
 import datetime
+try:
+    from pyfiglet import Figlet
+except:
+    click.secho("Pyfiglet failed to import! You don't get any pretty fonts.", fg='red', reverse=True)
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
@@ -97,6 +101,7 @@ def _check_options(function, time, utc, a, token):
     else:
         click.secho("No options given, try '--all'...", fg='white')
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.group()
 @click.option('--version', '--v', 'version', is_flag=True, callback=_print_ver, expose_value=False, is_eager=True, help="Current version")
 def dstream():
@@ -106,14 +111,13 @@ def dstream():
 @click.command()
 def welcome():
     """ Usage instructions for first time users. """
-    click.secho("\nJust Do It.\n", fg='magenta', bold=True)
+    f = Figlet(font='slant')
+    click.secho(f.renderText("Strom-C.L.I.\n"), fg='cyan')
+    click.secho("USAGE INSTRUCTIONS:\n", fg='cyan', underline=True)
+    click.secho("1. dstream define -template [template filepath]\n", fg='green')
+    click.secho("2. dstream load -filepath [data filepath] -token [template token file]\n", fg='green')
+    click.secho("3. dstream events --all -token [template token file]\n", fg='green')
     click.pause()
-
-@click.command()
-@click.argument('path')
-def locate(path):
-    """ Tool for opening specified files in file explorer. """
-    click.launch(path, locate=True)
 
 @click.command()
 @click.option('-template', '-t', 'template', prompt=True, type=click.File('r'), help="Template file with required and custom fields")
@@ -135,7 +139,7 @@ def define(template):
         template_filename = os.path.basename(template.name) # NOTE: TEMP, REFACTOR OUT OF TRY
         path_list = template_filename.split('.')
         template_name = path_list[0]
-        template_ext = path_list[1] # NOTE: TEMP, FILE UPLOAD EXTENSION
+        template_ext = path_list[1]
         print("Found File Extension: .{}".format(template_ext))  # NOTE: TEMP
     except:
         click.secho("\nProblem parsing template file!...\n", fg='red', reverse=True)
@@ -190,7 +194,7 @@ def load(filepath, token):
             #Try send data with token to server, if success...return status_code
             result = _api_POST("load", {'data':json.dumps(json_data)})
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
 @click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
@@ -252,13 +256,12 @@ def events(time, utc, a, tk):
     _check_options("events", time, utc, a, token)
 
 # d-stream group
-dstream.add_command(locate)
 dstream.add_command(welcome)
 dstream.add_command(define)
 dstream.add_command(add_source)
 dstream.add_command(load)
 #
-# dstream.add_command(raw)
+# dstream.add_command(raw)  #NOTE: TEMP
 # dstream.add_command(filtered)
 # dstream.add_command(derived_params)
 dstream.add_command(events)
