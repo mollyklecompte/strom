@@ -7,6 +7,7 @@ __author__ = "Justine <justine@tura.io>"
 import copy
 import gc
 import logging
+import itertools
 
 import pymysql.cursors
 # from pymysql.err import pymysql.err.ProgrammingError, pymysql.err.InternalError
@@ -14,6 +15,7 @@ from pymysql.constants import ER
 # relative path works when running mariadb.py as a module
 from .maria_config import dbconfig
 from ..dstream.dstream import DStream
+from ..dstream.bstream import BStream
 from ..dstream.filter_rules import FilterRules
 
 def _stringify_by_adding_quotes(dict):
@@ -266,6 +268,66 @@ class SQL_Connection:
         try:
             logging.info("Inserting row into table ", stringified_stream_token_uuid)
             self.cursor.execute(query)
+            self.mariadb_connection.commit()
+            logging.info("Inserted row")
+            logging.info(self.cursor.lastrowid)
+            return self.cursor.lastrowid
+        except pymysql.err.ProgrammingError as err:
+            raise err
+
+    def _insert_rows_into_stream_lookup_table(self, bstream):
+        stringified_stream_token_uuid = _stringify_uuid(bstream["stream_token"])
+
+        measure_columns = ""
+        # for each item in the measures dictionary
+            # create a column for that measure
+        for measure in bstream['measures']:
+            measure_columns += "  `" + measure + "`,"
+
+        uid_columns = ""
+        # for each item in the uids dictionary
+            # create a column for that uid
+        for uid in bstream['user_ids']:
+            uid_columns += "  `" + uid + "`,"
+
+        columns = (
+            "(`version`,"
+            " `time_stamp`,"
+            "%s"
+            "%s"
+            " `tags`,"
+            " `fields`)"
+        % (measure_columns, uid_columns))
+
+        measure_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["measures"].values()) ]
+
+        uid_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["user_ids"].values()) ]
+
+        tag_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["tags"].values()) ]
+
+        field_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["fields"].values()) ]
+
+        value_tuples = zip(itertools.repeat(bstream["version"]), bstream["timestamp"], measure_values, uid_values, tag_values, field_values)
+
+        print("VALUE_TUPLES", value_tuples)
+
+        # values = (
+        #     "(%s, "
+        #     "%s,"
+        #     "%s"
+        #     "%s"
+        #     "%s,"
+        #     "%s)"
+        # % (dstream["version"], dstream["timestamp"], measure_values, uid_values, _stringify_by_adding_quotes(dstream["tags"]), _stringify_by_adding_quotes(dstream["fields"])))
+
+        # print("****** COLUMNS ******", columns)
+        # print("****** VALUES ******", values)
+
+        query = ("INSERT INTO %s %s VALUES (%s, " % (stringified_stream_token_uuid, columns))
+        # print("~~~~~~~~ QUERY ~~~~~~~~", query);
+        try:
+            logging.info("Inserting row into table ", stringified_stream_token_uuid)
+            self.cursor.executemany(query, value_tuples)
             self.mariadb_connection.commit()
             logging.info("Inserted row")
             logging.info(self.cursor.lastrowid)
