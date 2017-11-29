@@ -6,7 +6,6 @@ __author__ = "Justine <justine@tura.io>"
 #!/usr/bin/python
 import copy
 import gc
-import logging
 import itertools
 import json
 from logging import (DEBUG, INFO)
@@ -302,23 +301,25 @@ class SQL_Connection:
             " `fields`)"
         % (measure_columns, uid_columns))
 
+        logger.info("Finished creating columns")
         measure_dict_array = list(bstream["measures"].values())
         measure_matrix = [ m['val'] for m in measure_dict_array ]
         measure_values = [ [str(item) for item in group] for group in measure_matrix ]
 
         uid_values = [ [str(item) for item in group] for group in list(bstream["user_ids"].values()) ]
 
-        tag_values = [ tag for tag in bstream["tags"].values() ]
-
-        field_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["fields"].values()) ]
+        # tag_values = [ tag for tag in bstream["tags"].values() ]
+        tag_values = str(bstream["tags"])
         field_values = [ f for f in list(bstream["fields"].values()) ]
 
-        value_tuples = list(itertools.zip_longest(itertools.repeat(str(bstream["version"])), str(bstream["timestamp"]), measure_values, uid_values, tag_values, field_values))
+        logger.info("Created values arrays")
 
-        # print("VALUE_TUPLES", value_tuples)
-
-        query = ("INSERT INTO %s %s " % (stringified_stream_token_uuid, columns)) + "VALUES (%s)"
-        # print("~~~~~~~~ QUERY ~~~~~~~~", query);
+        value_tuples = list(zip(itertools.repeat(bstream["version"]), bstream["timestamp"], *measure_values, *uid_values, itertools.repeat(tag_values), *field_values))
+        # The number of columns for measures, user_ids, and filters vary by dstream/bstream, so we need to build the number of
+        # string interpolations dynamically for the query values. There will always be at least one '%s', so the value_interpolations
+        # variable will be the length of one tuple minus 1.
+        value_interpolations = (len(value_tuples[0]) - 1) * ", %s"
+        query = ("INSERT INTO %s %s " % (stringified_stream_token_uuid, columns)) + "VALUES (%s" + value_interpolations + ")"
         try:
             logger.info("Inserting rows into table " + stringified_stream_token_uuid)
             self.cursor.executemany(query, value_tuples)
@@ -500,6 +501,28 @@ def main():
     bstream = json.load(open(demo_data_dir+"demo_bstream_trip26.txt"))
 
 
+    # measure_dict_array = list(bstream["measures"].values())
+    # measure_matrix = [ m['val'] for m in measure_dict_array ]
+    # measure_values = [ [str(item) for item in group] for group in measure_matrix ]
+    # # print(measure_values)
+    # uid_values = [ [item for item in group] for group in list(bstream["user_ids"].values()) ]
+    # print(uid_values)
+    # print(len(uid_values))
+    # print(*uid_values)
+    # bstream["tags"] = { 'some': 'tag', 'another': 'tag' }
+    # tag_values = str(bstream["tags"])
+    # # print(tag_values)
+    # # field_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["fields"].values()) ]
+    # field_values = [ f for f in list(bstream["fields"].values()) ]
+    # # print(field_values)
+    # logger.info("Created values arrays")
+    #
+    #
+    # # value_tuples = list(itertools.zip_longest(itertools.repeat(bstream["version"]), bstream["timestamp"], measure_values, uid_values, itertools.repeat(tag_values), field_values, fillvalue=''))
+    # value_tuples = list(zip(itertools.repeat(bstream["version"]), bstream["timestamp"], *measure_values, *uid_values, itertools.repeat(tag_values), *field_values))
+
+    # print("VALUE_TUPLES", value_tuples)
+
     # measure_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["measures"].values()) ]
     # print(measure_values)
 
@@ -543,6 +566,10 @@ def main():
 
     # fields_arrays = [ f for f in list(bstream["fields"].values()) ]
     # print(fields_arrays)
+    # print(*fields_arrays)
+    # single_array_field = *fields_arrays
+    # string_fields = [ str(f) for f in single_array_field ]
+    # print("string_fields", string_fields)
 
     # dstream = DStream()
     # # print("***DSTREAM INITIALIZED***:", dstream)
@@ -559,8 +586,8 @@ def main():
 
     # print("@@@@ DSTREAM WITH DATA @@@@", dstream)
 
-    sql._create_stream_lookup_table(dstream_template)
-    sql._check_table_exists('abc123')
+    # sql._create_stream_lookup_table(dstream_template)
+    # sql._check_table_exists('abc123')
 
     # second_row.load_from_json(second_single_dstream)
     # # print("@@@@ DSTREAM WITH second_single_dstream @@@@", second_row)
@@ -579,7 +606,7 @@ def main():
     # sql._insert_row_into_stream_lookup_table(fourth_row)
     # sql._insert_row_into_stream_lookup_table(fifth_row)
 
-    sql._insert_rows_into_stream_lookup_table(bstream)
+    # sql._insert_rows_into_stream_lookup_table(bstream)
 
     # stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
     # sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy_data sldkfj lksjf lsajdlfj sl', 1)
@@ -592,4 +619,4 @@ def main():
     gc.collect()
     sql._close_connection()
 
-main()
+# main()
