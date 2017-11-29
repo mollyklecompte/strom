@@ -7,7 +7,7 @@ import datetime
 try:
     from pyfiglet import Figlet
 except:
-    click.secho("Pyfiglet failed to import! You don't get any pretty fonts.", fg='yellow', reverse=True)
+    click.secho("Pyfiglet failed to import! You don't get any pretty fonts.", fg='yellow')
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
@@ -111,14 +111,21 @@ def dstream():
 @click.command()
 def welcome():
     """ Usage instructions for first time users. """
-    if Figlet:
+    try:
         f = Figlet(font='slant')
         click.secho(f.renderText("Strom-C.L.I.\n"), fg='cyan')
-    click.secho("USAGE INSTRUCTIONS:\n", fg='cyan', underline=True)
-    click.secho("1. dstream define -template [template filepath]\n", fg='green')
-    click.secho("2. dstream load -filepath [data filepath] -token [template token file]\n", fg='green')
-    click.secho("3. dstream events --all -token [template token file]\n", fg='green')
-    click.pause()
+    except:
+        click.secho("USAGE INSTRUCTIONS:\n", fg='cyan', underline=True)
+        click.secho("1. dstream define -template [template filepath]\n", fg='green')
+        click.secho("2. dstream load -filepath [data filepath] -token [template token file]\n", fg='green')
+        click.secho("3. dstream events --all -token [template token file]\n", fg='green')
+        click.pause()
+    else:
+        click.secho("USAGE INSTRUCTIONS:\n", fg='cyan', underline=True)
+        click.secho("1. dstream define -template [template filepath]\n", fg='green')
+        click.secho("2. dstream load -filepath [data filepath] -token [template token file]\n", fg='green')
+        click.secho("3. dstream events --all -token [template token file]\n", fg='green')
+        click.pause()
 
 @click.command()
 @click.option('-template', '-t', 'template', prompt=True, type=click.File('r'), help="Template file with required and custom fields")
