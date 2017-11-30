@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from Strom.strom.transform.derive_param import DeriveParam, DeriveSlope, DeriveChange, DeriveCumsum, DeriveDistance, DeriveHeading
+from strom.transform.derive_param import DeriveParam, DeriveSlope, DeriveChange, DeriveCumsum, DeriveDistance, DeriveHeading
 
 
 class TestDeriveParam(unittest.TestCase):

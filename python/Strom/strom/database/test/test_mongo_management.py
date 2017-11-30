@@ -1,11 +1,11 @@
 import unittest
 import json
-from Strom.strom.database.mongo_management import MongoManager
+from strom.database.mongo_management import MongoManager
 
 
 class TestMongoManager(unittest.TestCase):
     def setUp(self):
-        demo_data_dir = "Strom/demo_data/"
+        demo_data_dir = "demo_data/"
         self.manager = MongoManager()
         self.dstream_template = json.load(open(demo_data_dir + "demo_template.txt"))
         self.bstream = json.load(open(demo_data_dir + "demo_bstream_trip26.txt"))
@@ -28,6 +28,11 @@ class TestMongoManager(unittest.TestCase):
 
 
     def test_get_all_coll(self):
+        self.manager.insert(self.bstream, 'derived')
+        self.manager.insert(self.bstream, 'derived')
+        self.manager.insert(self.bstream, 'event')
+        self.manager.insert(self.bstream, 'event')
+
         all_derived = self.manager.get_all_coll('derived', 'abc123')
         all_events = self.manager.get_all_coll('event', 'abc123')
 

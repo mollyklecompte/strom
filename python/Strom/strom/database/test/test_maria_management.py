@@ -1,23 +1,22 @@
 import unittest
 import json
 import gc
-from strom.database.mariadb import SQL_Connection
-from strom.dstream.dstream import DStream
-from mysql.connector.errors import ProgrammingError
+from pymysql.converters import Decimal
+import collections
+from strom.database.maria_management import SQL_Connection
 
 class TestSQL_Connection(unittest.TestCase):
     def setUp(self):
         self.cnx = SQL_Connection()
         self.cursor = self.cnx.cursor
-        self.pool_name = self.cnx.pool_name
-        demo_data_dir = "demo_data/"
+        demo_data_dir = "./demo_data/"
         self.dstream = json.load(open(demo_data_dir+"demo_template.txt"))
         self.dstreams = json.load(open(demo_data_dir+"first_seven_from_demo_trip.txt"))
+        self.bstream = json.load(open(demo_data_dir+"demo_bstream_trip26.txt"))
 
     def test_init(self):
         self.assertIsInstance(self.cnx, SQL_Connection)
         self.assertIs(self.cursor, self.cnx.cursor)
-        self.assertEqual(self.pool_name, "my_pool")
 
     def test_mariadb(self):
 
@@ -37,13 +36,16 @@ class TestSQL_Connection(unittest.TestCase):
         self.assertEqual(self.cnx._insert_row_into_metadata_table("stream_three", "stream_token_three", 1.3, "right"), 1)
 
         # Retrieve from metadata_table (TEST)
-        self.assertEqual(self.cnx._retrieve_by_id(2), [2, "stream_two", "stream_token_two", 1.1, "woo"])
+        self.assertDictEqual(self.cnx._retrieve_by_id(2), {"unique_id":2, "stream_name":"stream_two", "stream_token":"stream_token_two", "version":Decimal('1.10'), "template_id":"woo"})
         self.assertEqual(self.cnx._retrieve_by_stream_name("stream_two"), 1)
         self.assertEqual(self.cnx._retrieve_by_stream_token("stream_token_one"), 1)
         self.assertEqual(self.cnx._return_template_id_for_latest_version_of_stream("stream_token_three"), "right")
         self.assertEqual(self.cnx._select_all_from_metadata_table(), 4)
 
-        # Insert rows into stream_lookup_table
+        # Insert rows into stream_lookup_table in one call
+        self.assertEqual(self.cnx._insert_rows_into_stream_lookup_table(self.bstream), 283)
+
+        # Insert rows into stream_lookup_table one by one
         for dstream in self.dstreams:
             self.cnx._insert_row_into_stream_lookup_table(dstream)
 
@@ -57,7 +59,6 @@ class TestSQL_Connection(unittest.TestCase):
         # Close connection
         gc.collect()
         self.cnx._close_connection()
-
 
 
 if __name__ == "__main__":
