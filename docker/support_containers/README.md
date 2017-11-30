@@ -1,9 +1,9 @@
 To run containers using docker-compose:
-```shell
+```sh
 docker-compose up -d
 ```
 
 To stop and remove the containers:
-```bash
+```sh
 docker-compose stop && docker-compose rm -f
 ```
