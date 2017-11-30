@@ -4,8 +4,8 @@ B-stream class
 Initializes a Bstream dict off Dstream, using a Dstream template to initialize all keys, static values. The Bstream contains methods to aggregate measures, timestamps, user ids, fields and tags, as well as a wrapper aggregate method.
 """
 
-from Strom.strom.dstream.dstream import DStream
-from Strom.strom.transform.apply_transformer import apply_transformation
+from strom.dstream.dstream import DStream
+from strom.transform.apply_transformer import apply_transformation
 
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"

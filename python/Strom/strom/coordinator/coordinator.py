@@ -4,9 +4,9 @@ Coordinator class
 """
 from copy import deepcopy
 from bson.objectid import ObjectId
-from Strom.strom.dstream.bstream import BStream
-from Strom.strom.database.mongo_management import MongoManager
-from Strom.strom.database.mariadb import SQL_Connection
+from strom.dstream.bstream import BStream
+from strom.database.mongo_management import MongoManager
+from strom.database.mariadb import SQL_Connection
 
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"

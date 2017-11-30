@@ -2,9 +2,8 @@
 #
 pymongo
 pykafka
+Flask
 flask_restful
-librdkafka
-librdkafka-devel
 #
 ###### Requirements with Version Specifiers ######
 #

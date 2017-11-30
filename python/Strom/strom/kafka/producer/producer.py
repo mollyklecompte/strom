@@ -10,7 +10,7 @@ class Producer():
     def __init__(self, url, topic):
         self.client = KafkaClient(hosts=url, zookeeper_hosts=None, use_greenlets=False)
         self.topic = self.client.topics[topic]
-        self.producer = self.topic.get_producer(delivery_reports=True, use_rdkafka=True)
+        self.producer = self.topic.get_producer(delivery_reports=True, use_rdkafka=False)
         self.count = 0
 
     def _snappy(self, data):
@@ -27,7 +27,8 @@ class Producer():
         """
         \b
         Produce to given topic and log e. 20k msg.
-        Expects type of compression ('none' if no compression needed) and message data.
+        Expects type of compression and message data.
+        Compression options: snappy, gzip, lz4, none
         """
         if compression == "snappy":
             com_msg = _snappy(msg)
