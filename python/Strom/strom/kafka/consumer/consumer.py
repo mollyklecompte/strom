@@ -21,11 +21,16 @@ class Consumer():
             queued_max_messages=2000,
             consumer_timeout_ms=1,
             auto_start=True,
-            use_rdkafka=False)  #may be quicker w/ alt. options
+            use_rdkafka=True)  # NOTE: may be quicker w/ alt. options
 
-    def _decompress_snappy(self, msg):
-        """ Decompress stream if snappy compression is found. """
+    def _snappy_decompress(self, msg):
         msg_unpkg = Compression.decode_snappy(msg)
+        return msg_unpkg
+    def _gzip_decompress(self, msg):
+        msg_unpkg = Compression.decode_gzip(msg)
+        return msg_unpkg
+    def _lz4_decompress(self, msg):
+        msg_unpkg = Compression.decode_lz4_old_kafka(msg)
         return msg_unpkg
 
     def listen(self):

@@ -2,6 +2,8 @@
 #
 pymongo
 pykafka
+librdkafka
+librdkafka-devel
 #
 ###### Requirements with Version Specifiers ######
 #

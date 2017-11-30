@@ -2,16 +2,16 @@
 import json
 from flask import Flask, request
 from flask_restful import reqparse
-from Strom.strom.dstream.dstream import DStream
-from Strom.strom.coordinator.coordinator import Coordinator
-from Strom.strom.kafka.producer import Producer
+from strom.dstream.dstream import DStream
+from strom.coordinator.coordinator import Coordinator
+from strom.kafka.producer import Producer
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
 
 app = Flask(__name__.split('.')[0])
 
-arguments = ['template', 'data', 'source', 'topic', 'token', 'stream_data']
+arguments = ['template', 'data', 'source', 'token', 'stream_data']
 
 parser = reqparse.RequestParser()
 for word in arguments:
@@ -52,15 +52,13 @@ def load():
     cd.process_data_sync(json_data, token)
     return 'Success.', 202
 
-def produce():
-    """ Produce to kafka. """
-    args = parser.parse_args()
-    topic = args['topic']
+def load_kafka():
+    """ Collect data and produce to kafka topic. """
+    producer = Producer('127.0.0.1:9092', b'load') #kafka url & topic name(byte-str)
+    args = parse_args()
     data = args['stream_data']
-    producer = Producer('127.0.0.1:9092', topic)
-    producer.produce(data)
-    return '', 202
-
+    producer.produce(None, data) # first param = compression: none, snappy, gzip, lz4
+    return 'Success.', 202
 
 def get(this):
     """ Returns data, specified by endpoint & URL params. """
@@ -75,13 +73,13 @@ def get(this):
             result = cd.get_events(token)
     return ("\n" + str(result) + "\n"), 200
 
-#   POST
+# POST
 app.add_url_rule('/api/define', 'define', define, methods=['POST'])
 app.add_url_rule('/api/add-source', 'add_source', add_source, methods=['POST'])
 app.add_url_rule('/api/load', 'load', load, methods=['POST'])
-# TODO
-app.add_url_rule('/kafka/produce', 'produce', produce, methods=['POST']) #NOTE: TEMP
-#   GET
+# KAFKA POST TODO
+app.add_url_rule('/kafka/load', 'load_kafka', load_kafka, methods=['POST']) #NOTE: TEMP
+# GET
 app.add_url_rule('/api/get/<this>', 'get', get, methods=['GET'])
 
 def start():
