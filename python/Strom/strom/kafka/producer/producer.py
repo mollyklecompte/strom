@@ -41,7 +41,7 @@ class Producer():
         bcount = str(self.count).encode()
         self.producer.produce(com_msg, partition_key=bcount)
         self.count += 1
-        if count == 20000:
+        if self.count == 20000:
             while True:
                 try:
                     msg, exc = producer.get_delivery_report(block=False)
