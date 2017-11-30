@@ -94,6 +94,9 @@ class SQL_Connection:
             self.cursor.execute(query, [unique_id])
             result = self.cursor.fetchone()
             logger.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(result["unique_id"], result["stream_name"], result["stream_token"], result["version"], result["template_id"]))
+            # convert version from decimal to float
+            float_version =  float(result['version'])
+            result['version'] = float_version
             return result
         except pymysql.err.ProgrammingError as err:
             raise err
