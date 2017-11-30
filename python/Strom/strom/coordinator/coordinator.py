@@ -78,8 +78,8 @@ class Coordinator(object):
                 id = i[1]
                 self.maria._insert_filtered_measure_into_stream_lookup_table(token, measure, str(val), id)
 
-    def _list_to_bstream(self, template, dstreams, ids):
-        bstream = BStream(template, dstreams, ids)
+    def _list_to_bstream(self, template, dstreams):
+        bstream = BStream(template, dstreams)
         bstream.aggregate
 
         return bstream

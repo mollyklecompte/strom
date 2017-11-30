@@ -21,22 +21,22 @@ class TestCoordinator(unittest.TestCase):
         self.bstream.find_events()
 
     def test_store_raw_filtered(self):
-        tsrf_dstream = deepcopy(self.dstream_template)
-        tsrf_dstream.pop("_id", None)
+        tsrf_template = deepcopy((self.dstream_template))
+        tsrf_bstream = deepcopy(self.bstream)
+        tsrf_bstream.pop("_id", None)
         cur_stream_token = "storing_token"
-        tsrf_dstream["stream_token"] = cur_stream_token
-        for ds in self.dstreams:
-            ds["stream_token"] = cur_stream_token
+        tsrf_bstream["stream_token"] = cur_stream_token
 
-        self.assertRaises(ProgrammingError, lambda: self.coordinator._store_raw(self.bstream))
+        self.assertRaises(ProgrammingError, lambda: self.coordinator._store_raw(tsrf_bstream))
 
 
-        self.coordinator.process_template(tsrf_dstream)
-        inserted_count = self.coordinator._store_raw(self.bstream)
-        self.assertEqual(inserted_count, len(self.bstream["timestamp"]))
+        self.coordinator.process_template(tsrf_template)
+        inserted_count = self.coordinator._store_raw(tsrf_bstream)
+        self.assertEqual(inserted_count, len(tsrf_bstream["timestamp"]))
         self.assertFalse(inserted_count == 0)
         self.assertIsNotNone(inserted_count)
-        qt = self.coordinator._retrieve_current_template(tsrf_dstream["stream_token"])
+
+        qt = self.coordinator._retrieve_current_template(tsrf_bstream["stream_token"])
         bstream = self.coordinator._list_to_bstream(qt, self.dstreams)
         bstream.apply_filters()
 
@@ -46,6 +46,7 @@ class TestCoordinator(unittest.TestCase):
         self.assertRaises(ProgrammingError,lambda: self.coordinator._store_filtered(bstream))
         bstream['stream_token'] = cur_stream_token
         self.assertRaises(KeyError,lambda: self.coordinator._store_filtered(bstream))
+        self.assertEqual(filtered_inserted_count, len(self.bstream["timestamp"]))
 
         # checks to make sure raw data with bad stream token raises error during storage attempt
         self.bstream["stream_token"] = "not_a_real_token"
