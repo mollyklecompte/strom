@@ -2,6 +2,7 @@
 #
 pymongo
 pykafka
+flask_restful
 librdkafka
 librdkafka-devel
 #
