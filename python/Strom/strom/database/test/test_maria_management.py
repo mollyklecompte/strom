@@ -21,11 +21,13 @@ class TestSQL_Connection(unittest.TestCase):
         # Initialize tables
         metadata_table = self.cnx._create_metadata_table()
         stream_lookup_table = self.cnx._create_stream_lookup_table(self.dstream)
+        stream_filter_table = self.cnx._create_stream_filtered_table(self.dstream)
 
-        # Check if metadata_table exists
+        # Check if tables exist
         self.assertTrue(self.cnx._check_metadata_table_exists())
         self.assertTrue(self.cnx._check_table_exists('template_metadata'))
         self.assertTrue(self.cnx._check_table_exists('abc123'))
+        self.assertTrue(self.cnx._check_table_exists('abc123_filter'))
 
         # Insert rows into metadata_table
         self.assertEqual(self.cnx._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler"), 1)
@@ -53,6 +55,9 @@ class TestSQL_Connection(unittest.TestCase):
         # Retrieve from stream_lookup_table
         self.assertEqual(self.cnx._retrieve_by_timestamp_range(self.dstream, 1510603551107, 1510603551109), 3)
         self.assertEqual(self.cnx._return_template_id_for_latest_version_of_stream("stream_token_three"), "right")
+
+        # Insert rows into stream filter table
+        self.assertEqual(self.cnx._insert_rows_into_stream_filtered_table(self.bstream), 283)
 
         # Close connection
         gc.collect()
