@@ -366,6 +366,12 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
+
+    def _create_stream_filtered_table(self, dict):
+        """Create table for storing filtered measures
+           Expects a dictionary with the stream_token, filtered measures, and timestamp
+        """
+        
     def _select_data_by_column_where(self, dstream, data_column, filter_column, value):
         # Method created for testing purposes. Not intended for use by the coordinator (for now).
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
