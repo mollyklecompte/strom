@@ -31,20 +31,20 @@ class Producer():
         Compression options: snappy, gzip, lz4, none
         """
         if compression == "snappy":
-            com_msg = _snappy(msg)
+            com_msg = self._snappy(msg)
         elif compression == "gzip":
-            com_msg = _gzip(msg)
+            com_msg = self._gzip(msg)
         elif compression == "lz4":
-            com_msg = _lz4(msg)
+            com_msg = self._lz4(msg)
         else:
             com_msg = msg
         bcount = str(self.count).encode()
         self.producer.produce(com_msg, partition_key=bcount)
         self.count += 1
-        if count == 20000:
+        if self.count == 20000:
             while True:
                 try:
-                    msg, exc = producer.get_delivery_report(block=False)
+                    msg, exc = self.producer.get_delivery_report(block=False)
                     if exc is not None:
                         print("Delivery Fail: {}: {}".format(msg.partition_key, repr(exc))) #replace w/ logger
                     else:

@@ -19,6 +19,7 @@ for word in arguments:
 
 cd = Coordinator() # NOTE: TEMP
 url = '127.0.0.1:9092'
+producer = Producer(url, b'load') #kafka url & topic name(byte-str)
 
 
 def define():
@@ -63,9 +64,8 @@ def load():
 
 def load_kafka():
     """ Collect data and produce to kafka topic. """
-    producer = Producer(url, b'load') #kafka url & topic name(byte-str)
     args = parser.parse_args()
-    data = args['stream_data']
+    data = args['stream_data'].encode()
     producer.produce(None, data) # first param = compression: none, snappy, gzip, lz4
     return 'Success.', 202
 
