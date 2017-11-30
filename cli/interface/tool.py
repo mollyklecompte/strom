@@ -7,7 +7,7 @@ import datetime
 try:
     from pyfiglet import Figlet
 except:
-    click.secho("Pyfiglet failed to import! You don't get any pretty fonts.", fg='yellow')
+    pass
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
@@ -60,7 +60,7 @@ def _api_GET(function, param, value, token):
         return [ret.status_code, ret.text]
 
 def _collect_token(cert):
-    """ Function to load json-formatted input and return stream_token, if found. """
+    """ Load json-formatted input and return stream_token, if found. """
     try:
         json_cert = json.loads(cert)
     except:
@@ -77,7 +77,7 @@ def _collect_token(cert):
             return token
 
 def _check_options(function, time, utc, a, token):
-    """ Function to check options given for GET methods before send. """
+    """ Check options given for GET methods before send. """
     if a:
         result = _api_GET("{}".format(function), "range", "ALL", token)
     elif utc:
