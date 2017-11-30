@@ -4,7 +4,7 @@ from flask import Flask, request
 from flask_restful import reqparse
 from strom.dstream.dstream import DStream
 from strom.coordinator.coordinator import Coordinator
-from strom.kafka.producer import Producer
+from strom.kafka.producer.producer import Producer
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'

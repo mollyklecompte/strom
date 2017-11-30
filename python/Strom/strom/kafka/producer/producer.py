@@ -1,6 +1,6 @@
 """ Kafka Producer """
 from pykafka import KafkaClient
-from pykafka.utils.compression import Compression
+import pykafka.utils.compression as Compression
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
