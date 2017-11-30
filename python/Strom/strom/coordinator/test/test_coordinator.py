@@ -14,7 +14,7 @@ class TestCoordinator(unittest.TestCase):
         self.dstream_template["_id"] = "chadwick666"
         self.dstream = json.load(open(demo_data_dir+"demo_single_data.txt"))
         self.dstreams = json.load(open(demo_data_dir+"demo_trip26.txt"))
-        self.bstream = BStream(self.dstream_template, self.dstreams, [1,2,3])
+        self.bstream = BStream(self.dstream_template, self.dstreams)
         self.bstream = self.bstream.aggregate
         self.bstream.apply_filters()
         self.bstream.apply_dparam_rules()
@@ -28,27 +28,28 @@ class TestCoordinator(unittest.TestCase):
         for ds in self.dstreams:
             ds["stream_token"] = cur_stream_token
 
-        self.assertRaises(ProgrammingError, lambda: self.coordinator._store_raw(self.dstreams))
+        self.assertRaises(ProgrammingError, lambda: self.coordinator._store_raw(self.bstream))
 
 
         self.coordinator.process_template(tsrf_dstream)
-        storeage_ids = self.coordinator._store_raw(self.dstreams)
-        self.assertEqual(len(storeage_ids), len(self.dstreams))
-        self.assertFalse(None in storeage_ids)
+        inserted_count = self.coordinator._store_raw(self.bstream)
+        self.assertEqual(inserted_count, len(self.bstream["timestamp"]))
+        self.assertFalse(inserted_count == 0)
+        self.assertIsNotNone(inserted_count)
         qt = self.coordinator._retrieve_current_template(tsrf_dstream["stream_token"])
-        bstream = self.coordinator._list_to_bstream(qt, self.dstreams, storeage_ids)
+        bstream = self.coordinator._list_to_bstream(qt, self.dstreams)
         bstream.apply_filters()
-        self.coordinator._store_filtered(bstream)
+
+        # test storing filtered data
+        filtered_inserted_count = self.coordinator._store_filtered(bstream)
         bstream['stream_token'] = "this_token_is_bad"
         self.assertRaises(ProgrammingError,lambda: self.coordinator._store_filtered(bstream))
         bstream['stream_token'] = cur_stream_token
-        bstream.ids = ["a","b"]
         self.assertRaises(KeyError,lambda: self.coordinator._store_filtered(bstream))
 
-
-        for ds in self.dstreams:
-            ds["stream_token"] = "not_a_real_token"
-        self.assertRaises(ProgrammingError, lambda: self.coordinator._store_raw(self.dstreams))
+        # checks to make sure raw data with bad stream token raises error during storage attempt
+        self.bstream["stream_token"] = "not_a_real_token"
+        self.assertRaises(ProgrammingError, lambda: self.coordinator._store_raw(self.bstream))
 
     def test_store_json(self):
         inserted_template_id = self.coordinator._store_json(self.dstream_template, 'template')
@@ -64,10 +65,9 @@ class TestCoordinator(unittest.TestCase):
         self.assertEqual(inserted_event_id, queried_event["_id"])
 
     def test_list_to_bstream(self):
-        bstream = self.coordinator._list_to_bstream(self.dstream_template, self.dstreams, [1,2,3])
+        bstream = self.coordinator._list_to_bstream(self.dstream_template, self.dstreams)
 
         self.assertEqual(bstream["measures"], self.bstream["measures"])
-        self.assertEqual(bstream.ids, [1,2,3])
 
 
     def test_process_template(self):

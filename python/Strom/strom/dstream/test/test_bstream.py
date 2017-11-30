@@ -10,15 +10,12 @@ class TestBStream(unittest.TestCase):
         self.dstream_template = json.load(open(demo_data_dir + "demo_template.txt"))
         self.dstream_template["_id"] = "chadwick666"
         self.dstreams = json.load(open(demo_data_dir+"demo_trip26.txt"))
-
-        self.ids = [1,2,3]
-        self.bstream = BStream(self.dstream_template, self.dstreams, self.ids)
+        self.bstream = BStream(self.dstream_template, self.dstreams)
 
     def test_init(self):
         self.assertEqual(self.bstream["template_id"], "chadwick666")
-        self.assertEqual(self.bstream.ids, [1,2,3])
         self.dstream_template.pop("_id")
-        self.assertRaises(KeyError,lambda: BStream(self.dstream_template, self.dstream_template, self.ids))
+        self.assertRaises(KeyError,lambda: BStream(self.dstream_template, self.dstream_template))
 
     def test_load_from_dict(self):
         self.assertEqual(self.bstream["stream_name"], self.dstream_template["stream_name"])

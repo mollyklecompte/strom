@@ -404,7 +404,7 @@ class SQL_Connection:
         measure_columns = ""
         # for each item in the measures dictionary
             # create a column for that measure
-        for measure in dictionary['measures']:
+        for measure in dictionary['filter_measures']:
             measure_columns += "  `" + measure + "`,"
 
         columns = (
@@ -414,7 +414,7 @@ class SQL_Connection:
         % (measure_columns))
 
         logger.info("Finished creating columns")
-        measure_dict_array = list(dictionary["measures"].values())
+        measure_dict_array = list(dictionary["filter_measures"].values())
         measure_matrix = [ m['val'] for m in measure_dict_array ]
         measure_values = [ [str(item) for item in group] for group in measure_matrix ]
 

@@ -11,6 +11,7 @@ from strom.database.maria_management import SQL_Connection
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"
 
+
 class Coordinator(object):
     def __init__(self):
         self.mongo = MongoManager()
@@ -21,7 +22,22 @@ class Coordinator(object):
 
         return insert_id
 
-    def _store_raw(self, data_list):
+    def _store_raw(self, bstream):
+        """
+        Passes freshly aggregated bstream to maria manager for storage.
+        :param bstream: a bstream
+        :return:
+        """
+        rows_inserted = self.maria._insert_rows_into_stream_lookup_table(bstream)
+
+        return rows_inserted
+
+    def _store_raw_old(self, data_list):
+        """
+        Old version of store_raw where we iterated through dstreams and inserted them one by one. DO NOT USE
+        :param data_list:
+        :return:
+        """
         ids = []
 
         for dstream in data_list:
@@ -32,6 +48,23 @@ class Coordinator(object):
         return ids
 
     def _store_filtered(self, bstream):
+        """
+        Passes token, timestamp list, filtered measures to maria manager for storage
+        :param bstream: b-stream dict with filtered data
+        :return:
+        """
+
+        filtered_dict = {"stream_token": bstream["stream_token"], "timestamp": bstream["timestamp"], "filter_measures": bstream["filter_measures"]}
+        rows_inserted = self.maria._insert_rows_into_stream_filtered_table(filtered_dict)
+
+        return rows_inserted
+
+    def _store_filtered_old_dumb(self, bstream):
+        """
+        This is when we foolishly updated rows in the stream table with the filtered data. Here for historical purposes only DO NOT USE
+        :param bstream:
+        :return:
+        """
         ids = bstream.ids
         token = bstream['stream_token']
         zippies = {}
@@ -50,20 +83,6 @@ class Coordinator(object):
         bstream.aggregate
 
         return bstream
-    """
-     def _apply_filters(self, bstream):
-        filtered_bstream = bstream.apply_filters()
-
-        return filtered_bstream
-
-    def _apply_derived_params(self, bstream):
-        derived_bstream = bstream.
-        return bstream
-
-    def _apply_events(self, bstream):
-        return bstream
-    """
-
 
     def _retrieve_current_template(self, token):
         """
@@ -89,7 +108,6 @@ class Coordinator(object):
             end = time[1]
             return self.maria._retrieve_by_timestamp_range(dstream, start, end)
 
-
     def process_template(self, temp_dstream):
         temp_dstream = deepcopy(temp_dstream)
         token = temp_dstream["stream_token"]
@@ -100,8 +118,10 @@ class Coordinator(object):
         if not metadata_tabel_check:
             self.maria._create_metadata_table()
         self.maria._insert_row_into_metadata_table(name, token, version, mongo_id)
+        # Create stream lookup table for raw data
         self.maria._create_stream_lookup_table(temp_dstream)
-
+        # Create stream lookup table for filtered data
+        self.maria._create_stream_filtered_table(temp_dstream)
 
     def process_data_sync(self, dstream_list, token):
         # store raw dstream data, return list of ids
