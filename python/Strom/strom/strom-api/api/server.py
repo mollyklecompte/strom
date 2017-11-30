@@ -4,7 +4,7 @@ from flask import Flask, request
 from flask_restful import reqparse
 from strom.dstream.dstream import DStream
 from strom.coordinator.coordinator import Coordinator
-from strom.kafka.producer import Producer
+from strom.kafka.producer.producer import Producer
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
@@ -64,7 +64,7 @@ def load():
 def load_kafka():
     """ Collect data and produce to kafka topic. """
     producer = Producer(url, b'load') #kafka url & topic name(byte-str)
-    args = parse_args()
+    args = parser.parse_args()
     data = args['stream_data']
     producer.produce(None, data) # first param = compression: none, snappy, gzip, lz4
     return 'Success.', 202
