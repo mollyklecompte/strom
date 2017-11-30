@@ -1,6 +1,7 @@
 import unittest
 import json
 import gc
+from pymysql.converters import Decimal
 import collections
 from strom.database.maria_management import SQL_Connection
 
@@ -35,7 +36,7 @@ class TestSQL_Connection(unittest.TestCase):
         self.assertEqual(self.cnx._insert_row_into_metadata_table("stream_three", "stream_token_three", 1.3, "right"), 1)
 
         # Retrieve from metadata_table (TEST)
-        self.assertTrue(collections.Counter(list(self.cnx._retrieve_by_id(2))), collections.Counter([2, "stream_two", "stream_token_two", 1.1, "woo"]))
+        self.assertDictEqual(self.cnx._retrieve_by_id(2), {"unique_id":2, "stream_name":"stream_two", "stream_token":"stream_token_two", "version":Decimal('1.10'), "template_id":"woo"})
         self.assertEqual(self.cnx._retrieve_by_stream_name("stream_two"), 1)
         self.assertEqual(self.cnx._retrieve_by_stream_token("stream_token_one"), 1)
         self.assertEqual(self.cnx._return_template_id_for_latest_version_of_stream("stream_token_three"), "right")

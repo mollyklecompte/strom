@@ -1,17 +1,16 @@
 import unittest
 import json
 from copy import deepcopy
-from Strom.strom.dstream.bstream import DStream, BStream
+from strom.dstream.bstream import DStream, BStream
 
 class TestBStream(unittest.TestCase):
     def setUp(self):
         #import demo data
-        demo_data_dir = "Strom/demo_data/"
+        demo_data_dir = "demo_data/"
         self.dstream_template = json.load(open(demo_data_dir + "demo_template.txt"))
         self.dstream_template["_id"] = "chadwick666"
         self.dstreams = json.load(open(demo_data_dir+"demo_trip26.txt"))
-        # dstreams = [{"stream_name": "driver_data", "version": 0, "stream_token": "abc123", "sources": {}, 'storage_rules': {}, 'ingest_rules': {}, 'engine_rules': {}, "timestamp": 1510603538107, "measures": {"location": {"val": [-122.69081962885704, 45.52110054870811], "dtype": "float"}, "measure2": {"val": 13, "dtype": "int"}}, "fields": {"region-code": "PDX"}, "user_ids": {"driver-id": "Molly Mora", "id": 0}, "tags": {"mood": "chill"}, "foreign_keys": [], "filters": [], "dparam_rules": [], "event_rules": {}}, {"stream_name": "driver_data", "version": 0, "stream_token": "abc123","sources": {}, 'storage_rules': {}, 'ingest_rules': {}, 'engine_rules': {},"timestamp": 1510603538108, "measures": {"location": {"val": [-132.69081962885704, 55.52110054870811], "dtype": "float"}, "measure2": {"val": 9, "dtype": "int"}}, "fields": {"region-code": "PDX"}, "user_ids": {"driver-id": "Molly Mora", "id": 0}, "tags": {"mood": "big mood"}, "foreign_keys": [], "filters": [], "dparam_rules": [], "event_rules": {}}, {"stream_name": "driver_data", "version": 0, "stream_token": "abc123","sources": {}, 'storage_rules': {}, 'ingest_rules': {}, 'engine_rules': {},"timestamp": 1510603538109, "measures": {"location": {"val": [-142.69081962885704, 65.52110054870811], "dtype": "float"}, "measure2": {"val": 4, "dtype": "int"}}, "fields": {"region-code": "PDX"}, "user_ids": {"driver-id": "Molly Mora", "id": 0}, "tags": {"mood": "the last big mood"}, "foreign_keys": [], "filters": [], "dparam_rules": [], "event_rules": {}}]
-        # template = {"stream_name": "driver_data", "version": 0, "stream_token": "abc123", "sources": {}, 'storage_rules': {}, 'ingest_rules': {}, 'engine_rules': {}, "timestamp": None, "measures": {"location": {"val": None, "dtype": "float"}, "measure2": {"val": None, "dtype": "int"}}, "fields": {"region-code": None}, "user_ids": {"driver-id": {}, "id": {}}, "tags": {"mood": None}, "foreign_keys": [], "filters": [], "dparam_rules": [], "event_rules": {}, "_id": "chadwick666"}
+
         self.ids = [1,2,3]
         self.bstream = BStream(self.dstream_template, self.dstreams, self.ids)
 
@@ -62,17 +61,6 @@ class TestBStream(unittest.TestCase):
             self.assertEqual(len(self.bstream["tags"][tag]), len(self.dstreams))
     #
     def test_aggregate(self):
-<<<<<<< HEAD
-        b = self.bstream.aggregate
-        x = {"stream_name": "driver_data", "version": 0, "stream_token": "abc123", "sources": {},'storage_rules': {}, 'ingest_rules': {}, 'engine_rules': {}, "timestamp": [1510603538107, 1510603538108, 1510603538109], "measures":{"location": {"val": [[-122.69081962885704, 45.52110054870811], [-132.69081962885704, 55.52110054870811], [-142.69081962885704, 65.52110054870811]], "dtype": "float"}, "measure2": {"val": [13, 9, 4], "dtype": "int"}}, "fields": {"region-code": ["PDX", "PDX", "PDX"]}, "user_ids": {"driver-id": ["Molly Mora", "Molly Mora", "Molly Mora"], "id": [0, 0, 0]}, "tags": {"mood": ["chill", "big mood", "the last big mood"]}, "foreign_keys": [], "filters": [], "dparam_rules": [], "event_rules": {}, "template_id": "chadwick666"}
-
-        print("B STREAM")
-        print(b)
-        print("TEST ONE")
-        print(x)
-
-        self.assertEqual(b,x)
-=======
         b = self.bstream.aggregate()
         self.assertIsInstance(self.bstream["timestamp"], list)
         for uuid in self.dstream_template["user_ids"]:
@@ -92,7 +80,6 @@ class TestBStream(unittest.TestCase):
             self.assertIsInstance(self.bstream["tags"][tag], list)
             self.assertEqual(len(self.bstream["tags"][tag]), len(self.dstreams))
         self.assertEqual(b, self.bstream)
->>>>>>> ef1202e4da443aec82e212341cb3ae0f723602ae
 
     def test_applying(self):
         bstream = deepcopy(self.bstream)

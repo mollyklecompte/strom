@@ -1,5 +1,5 @@
 import unittest
-from Strom.strom.transform.detect_event import DetectEvent, DetectThreshold
+from strom.transform.detect_event import DetectEvent, DetectThreshold
 
 class TestDetectEvent(unittest.TestCase):
     def setUp(self):
