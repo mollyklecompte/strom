@@ -2,7 +2,7 @@ import unittest
 import json
 import gc
 import collections
-from Strom.strom.database.mariadb import SQL_Connection
+from Strom.strom.database.maria_management import SQL_Connection
 
 class TestSQL_Connection(unittest.TestCase):
     def setUp(self):
@@ -41,12 +41,12 @@ class TestSQL_Connection(unittest.TestCase):
         self.assertEqual(self.cnx._return_template_id_for_latest_version_of_stream("stream_token_three"), "right")
         self.assertEqual(self.cnx._select_all_from_metadata_table(), 4)
 
-        # Insert rows into stream_lookup_table one by one
-        # for dstream in self.dstreams:
-        #     self.cnx._insert_row_into_stream_lookup_table(dstream)
-
         # Insert rows into stream_lookup_table in one call
-        self.cnx._insert_rows_into_stream_lookup_table(self.bstream)
+        self.assertEqual(self.cnx._insert_rows_into_stream_lookup_table(self.bstream), 283)
+
+        # Insert rows into stream_lookup_table one by one
+        for dstream in self.dstreams:
+            self.cnx._insert_row_into_stream_lookup_table(dstream)
 
         # Insert value into filtered measure in stream_lookup_table
         self.assertEqual(self.cnx._insert_filtered_measure_into_stream_lookup_table("abc123", "buttery_location", "dummy data dummy data dummy data dummy data", 1), 1)

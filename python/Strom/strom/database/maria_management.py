@@ -84,7 +84,6 @@ class SQL_Connection:
             logger.info("Querying by stream name")
             self.cursor.execute(query, [stream_name])
             results = self.cursor.fetchall()
-            print("results for stream_name", results)
             for dictionary in results:
                 logger.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(dictionary["unique_id"], dictionary["stream_name"], dictionary["stream_token"], dictionary["version"], dictionary["template_id"]))
             return self.cursor.rowcount
@@ -123,7 +122,6 @@ class SQL_Connection:
             logger.info("Returning template_id for latest version of stream by stream_token")
             self.cursor.execute(query, [stringified_stream_token_uuid, stringified_stream_token_uuid])
             result = self.cursor.fetchall()
-            print('template_id result', result)
             if len(result) == 1:
                 logger.info(result[0]["template_id"])
                 return result[0]["template_id"]
@@ -150,8 +148,6 @@ class SQL_Connection:
             logger.info("Checking if template_metadata table exists")
             self.cursor.execute(query)
             results = self.cursor.fetchall()
-            print("results", results)
-            print("results[0]['COUNT(*)']", results[0]['COUNT(*)'])
             if results[0]['COUNT(*)'] == 1:
                 return True
             else:
@@ -262,11 +258,8 @@ class SQL_Connection:
             "%s)"
         % (dstream["version"], dstream["timestamp"], measure_values, uid_values, _stringify_by_adding_quotes(dstream["tags"]), _stringify_by_adding_quotes(dstream["fields"])))
 
-        # print("****** COLUMNS ******", columns)
-        # print("****** VALUES ******", values)
-
         query = ("INSERT INTO %s %s VALUES %s" % (stringified_stream_token_uuid, columns, values))
-        # print("~~~~~~~~ QUERY ~~~~~~~~", query);
+
         try:
             logger.info("Inserting row into table " + stringified_stream_token_uuid)
             self.cursor.execute(query)
@@ -325,8 +318,8 @@ class SQL_Connection:
             self.cursor.executemany(query, value_tuples)
             self.mariadb_connection.commit()
             logger.info("Inserted rows")
-            logger.info(self.cursor.lastrowid)
-            return self.cursor.lastrowid
+            logger.info(self.cursor.rowcount)
+            return self.cursor.rowcount
         except pymysql.err.ProgrammingError as err:
             raise err
 
@@ -355,6 +348,7 @@ class SQL_Connection:
             results = self.cursor.fetchall()
             for row in results:
                 logger.info(row)
+            logger.info(self.cursor.rowcount)
             return self.cursor.rowcount
         except pymysql.err.ProgrammingError as err:
             raise err
@@ -384,239 +378,3 @@ class SQL_Connection:
             return self.cursor.rowcount
         except pymysql.err.ProgrammingError as err:
             raise err
-
-single_dstream = {
-    'stream_name': 'driver_data',
-    'version': 0,
-    'stream_token': 'test_token',
-    'timestamp': 20171117,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
-    'fields': {'region-code': 'PDX'},
-    'user_ids': {'driver-id': 'Molly Mora', 'id': 0},
-    'tags': {},
-    'foreign_keys': [],
-    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
-    'dparam_rules': [],
-    'event_rules': {}
-}
-
-second_single_dstream = {
-    'stream_name': 'driver_data',
-    'version': 0,
-    'stream_token': 'test_token',
-    'timestamp': 20171118,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
-    'fields': {'region-code': 'PDX'},
-    'user_ids': {'driver-id': 'Kelson Agnic', 'id': 0},
-    'tags': {},
-    'foreign_keys': [],
-    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
-    'dparam_rules': [],
-    'event_rules': {}
-}
-
-third_single_dstream = {
-    'stream_name': 'driver_data',
-    'version': 0,
-    'stream_token': 'test_token',
-    'timestamp': 20171119,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
-    'fields': {'region-code': 'PDX'},
-    'user_ids': {'driver-id': 'David Parvizi', 'id': 0},
-    'tags': {},
-    'foreign_keys': [],
-    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
-    'dparam_rules': [],
-    'event_rules': {}
-}
-
-fourth_single_dstream = {
-    'stream_name': 'driver_data',
-    'version': 0,
-    'stream_token': 'test_token',
-    'timestamp': 20171120,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
-    'fields': {'region-code': 'PDX'},
-    'user_ids': {'driver-id': 'Justine LeCompte', 'id': 0},
-    'tags': {},
-    'foreign_keys': [],
-    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
-    'dparam_rules': [],
-    'event_rules': {}
-}
-
-fifth_single_dstream = {
-    'stream_name': 'driver_data',
-    'version': 0,
-    'stream_token': 'test_token',
-    'timestamp': 20171121,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
-    'fields': {'region-code': 'PDX'},
-    'user_ids': {'driver-id': 'Adrian Wang', 'id': 0},
-    'tags': {},
-    'foreign_keys': [],
-    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
-    'dparam_rules': [],
-    'event_rules': {}
-}
-
-sixth_single_dstream = {
-    'stream_name': 'driver_data',
-    'version': 0,
-    'stream_token': 'test_token',
-    'timestamp': 20171122,
-    'measures': {'location': {'val': [-122.69081962885704, 45.52110054870811], 'dtype': 'varchar(60)'}},
-    'fields': {'region-code': 'PDX'},
-    'user_ids': {'driver-id': 'Parham Nielsen', 'id': 0},
-    'tags': {},
-    'foreign_keys': [],
-    'filters': [{"func_params":{}, "filter_name": "smoothing", "dtype":"float"}, {"func_params":{}, "filter_name": "low_pass", "dtype":"float"}],
-    'dparam_rules': [],
-    'event_rules': {}
-}
-
-def main():
-    sql = SQL_Connection()
-    # sql._create_metadata_table()
-    # sql._check_metadata_table_exists()
-    # sql._check_table_exists('template_metadata')
-    # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "temp_id_one")
-    # # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "temp_id_one")
-    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "temp_id_two")
-    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "temp_id_three")
-    # sql._retrieve_by_stream_name("stream_one")
-    # sql._retrieve_by_id(1)
-    # # print("RETRIEVE ONE stream_two ROW")
-    # sql._retrieve_by_stream_token("stream_token_two")
-    # sql._return_template_id_for_latest_version_of_stream("stream_token_two")
-    # sql._select_all_from_metadata_table()
-
-
-
-# STREAM LOOKUP TABLE PRELIMINARY TESTS
-
-    demo_data_dir = "Strom/demo_data/"
-    dstream_template = json.load(open(demo_data_dir + "demo_template.txt"))
-    dstream_template["stream_token"] = "abc123"
-    bstream = json.load(open(demo_data_dir+"demo_bstream_trip26.txt"))
-
-
-    # measure_dict_array = list(bstream["measures"].values())
-    # measure_matrix = [ m['val'] for m in measure_dict_array ]
-    # measure_values = [ [str(item) for item in group] for group in measure_matrix ]
-    # # print(measure_values)
-    # uid_values = [ [item for item in group] for group in list(bstream["user_ids"].values()) ]
-    # print(uid_values)
-    # print(len(uid_values))
-    # print(*uid_values)
-    # bstream["tags"] = { 'some': 'tag', 'another': 'tag' }
-    # tag_values = str(bstream["tags"])
-    # # print(tag_values)
-    # # field_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["fields"].values()) ]
-    # field_values = [ f for f in list(bstream["fields"].values()) ]
-    # # print(field_values)
-    # logger.info("Created values arrays")
-    #
-    #
-    # # value_tuples = list(itertools.zip_longest(itertools.repeat(bstream["version"]), bstream["timestamp"], measure_values, uid_values, itertools.repeat(tag_values), field_values, fillvalue=''))
-    # value_tuples = list(zip(itertools.repeat(bstream["version"]), bstream["timestamp"], *measure_values, *uid_values, itertools.repeat(tag_values), *field_values))
-
-    # print("VALUE_TUPLES", value_tuples)
-
-    # measure_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["measures"].values()) ]
-    # print(measure_values)
-
-    # print(list(bstream["measures"].values()))
-
-    # measure_dict_array = list(bstream["measures"].values())
-    # # print(measure_dict_array[0]['val'])
-    #
-    # # measure_matrix = []
-    # # for measure_arrays in measure_dict_array:
-    # #     measure_matrix.append(measure_arrays['val'])
-    # # print(measure_matrix)
-    #
-    # measure_matrix = [ m['val'] for m in measure_dict_array ]
-    # # for subarray in measure_matrix:
-    # #     for item in subarray:
-    # #         str(item)
-    #
-    # strings = [ [str(item) for item in group] for group in measure_matrix ]
-    # # print(measure_matrix)
-    # print(strings)
-
-
-    # # uid_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["user_ids"].values()) ]
-    # # print(uid_values)
-    # print(list(bstream["user_ids"].values()))
-
-    # uid_stringified = [ [str(item) for item in group] for group in list(bstream["user_ids"].values()) ]
-    # print(uid_stringified)
-
-    # # tag_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["tags"].values()) ]
-    # # print(tag_values)
-    # print(list(bstream["tags"].values()))
-
-    # tags = [ tag for tag in bstream["tags"].values() ]
-    # print(tags)
-
-    # # field_values = [ _stringify_by_adding_quotes(value) for value in list(bstream["fields"].values()) ]
-    # # print(field_values)
-    # print(list(bstream["fields"].values()))
-
-    # fields_arrays = [ f for f in list(bstream["fields"].values()) ]
-    # print(fields_arrays)
-    # print(*fields_arrays)
-    # single_array_field = *fields_arrays
-    # string_fields = [ str(f) for f in single_array_field ]
-    # print("string_fields", string_fields)
-
-    # dstream = DStream()
-    # # print("***DSTREAM INITIALIZED***:", dstream)
-    #
-    # dstream["stream_token"] = "abc123"
-    #
-    # second_row = copy.deepcopy(dstream)
-    # third_row = copy.deepcopy(dstream)
-    # fourth_row = copy.deepcopy(dstream)
-    # fifth_row = copy.deepcopy(dstream)
-    #
-    #
-    # dstream.load_from_json(single_dstream)
-
-    # print("@@@@ DSTREAM WITH DATA @@@@", dstream)
-
-    # sql._create_stream_lookup_table(dstream_template)
-    # sql._check_table_exists('abc123')
-
-    # second_row.load_from_json(second_single_dstream)
-    # # print("@@@@ DSTREAM WITH second_single_dstream @@@@", second_row)
-    # third_row.load_from_json(third_single_dstream)
-    # # print("@@@@ DSTREAM WITH third_single_dstream @@@@", third_row)
-    # fourth_row.load_from_json(fourth_single_dstream)
-    # # print("@@@@ DSTREAM WITH fourth_single_dstream @@@@", fourth_row)
-    # fifth_row.load_from_json(fifth_single_dstream)
-    # # print("@@@@ DSTREAM WITH fifth_single_dstream @@@@", fifth_row)
-    #
-    # sql._insert_row_into_stream_lookup_table(dstream)
-    #
-    #
-    # sql._insert_row_into_stream_lookup_table(second_row)
-    # sql._insert_row_into_stream_lookup_table(third_row)
-    # sql._insert_row_into_stream_lookup_table(fourth_row)
-    # sql._insert_row_into_stream_lookup_table(fifth_row)
-
-    # sql._insert_rows_into_stream_lookup_table(bstream)
-
-    # stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
-    # sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy_data sldkfj lksjf lsajdlfj sl', 1)
-    # sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'test data sdfadsfafwt ergreag erg ', 2)
-    # sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy data asdga ergawe gedawe erag', 3)
-    # sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
-    # sql._select_all_from_stream_lookup_table(dstream)
-    # sql._select_data_by_column_where(dstream, "`driver-id`", "unique_id", 3)
-
-    gc.collect()
-    sql._close_connection()
-
-# main()
