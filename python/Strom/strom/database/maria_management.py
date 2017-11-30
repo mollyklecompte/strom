@@ -366,12 +366,76 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
+    def _create_stream_filtered_table(self, dstream):
+        """Insert row into table for storing filtered measures
+           Creates table by parsing the dstream template
+        """
+        measure_columns = ""
+        # for each item in the measures dictionary
+            # create a column for that measure
+        for measure in dstream['measures']:
+            measure_columns += "  `" + measure + "` " + dstream['measures'][measure]['dtype'] + ","
 
-    def _create_stream_filtered_table(self, dict):
-        """Create table for storing filtered measures
+        stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
+
+        table = ("CREATE TABLE %s ("
+            "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
+            # "  `version` decimal(10, 2) NOT NULL,"
+            "%s"
+            "  `time_stamp` decimal(20, 5) NOT NULL,"
+            "  PRIMARY KEY (`unique_id`)"
+            ") ENGINE=InnoDB" % (stringified_stream_token_uuid, measure_columns))
+
+        try:
+            logger.info("Creating filtered measures table for stream")
+            self.cursor.execute(table)
+        except pymysql.err.ProgrammingError as err:
+            if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
+                logger.error("table already exists")
+            else:
+                raise err
+
+    def _insert_rows_into_stream_filtered_table(self, dictionary):
+        """Insert row into table for storing filtered measures
            Expects a dictionary with the stream_token, filtered measures, and timestamp
         """
-        
+        stringified_stream_token_uuid = _stringify_uuid(dictionary["stream_token"])
+
+        measure_columns = ""
+        # for each item in the measures dictionary
+            # create a column for that measure
+        for measure in dictionary['measures']:
+            measure_columns += "  `" + measure + "`,"
+
+        columns = (
+            # "(`version`,"
+            "%s"
+            " `time_stamp`,"
+        % (measure_columns))
+
+        logger.info("Finished creating columns")
+        measure_dict_array = list(dictionary["measures"].values())
+        measure_matrix = [ m['val'] for m in measure_dict_array ]
+        measure_values = [ [str(item) for item in group] for group in measure_matrix ]
+
+        logger.info("Created values arrays")
+
+        value_tuples = list(zip(*measure_values, dictionary["timestamp"]))
+        # The number of columns for measures, user_ids, and filters vary by dstream/bstream, so we need to build the number of
+        # string interpolations dynamically for the query values. There will always be at least one '%s', so the value_interpolations
+        # variable will be the length of one tuple minus 1.
+        value_interpolations = (len(value_tuples[0]) - 1) * ", %s"
+        query = ("INSERT INTO %s %s " % (stringified_stream_token_uuid, columns)) + "VALUES (%s" + value_interpolations + ")"
+        try:
+            logger.info("Inserting rows into table " + stringified_stream_token_uuid)
+            self.cursor.executemany(query, value_tuples)
+            self.mariadb_connection.commit()
+            logger.info("Inserted rows")
+            logger.info(self.cursor.rowcount)
+            return self.cursor.rowcount
+        except pymysql.err.ProgrammingError as err:
+            raise err
+
     def _select_data_by_column_where(self, dstream, data_column, filter_column, value):
         # Method created for testing purposes. Not intended for use by the coordinator (for now).
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
