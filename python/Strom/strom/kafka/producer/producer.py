@@ -27,7 +27,8 @@ class Producer():
         """
         \b
         Produce to given topic and log e. 20k msg.
-        Expects type of compression ('none' if no compression needed) and message data.
+        Expects type of compression and message data.
+        Compression options: snappy, gzip, lz4, none
         """
         if compression == "snappy":
             com_msg = _snappy(msg)
