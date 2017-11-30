@@ -21,7 +21,7 @@ class Consumer():
             queued_max_messages=2000,
             consumer_timeout_ms=1,
             auto_start=True,
-            use_rdkafka=True)  # NOTE: may be quicker w/ alt. options
+            use_rdkafka=False)  # NOTE: may be quicker w/ alt. options
 
     def _snappy_decompress(self, msg):
         msg_unpkg = Compression.decode_snappy(msg)

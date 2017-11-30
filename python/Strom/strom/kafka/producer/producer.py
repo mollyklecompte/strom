@@ -10,7 +10,7 @@ class Producer():
     def __init__(self, url, topic):
         self.client = KafkaClient(hosts=url, zookeeper_hosts=None, use_greenlets=False)
         self.topic = self.client.topics[topic]
-        self.producer = self.topic.get_producer(delivery_reports=True, use_rdkafka=True)
+        self.producer = self.topic.get_producer(delivery_reports=True, use_rdkafka=False)
         self.count = 0
 
     def _snappy(self, data):
