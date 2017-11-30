@@ -8,17 +8,13 @@ import copy
 import gc
 import itertools
 import json
-from logging import (DEBUG, INFO)
-from Strom.strom.utils.logger.logger import logger
 
 import pymysql.cursors
-# from pymysql.err import pymysql.err.ProgrammingError, pymysql.err.InternalError
 from pymysql.constants import ER
-# relative path works when running mariadb.py as a module
-from Strom.strom.database.maria_config import dbconfig
-from Strom.strom.dstream.dstream import DStream
-# from Strom.strom.dstream.bstream import BStream
-from Strom.strom.dstream.filter_rules import FilterRules
+
+from logging import (DEBUG, INFO)
+from strom.utils.logger.logger import logger
+from strom.utils.configer import configer
 
 def _stringify_by_adding_quotes(dict):
     return '"' + str(dict) + '"'
@@ -32,7 +28,8 @@ class SQL_Connection:
         # running out of database connections.
         gc.collect()
         # Set up connection to 'test' database in the MariaDB instance on Docker
-        self.mariadb_connection = pymysql.connect(**dbconfig)
+        logger.info(configer['host'])
+        self.mariadb_connection = pymysql.connect(host=configer['host'], database=configer['database'], user=configer['user'], password=configer['password'], charset=configer['charset'], cursorclass=pymysql.cursors.DictCursor, autocommit=configer['autocommit'])
         self.cursor = self.mariadb_connection.cursor()
 
     def _close_connection(self):
