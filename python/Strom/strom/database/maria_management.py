@@ -410,7 +410,7 @@ class SQL_Connection:
         columns = (
             # "(`version`,"
             "%s"
-            " `time_stamp`,"
+            " `time_stamp`"
         % (measure_columns))
 
         logger.info("Finished creating columns")
@@ -425,7 +425,7 @@ class SQL_Connection:
         # string interpolations dynamically for the query values. There will always be at least one '%s', so the value_interpolations
         # variable will be the length of one tuple minus 1.
         value_interpolations = (len(value_tuples[0]) - 1) * ", %s"
-        query = ("INSERT INTO %s %s " % (stringified_stream_token_uuid, columns)) + "VALUES (%s" + value_interpolations + ")"
+        query = ("INSERT INTO %s (%s) " % (stringified_stream_token_uuid, columns)) + "VALUES (%s" + value_interpolations + ")"
         try:
             logger.info("Inserting rows into table " + stringified_stream_token_uuid)
             self.cursor.executemany(query, value_tuples)
@@ -448,3 +448,86 @@ class SQL_Connection:
             return self.cursor.rowcount
         except pymysql.err.ProgrammingError as err:
             raise err
+
+def main():
+    sql = SQL_Connection()
+    # sql._create_metadata_table()
+    # sql._check_metadata_table_exists()
+    # sql._check_table_exists('template_metadata')
+    # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "temp_id_one")
+    # # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "temp_id_one")
+    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "temp_id_two")
+    # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "temp_id_three")
+    # # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
+    # # sql._insert_row_into_metadata_table("stream_one", "stream_token_one", 1.0, "filler")
+    # # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.1, "filler")
+    # # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
+    # # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
+    # # sql._insert_row_into_metadata_table("stream_two", "stream_token_two", 1.2, "filler")
+    # sql._retrieve_by_stream_name("stream_one")
+    # sql._retrieve_by_id(1)
+    # # print("RETRIEVE ONE stream_two ROW")
+    # sql._retrieve_by_stream_token("stream_token_two")
+    # sql._return_template_id_for_latest_version_of_stream("stream_token_two")
+    # sql._select_all_from_metadata_table()
+
+
+
+# STREAM LOOKUP TABLE PRELIMINARY TESTS
+
+    # dstream = DStream()
+    # print("***DSTREAM INITIALIZED***:", dstream)
+
+    demo_data_dir = "./demo_data/"
+    dstream = json.load(open(demo_data_dir+"demo_template.txt"))
+    dstreams = json.load(open(demo_data_dir+"first_seven_from_demo_trip.txt"))
+    bstream = json.load(open(demo_data_dir+"demo_bstream_trip26.txt"))
+
+    dstream["stream_token"] = "abc123"
+
+    # second_row = copy.deepcopy(dstream)
+    # third_row = copy.deepcopy(dstream)
+    # fourth_row = copy.deepcopy(dstream)
+    # fifth_row = copy.deepcopy(dstream)
+    #
+    #
+    # dstream.load_from_json(single_dstream)
+
+    # print("@@@@ DSTREAM WITH DATA @@@@", dstream)
+
+    # sql._create_stream_lookup_table(dstream)
+    # sql._check_table_exists('abc123')
+
+    sql._create_stream_filtered_table(dstream)
+    sql._check_table_exists('abc123')
+    sql._insert_rows_into_stream_filtered_table(bstream)
+
+    # second_row.load_from_json(second_single_dstream)
+    # # print("@@@@ DSTREAM WITH second_single_dstream @@@@", second_row)
+    # third_row.load_from_json(third_single_dstream)
+    # # print("@@@@ DSTREAM WITH third_single_dstream @@@@", third_row)
+    # fourth_row.load_from_json(fourth_single_dstream)
+    # # print("@@@@ DSTREAM WITH fourth_single_dstream @@@@", fourth_row)
+    # fifth_row.load_from_json(fifth_single_dstream)
+    # # print("@@@@ DSTREAM WITH fifth_single_dstream @@@@", fifth_row)
+    #
+    # sql._insert_row_into_stream_lookup_table(dstream)
+    #
+    #
+    # sql._insert_row_into_stream_lookup_table(second_row)
+    # sql._insert_row_into_stream_lookup_table(third_row)
+    # sql._insert_row_into_stream_lookup_table(fourth_row)
+    # sql._insert_row_into_stream_lookup_table(fifth_row)
+
+    # stringified_stream_token_uuid = str(dstream["stream_token"]).replace("-", "_")
+    # sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy_data sldkfj lksjf lsajdlfj sl', 1)
+    # sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'test data sdfadsfafwt ergreag erg ', 2)
+    # sql._insert_filtered_measure_into_stream_lookup_table(dstream["stream_token"], 'smoothing', 'dummy data asdga ergawe gedawe erag', 3)
+    # sql._retrieve_by_timestamp_range(dstream, 20171117, 20171119)
+    # sql._select_all_from_stream_lookup_table(dstream)
+    # sql._select_data_by_column_where(dstream, "`driver-id`", "unique_id", 3)
+
+    gc.collect()
+    sql._close_connection()
+
+main()
