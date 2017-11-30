@@ -18,6 +18,7 @@ for word in arguments:
     parser.add_argument(word)
 
 cd = Coordinator() # NOTE: TEMP
+url = '127.0.0.1:9092'
 
 
 def define():
@@ -32,7 +33,7 @@ def define():
 
 def define_kafka():
     """ Collect template and produce to kafka topic. """
-    producer = Producer('127.0.0.1:9092', b'define') #kafka url & topic name(byte-str)
+    producer = Producer(url, b'define') #kafka url & topic name(byte-str)
     args = parse_args()
     data = args['stream_template']
     producer.produce(None, data)
@@ -62,7 +63,7 @@ def load():
 
 def load_kafka():
     """ Collect data and produce to kafka topic. """
-    producer = Producer('127.0.0.1:9092', b'load') #kafka url & topic name(byte-str)
+    producer = Producer(url, b'load') #kafka url & topic name(byte-str)
     args = parse_args()
     data = args['stream_data']
     producer.produce(None, data) # first param = compression: none, snappy, gzip, lz4
@@ -86,7 +87,7 @@ app.add_url_rule('/api/define', 'define', define, methods=['POST'])
 app.add_url_rule('/api/add-source', 'add_source', add_source, methods=['POST'])
 app.add_url_rule('/api/load', 'load', load, methods=['POST'])
 # KAFKA POST TODO
-app.add_url_rule('/kafka/load', 'load_kafka', load_kafka, methods=['POST']) #NOTE: TEMP
+app.add_url_rule('/kafka/load', 'load_kafka', load_kafka, methods=['POST'])
 app.add_url_rule('/kafka/define', 'define_kafka', define_kafka, methods=['POST'])
 # GET
 app.add_url_rule('/api/get/<this>', 'get', get, methods=['GET'])
