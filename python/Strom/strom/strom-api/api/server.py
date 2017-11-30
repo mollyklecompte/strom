@@ -64,7 +64,7 @@ def load():
 def load_kafka():
     """ Collect data and produce to kafka topic. """
     producer = Producer(url, b'load') #kafka url & topic name(byte-str)
-    args = parse_args()
+    args = parser.parse_args()
     data = args['stream_data']
     producer.produce(None, data) # first param = compression: none, snappy, gzip, lz4
     return 'Success.', 202
