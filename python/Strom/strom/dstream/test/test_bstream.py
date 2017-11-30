@@ -61,7 +61,7 @@ class TestBStream(unittest.TestCase):
             self.assertEqual(len(self.bstream["tags"][tag]), len(self.dstreams))
     #
     def test_aggregate(self):
-        b = self.bstream.aggregate()
+        b = self.bstream.aggregate
         self.assertIsInstance(self.bstream["timestamp"], list)
         for uuid in self.dstream_template["user_ids"]:
             self.assertIn(uuid, self.bstream["user_ids"])
@@ -83,7 +83,7 @@ class TestBStream(unittest.TestCase):
 
     def test_applying(self):
         bstream = deepcopy(self.bstream)
-        bstream.aggregate()
+        bstream.aggregate
 
         bstream.apply_filters()
         self.assertIsInstance(bstream["filter_measures"], dict)
