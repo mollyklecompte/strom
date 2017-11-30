@@ -4,13 +4,14 @@ from flask import Flask, request
 from flask_restful import reqparse
 from Strom.strom.dstream.dstream import DStream
 from Strom.strom.coordinator.coordinator import Coordinator
+from Strom.strom.kafka.producer import Producer
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
 
 app = Flask(__name__.split('.')[0])
 
-arguments = ['template', 'data', 'source', 'topic', 'token']
+arguments = ['template', 'data', 'source', 'topic', 'token', 'stream_data']
 
 parser = reqparse.RequestParser()
 for word in arguments:
@@ -20,17 +21,17 @@ cd = Coordinator() # NOTE: TEMP
 
 
 def define():
-    """ Route to collect template for DStream init and return stream_token. """
+    """ Collect template for DStream init and return stream_token. """
     args = parser.parse_args()
     template = args['template'] #   dstream template
     dstream_new = DStream()
     json_template = json.loads(template)
     dstream_new.load_from_json(json_template)
     cd.process_template(dstream_new)
-    return str(dstream_new['stream_token']), 202
+    return str(dstream_new['stream_token']), 200
 
-def add_source():
-    """ Route to collect data source and set in DStream field """
+def add_source(): #NOTE TODO
+    """ Collect data source and set in DStream field """
     args = parser.parse_args()
     if args['topic'] is not None:
         topic = args['topic']   #   kafka topic
@@ -39,10 +40,10 @@ def add_source():
     token = args['token']   #   stream_token
     print(source)
     print(token)
-    return 'Success.', 202
+    return 'Success.', 200
 
 def load():
-    """ Route to collect tokenized data. """
+    """ Collect tokenized data. """
     args = parser.parse_args()
     data = args['data'] #   data with token
     json_data = json.loads(data)
@@ -51,8 +52,18 @@ def load():
     cd.process_data_sync(json_data, token)
     return 'Success.', 202
 
+def produce():
+    """ Produce to kafka. """
+    args = parser.parse_args()
+    topic = args['topic']
+    data = args['stream_data']
+    producer = Producer('127.0.0.1:9092', topic)
+    producer.produce(data)
+    return '', 202
+
+
 def get(this):
-    """ Route for returning data, specified by endpoint & URL params. """
+    """ Returns data, specified by endpoint & URL params. """
     time_range = request.args.get('range', '')
     time = request.args.get('time', '')
     token = request.args.get('token', '')
@@ -68,6 +79,8 @@ def get(this):
 app.add_url_rule('/api/define', 'define', define, methods=['POST'])
 app.add_url_rule('/api/add-source', 'add_source', add_source, methods=['POST'])
 app.add_url_rule('/api/load', 'load', load, methods=['POST'])
+# TODO
+app.add_url_rule('/kafka/produce', 'produce', produce, methods=['POST']) #NOTE: TEMP
 #   GET
 app.add_url_rule('/api/get/<this>', 'get', get, methods=['GET'])
 

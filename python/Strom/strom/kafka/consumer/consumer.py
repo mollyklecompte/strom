@@ -20,31 +20,25 @@ class Consumer():
             auto_commit_interval_ms=60000,
             queued_max_messages=2000,
             consumer_timeout_ms=1,
-            auto_start=False,
+            auto_start=True,
             use_rdkafka=False)  #may be quicker w/ alt. options
 
-    def _decompress_if_snappy(self, msg):
+    def _decompress_snappy(self, msg):
         """ Decompress stream if snappy compression is found. """
         msg_unpkg = Compression.decode_snappy(msg)
         return msg_unpkg
 
     def listen(self):
         """ Actively 'listen' on given topic. Check consumer_timeout_ms option in init. """
-        self.consumer.start() #auto-start
+        # self.consumer.start() #auto-start
         for msg in self.consumer:
             if msg is not None:
                 print(msg.value)#NOTE: TEMP
+                #pass message on to keep listening
 
     def consume(self):
         """ Collect all new messages in a topic at once. """
-        self.consumer.start() #auto-start
+        # self.consumer.start() #auto-start
         msg = self.consumer.consume()
         if msg is not None:
-            try:
-                decompressed = _decompress_if_snappy(msg)
-            except:
-                self.consumer.commit_offsets()
-                return msg
-            else:
-                self.consumer.commit_offsets()
-                return decompressed
+            return msg
