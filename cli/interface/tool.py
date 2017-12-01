@@ -263,6 +263,14 @@ def events(time, utc, a, tk):
     token = _collect_token(cert)
     _check_options("events", time, utc, a, token)
 
+@click.command()
+@click.option('-data', '-d', 'd', type=click.File('r'))
+def test_kafka_load(d):
+    data = d.read()
+    ret = requests.post(url + "/kafka/load", data={'stream_data': data})
+    click.secho(str(ret.status_code), fg='yellow')
+    click.secho(ret.text, fg='yellow')
+
 # d-stream group
 dstream.add_command(welcome)
 dstream.add_command(define)
@@ -273,3 +281,4 @@ dstream.add_command(load)
 # dstream.add_command(filtered)
 # dstream.add_command(derived_params)
 dstream.add_command(events)
+dstream.add_command(test_kafka_load)
