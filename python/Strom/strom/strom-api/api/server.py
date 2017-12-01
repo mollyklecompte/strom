@@ -34,9 +34,9 @@ def define():
 
 def define_kafka():
     """ Collect template and produce to kafka topic. """
-    producer = Producer(url, b'define') #kafka url & topic name(byte-str)
-    args = parse_args()
-    data = args['stream_template']
+    producer = Producer(url, b'define') #NOTE: TODO -> CHANGE LOCATION OF PRODUCER INIT
+    args = parser.parse_args()
+    data = args['stream_template'].encode()
     producer.produce(None, data)
     return 'Success.', 202
 
