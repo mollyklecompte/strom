@@ -36,7 +36,7 @@ class Consumer():
     def consume(self, timeout, compression):
         """ Expects amount of time to listen on topic for new messages. """
         # NOTE: TODO Check diffs b/w for-loop and consumer.consume()
-        self.consumer.consumer_timeout_ms = timeout
+        self.consumer.consumer_timeout_ms = (timeout * 1000)
         self.consumer.start() #auto-start
         for msg in self.consumer:
             if msg is not None:
