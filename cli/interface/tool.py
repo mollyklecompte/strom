@@ -263,14 +263,16 @@ def events(time, utc, a, tk):
     token = _collect_token(cert)
     _check_options("events", time, utc, a, token)
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TEMP
 @click.command()
 @click.option('-data', '-d', 'd', type=click.File('r'))
-def test_kafka_load(d):
+@click.option('--c', type=str)
+def test_kafka_load(d, c):
     data = d.read()
-    ret = requests.post(url + "/kafka/load", data={'stream_data': data})
+    ret = requests.post(url + "/kafka/load", data={'compression':c, 'stream_data':data})
     click.secho(str(ret.status_code), fg='yellow')
     click.secho(ret.text, fg='yellow')
-
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # d-stream group
 dstream.add_command(welcome)
 dstream.add_command(define)

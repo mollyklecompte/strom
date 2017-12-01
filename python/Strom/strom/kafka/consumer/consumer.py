@@ -29,12 +29,9 @@ class Consumer():
     def _gzip_decompress(self, msg):
         msg_unpkg = Compression.decode_gzip(msg)
         return msg_unpkg
-    def _lz4_decompress(self, msg):
-        msg_unpkg = Compression.decode_lz4_old_kafka(msg)
-        return msg_unpkg
 
-    def consume(self, compression):
-        """ Listen time determinied by 'timeout' param given on init. Compression options: snappy, gzip, lz4. """
+    def consume(self, compression=None):
+        """ Listen time determinied by 'timeout' param given on init. Compression options: 'snappy', 'gzip', None. """
         # NOTE: TODO Check diffs b/w for-loop and consumer.consume()
         self.consumer.start() #auto-start
         for msg in self.consumer:
@@ -43,8 +40,6 @@ class Consumer():
                     com_msg = self._snappy_decompress(msg.value)
                 elif compression == "gzip":
                     com_msg = self._gzip_decompress(msg.value)
-                elif compression == "lz4":
-                    com_msg = self._lz4_decompress(msg.value)
                 else:
                     com_msg = msg.value
                 print(str(com_msg) + ": {}".format(msg.offset))

@@ -19,23 +19,18 @@ class Producer():
     def _gzip(self, data):
         cdata = Compression.encode_gzip(data)
         return cdata
-    def _lz4(self, data):
-        cdata = Compression.encode_lz4_old_kafka(data)
-        return cdata
 
     def produce(self, compression, msg):
         """
         \b
         Produce to given topic and log e. 20k msg.
         Expects type of compression and message data.
-        Compression options: snappy, gzip, lz4, none
+        Compression options: 'snappy', 'gzip', None
         """
         if compression == "snappy":
             com_msg = self._snappy(msg)
         elif compression == "gzip":
             com_msg = self._gzip(msg)
-        elif compression == "lz4":
-            com_msg = self._lz4(msg)
         else:
             com_msg = msg
         bcount = str(self.count).encode()

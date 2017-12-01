@@ -11,7 +11,7 @@ __author__ = 'Adrian Agnic <adrian@tura.io>'
 
 app = Flask(__name__.split('.')[0])
 
-arguments = ['template', 'data', 'source', 'token', 'stream_data', 'stream_template']
+arguments = ['template', 'data', 'source', 'token', 'stream_data', 'stream_template', 'compression']
 
 parser = reqparse.RequestParser()
 for word in arguments:
@@ -65,8 +65,9 @@ def load():
 def load_kafka():
     """ Collect data and produce to kafka topic. """
     args = parser.parse_args()
+    compression = args['compression']
     data = args['stream_data'].encode()
-    producer.produce(None, data) # first param = compression: none, snappy, gzip, lz4
+    producer.produce(compression, data) # first param = compression: none, snappy, gzip, lz4
     return 'Success.', 202
 
 def get(this):
