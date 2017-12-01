@@ -6,7 +6,7 @@ while [ $i -lt 200 ]
 do
 echo $i
 endi=$[$i+9]
-poster_dstream=$(sed "s/\[{/{/g" ../../python/Strom/demo_data/demo_trip26.txt | sed "s/}\]/}/g" | sed "s/{\"stream_name\"\:/\n&/g" | sed -n "$i","$endi"p | tr "\n" " ")
+poster_dstream=$(sed "s/\[{/{/g" ../../python/Strom/demo_data/demo_trip26.txt | sed "s/}\]/}/g" | sed "s/{\"stream_name\"\:/\n&/g" | sed -n "$i","$endi"p | tr "\n" " " | awk '{print "["$0"]"}')
 echo $poster_dstream
 curl -H "Content-Type: application/json" -X POST -d '{"stream_data":"$poster_dstream"}' 127.0.0.1:5000/kafka/load
 i=$(($[$i+50] % 200))
