@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from Strom.strom.transform.filter_data import Filter, ButterLowpass, WindowAverage
+from strom.transform.filter_data import Filter, ButterLowpass, WindowAverage
 
 
 class TestFilter(unittest.TestCase):

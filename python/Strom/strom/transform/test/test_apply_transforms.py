@@ -1,8 +1,8 @@
 import unittest
 import json
-from Strom.strom.transform.apply_transformer import *
-from Strom.strom.transform.derive_param import *
-from Strom.strom.transform.filter_data import *
+from strom.transform.apply_transformer import *
+from strom.transform.derive_param import *
+from strom.transform.filter_data import *
 
 class TestApplyTransformer(unittest.TestCase):
     def setUp(self):
@@ -34,7 +34,7 @@ class TestApplyTransformer(unittest.TestCase):
         self.assertIsInstance(butter, ButterLowpass)
 
     def test_apply_transformation(self):
-        bstream = json.load(open("Strom/strom/transform/bstream.txt"))
+        bstream = json.load(open("demo_data/demo_bstream_trip26.txt"))
         heading_params = {}
         heading_params["func_name"] = "DeriveHeading"
         heading_params["func_type"] = "derive_param"

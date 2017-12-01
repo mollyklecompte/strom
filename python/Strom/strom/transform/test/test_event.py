@@ -1,5 +1,5 @@
 import unittest
-from Strom.strom.transform.event import Event
+from strom.transform.event import Event
 
 class TestEvent(unittest.TestCase):
     def setUp(self):

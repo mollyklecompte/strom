@@ -1,5 +1,5 @@
 import unittest
-from Strom.strom.dstream.filter_rules import FilterRules
+from strom.dstream.filter_rules import FilterRules
 
 
 class TestFilterRules(unittest.TestCase):
