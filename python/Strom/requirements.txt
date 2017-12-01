@@ -6,7 +6,7 @@ pymongo
 #
 numpy>=1.13.3
 scipy>=0.19.1K
-mysql-connector==2.1.6
+PyMySQL==0.7.11
 #
 ###### Refer to other requirements files ######
 #
