@@ -124,13 +124,15 @@ class Coordinator(object):
         self.maria._create_stream_filtered_table(temp_dstream)
 
     def process_data_sync(self, dstream_list, token):
-        # store raw dstream data, return list of ids
-        stream_ids = self._store_raw(dstream_list)
+
         # retrieve most recent versioned dstream template
         template = self._retrieve_current_template(token)
 
         # create bstream for dstream list
-        bstream = self._list_to_bstream(template, dstream_list, stream_ids)
+        bstream = self._list_to_bstream(template, dstream_list)
+
+        # store raw measures from bstream
+        self._store_raw(bstream)
 
         # filter bstream data
         bstream.apply_filters()

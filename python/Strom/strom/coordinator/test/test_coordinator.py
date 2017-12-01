@@ -3,7 +3,7 @@ import json
 from copy import deepcopy
 from strom.coordinator.coordinator import Coordinator
 from strom.dstream.bstream import BStream
-from mysql.connector.errors import ProgrammingError
+from pymysql.err import ProgrammingError
 from pymongo.errors import DuplicateKeyError
 class TestCoordinator(unittest.TestCase):
     def setUp(self):
@@ -23,9 +23,10 @@ class TestCoordinator(unittest.TestCase):
     def test_store_raw_filtered(self):
         tsrf_template = deepcopy((self.dstream_template))
         tsrf_bstream = deepcopy(self.bstream)
-        tsrf_bstream.pop("_id", None)
-        cur_stream_token = "storing_token"
+        tsrf_template.pop("_id", None)
+        cur_stream_token = "storing_token_token"
         tsrf_bstream["stream_token"] = cur_stream_token
+        tsrf_template["stream_token"] = cur_stream_token
 
         self.assertRaises(ProgrammingError, lambda: self.coordinator._store_raw(tsrf_bstream))
 
@@ -36,7 +37,7 @@ class TestCoordinator(unittest.TestCase):
         self.assertFalse(inserted_count == 0)
         self.assertIsNotNone(inserted_count)
 
-        qt = self.coordinator._retrieve_current_template(tsrf_bstream["stream_token"])
+        qt = self.coordinator._retrieve_current_template(tsrf_template["stream_token"])
         bstream = self.coordinator._list_to_bstream(qt, self.dstreams)
         bstream.apply_filters()
 
@@ -45,7 +46,6 @@ class TestCoordinator(unittest.TestCase):
         bstream['stream_token'] = "this_token_is_bad"
         self.assertRaises(ProgrammingError,lambda: self.coordinator._store_filtered(bstream))
         bstream['stream_token'] = cur_stream_token
-        self.assertRaises(KeyError,lambda: self.coordinator._store_filtered(bstream))
         self.assertEqual(filtered_inserted_count, len(self.bstream["timestamp"]))
 
         # checks to make sure raw data with bad stream token raises error during storage attempt
@@ -73,7 +73,7 @@ class TestCoordinator(unittest.TestCase):
 
     def test_process_template(self):
         tpt_dstream = deepcopy(self.dstream_template)
-        tpt_dstream["stream_token"] = "a_token_token"
+        tpt_dstream["stream_token"] = "a_tpt_token"
         tpt_dstream.pop("_id", None)
 
         self.coordinator.process_template(tpt_dstream)
@@ -88,12 +88,14 @@ class TestCoordinator(unittest.TestCase):
         self.assertRaises(DuplicateKeyError, lambda: self.coordinator.process_template(tpt_dstream))
 
         tpt_dstream.pop("_id", None)
+        tpt_dstream["stream_token"] = "last_tpt_token"
         self.coordinator.process_template(tpt_dstream)
         qt = self.coordinator._retrieve_current_template(tpt_dstream["stream_token"])
         self.assertEqual(qt["version"], 1)
 
     def test_process_data_sync(self):
         tpds_dstream = deepcopy(self.dstream_template)
+        # tpds_dstream["stream_token"] = "the final token"
         tpds_dstream.pop("_id", None)
         self.coordinator.process_template(tpds_dstream)
         self.coordinator.process_data_sync(self.dstreams, tpds_dstream["stream_token"])

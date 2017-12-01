@@ -370,11 +370,12 @@ class SQL_Connection:
         """Insert row into table for storing filtered measures
            Creates table by parsing the dstream template
         """
+        coll_tuples = [(f["filter_name"], mv["dtype"]) for f in dstream["filters"] for m, mv in dstream["measures"].items() if f["measures"][0] == m]
         measure_columns = ""
         # for each item in the measures dictionary
             # create a column for that measure
-        for measure in dstream['measures']:
-            measure_columns += "  `" + measure + "` " + dstream['measures'][measure]['dtype'] + ","
+        for coll in coll_tuples:
+            measure_columns += "  `" + coll[0] + "` " + coll[1] + ","
 
         filter_table_stream_token_uuid = _stringify_uuid(dstream["stream_token"]) + "_filter"
 
