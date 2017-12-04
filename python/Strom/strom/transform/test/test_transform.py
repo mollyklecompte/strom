@@ -1,5 +1,5 @@
 import unittest
-from Strom.strom.transform.transform import Transformer
+from strom.transform.transform import Transformer
 
 class TestTransformer(unittest.TestCase):
     def setUp(self):

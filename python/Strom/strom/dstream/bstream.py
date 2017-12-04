@@ -4,7 +4,7 @@ B-stream class
 Initializes a Bstream dict off Dstream, using a Dstream template to initialize all keys, static values. The Bstream contains methods to aggregate measures, timestamps, user ids, fields and tags, as well as a wrapper aggregate method.
 """
 
-from strom.dstream.dstream import DStream
+from .dstream import DStream
 from strom.transform.apply_transformer import apply_transformation
 
 __version__ = "0.1"
@@ -12,10 +12,9 @@ __author__ = "Molly <molly@tura.io>"
 
 
 class BStream(DStream):
-    def __init__(self, template, dstreams, ids):
+    def __init__(self, template, dstreams):
         super().__init__()
         self.dstreams = dstreams
-        self.ids = ids
         self["template_id"] = template["_id"]
         self._load_from_dict(template)
 
@@ -59,6 +58,7 @@ class BStream(DStream):
         tags = [s["tags"] for s in self.dstreams]
         self["tags"] = {tagkey: [i[tagkey] for i in tags] for tagkey, v in self["tags"].items()}
 
+    @property
     def aggregate(self):
         self._aggregate_uids()
         self._aggregate_measures()
@@ -72,7 +72,6 @@ class BStream(DStream):
         self["filter_measures"] = {}
         for filter_rule in self["filters"]:
             self["filter_measures"][filter_rule["filter_name"]] = apply_transformation(filter_rule, self)[filter_rule["filter_name"]]
-
 
     def apply_dparam_rules(self):
         self["derived_measures"] = {}

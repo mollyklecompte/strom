@@ -1,6 +1,6 @@
 import unittest
 import uuid
-from Strom.strom.dstream.dstream import DStream
+from strom.dstream.dstream import DStream
 
 
 class TestDStream(unittest.TestCase):
@@ -58,6 +58,9 @@ class TestDStream(unittest.TestCase):
         old_version = self.dstream["version"]
         self.dstream._publish_version()
         self.assertEqual(old_version+1, self.dstream["version"])
+
+    def test_load_from_json(self):
+        pass
 
     def test_define(self):
         storage_rules = {"store":"yes"}

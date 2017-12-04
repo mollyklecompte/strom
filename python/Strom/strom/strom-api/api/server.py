@@ -39,10 +39,14 @@ def define():
     args = srv.parse()
     template = args['template'] #   dstream template
     srv._dstream_new()
-    json_template = json.loads(template)
-    srv.dstream.load_from_json(json_template)
-    srv.coordinator.process_template(srv.dstream)
-    return str(srv.dstream['stream_token']), 200
+    try:
+        json_template = json.loads(template)
+        srv.dstream.load_from_json(json_template)
+        srv.coordinator.process_template(srv.dstream)
+    except:
+        return '', 406
+    else:
+        return str(srv.dstream['stream_token']), 200
 
 def add_source(): #NOTE TODO
     """ Collect data source and set in DStream field """
@@ -60,18 +64,20 @@ def load():
     """ Collect tokenized data. """
     args = srv.parse()
     data = args['data'] #   data with token
-    json_data = json.loads(data)
-    token = json_data[0]['stream_token']
-    print(token)
-    srv.coordinator.process_data_sync(json_data, token)
-    return 'Success.', 202
+    try:
+        json_data = json.loads(data)
+        token = json_data[0]['stream_token']
+        srv.coordinator.process_data_sync(json_data, token)
+    except:
+        return '', 406
+    else:
+        return 'Success.', 202
 
 def load_kafka():
     """ Collect data and produce to kafka topic. """
     args = srv.parse()
-    compression = args['compression']
     data = args['stream_data'].encode()
-    srv.load_producer.produce(compression, data)
+    srv.load_producer.produce(data)
     return 'Success.', 202
 
 def get(this):
