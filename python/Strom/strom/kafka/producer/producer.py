@@ -5,7 +5,7 @@ __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
 
 class Producer():
-    """ Simple kafka producer """
+    """ Simple kafka producer, accepts kafka url string and topic name byte-string. """
     def __init__(self, url, topic):
         self.client = KafkaClient(hosts=url, zookeeper_hosts=None, use_greenlets=False)
         self.topic = self.client.topics[topic]
@@ -13,7 +13,7 @@ class Producer():
         self.count = 0
 
     def produce(self, compression, dmsg):
-        """ Produce to given topic and log e. 1k msg. """
+        """ Produce to given topic w/ partition_key and log e. 1k msg. """
         bcount = str(self.count).encode()
         self.producer.produce(dmsg, partition_key=bcount)
         self.count += 1

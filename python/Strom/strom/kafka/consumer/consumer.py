@@ -5,7 +5,7 @@ __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
 
 class Consumer():
-    """ Simple balanced kafka consumer. """
+    """ Simple balanced kafka consumer. Accepts kafka url string and topic name byte-string. (Optional) Time in ms to stay active. """
     def __init__(self, url, topic, timeout=-1):
         """ Init requires kafka url:port, topic name, and timeout for listening. """
         self.client = KafkaClient(hosts=url, zookeeper_hosts=None, use_greenlets=False)

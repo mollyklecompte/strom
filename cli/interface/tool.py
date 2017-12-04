@@ -106,19 +106,19 @@ class CLIConfig(object):
         self.verbose = verbose
         self.token = None
         self.url = 'http://127.0.0.1:5000'
-        self.store = False
+        self.store = store
 
     def _set_token(self):
-        f = open("*_token.txt")
+        f = open(".cli_token")
         data = f.read()
-        self.token = _collect_token(data)
+        self.token = data
         return self.token
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.group()
-@click.option('-verbose', '-v', 'verbose', is_flag=True, is_eager=True, help="Enables verbose mode")
-@click.option('-store', '-S', 'store', is_flag=True, help="Enable CLI to store token information for easier retrieval.")
-@click.option('--version', is_flag=True, callback=_print_ver, expose_value=False, help="Current version")
+@click.option('-verbose', '-v', 'verbose', is_flag=True, help="Enables verbose mode")
+@click.option('-store', '-S', 'store', is_flag=True, help="(SHORTCUT) Stores *most recent* template token for easier retrieval. Allows omission of '-token' in each command") # TODO change to callback
+@click.option('--version', is_flag=True, callback=_print_ver, is_eager=True, expose_value=False, help="Current version")
 @click.pass_context
 def dstream(ctx, verbose, store):
     """ Entry-point. Parent command for all DStream methods. """
@@ -145,12 +145,13 @@ def welcome():
 
 @click.command()
 @click.option('-template', '-t', 'template', prompt=True, type=click.File('r'), help="Template file with required and custom fields")
-@click.option('--yes', is_flag=True, callback=_abort_if_false, expose_value=False, prompt="\nInitialize new DStream with this template?", help="Bypass confirmation prompt")
+@click.option('--y', is_flag=True, callback=_abort_if_false, expose_value=False, prompt="\nInitialize new DStream with this template?", help="Bypass confirmation prompt")
 @click.pass_obj
 def define(config, template):
     """ Upload template file for DStream. """
     template_data = template.read()
-    click.secho("\nSending template file...", fg='white')
+    if config.verbose:
+        click.secho("\nSending template file...", fg='white')
     #Try send template to server, if success...collect stream_token
     result = _api_POST(config, "define", {'template':template_data})
     if result[0] == 200:
@@ -165,14 +166,20 @@ def define(config, template):
         path_list = template_filename.split('.')
         template_name = path_list[0]
         template_ext = path_list[1]
-        print("Found File Extension: .{}".format(template_ext))  # NOTE: TEMP
+        if config.verbose:
+            print("Found File Extension: .{}".format(template_ext))
     except:
         click.secho("\nProblem parsing template file!...\n", fg='red', reverse=True)
     else:
-        click.secho("\nTemplate has been tokenized with...{}".format(json_template['stream_token']), fg='white')
+        if config.verbose:
+            click.secho("\nTemplate has been tokenized with...{}".format(json_template['stream_token']), fg='white')
         template_file = open("{}_token.txt".format(template_name), "w")
         template_file.write(json.dumps(json_template))
         template_file.close()
+        if config.store:
+            cli_templ = open(".cli_token", "w")
+            cli_templ.write(token)
+            cli_templ.close()
         click.secho("New template stored locally as '{}_token.txt'.\n".format(template_name))
 
 @click.command()
@@ -186,29 +193,38 @@ def add_source(config, source, kafka_topic, token):
     if source == 'kafka' and kafka_topic == None:
         click.secho("No topic specified, please re-run command.", fg='yellow', reverse=True)
     else:
-        cert = token.read()
-        #Try loading template as json and retrieving token, if success...pass
-        tk = _collect_token(cert)
-        click.secho("\nSending source for this DStream...\n", fg='white')
+        if config.store:
+            tk = config._set_token()
+        else:
+            cert = token.read()
+            #Try loading template as json and retrieving token, if success...pass
+            tk = _collect_token(cert)
+        if config.verbose:
+            click.secho("\nSending source for this DStream...\n", fg='white')
         #Try posting data to server, if success...return status_code
         result = _api_POST(config, "add-source", {'source':source, 'topic':kafka_topic, 'token':tk})
 
 @click.command()
 @click.option('-filepath', '-f', 'filepath', prompt=True, type=click.Path(exists=True), help="File-path of data file to upload")
-@click.option('-token', '-tk', 'token', type=click.File('r'), help="Tokenized template file for verification")
+@click.option('-token', '-tk', 'token', default=None, type=click.File('r'), help="Tokenized template file for verification")
 @click.pass_obj
 def load(config, filepath, token):
     """ Provide file-path of data to upload, along with tokenized_template for this DStream. """
-    click.secho("\nTokenizing data fields of {}".format(click.format_filename(filepath)), fg='white')
-    cert = token.read()
+    if config.verbose:
+        click.secho("\nTokenizing data fields of {}".format(click.format_filename(filepath)), fg='white')
+    if not config.store:
+        cert = token.read()
     #Try load client files as json, if success...pass
     try:
         json_data = json.load(open(filepath))
     except:
         click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
     else:
-        #Try collect stream_token, if success...pass
-        tk = _collect_token(cert)
+        if config.store:
+            tk = config._set_token()
+        else:
+            #Try collect stream_token, if success...pass
+            tk = _collect_token(cert)
     #Try set stream_token fields to collected token, if success...pass
     try:
         with click.progressbar(json_data) as bar:
@@ -217,7 +233,8 @@ def load(config, filepath, token):
     except:
         click.secho("Data file not correctly formatted!...\n", fg='red', reverse=True)
     else:
-        click.secho("\nSending data...", fg='white')
+        if config.verbose:
+            click.secho("\nSending data...", fg='white')
         #Try send data with token to server, if success...return status_code
         result = _api_POST(config, "load", {'data':json.dumps(json_data)})
 
@@ -226,61 +243,77 @@ def load(config, filepath, token):
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
 @click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
-@click.option('-token', '-tk', 'tk', type=click.File('r'), help="Tokenized template file for verification")
-def raw(time, utc, a, tk):
+@click.option('-token', '-tk', 'tk', default=None, type=click.File('r'), help="Tokenized template file for verification")
+@click.pass_obj
+def raw(config, time, utc, a, tk):
     """
     \b
      Collect all raw data for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
     """
-    cert = tk.read()
-    token = _collect_token(cert)
-    _check_options("raw", time, utc, a, token)
+    if not config.store:
+        cert = tk.read()
+        token = _collect_token(cert)
+    else:
+        token = config._set_token()
+    _check_options(config, "raw", time, utc, a, token)
 
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
 @click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
-@click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
-def filtered(time, utc, a, tk):
+@click.option('-token', '-tk', 'tk', default=None, type=click.File('r'), help="Tokenized template file for verification")
+@click.pass_obj
+def filtered(config, time, utc, a, tk):
     """
     \b
      Collect all filtered data for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
     """
-    cert = tk.read()
-    token = _collect_token(cert)
-    _check_options("filtered", time, utc, a, token)
+    if not config.store:
+        cert = tk.read()
+        token = _collect_token(cert)
+    else:
+        token = config._set_token()
+    _check_options(config, "filtered", time, utc, a, token)
 
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
 @click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
-@click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
-def derived_params(time, utc, a, tk):
+@click.option('-token', '-tk', 'tk', default=None, type=click.File('r'), help="Tokenized template file for verification")
+@click.pass_obj
+def derived_params(config, time, utc, a, tk):
     """
     \b
      Collect all derived parameters for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
     """
-    cert = tk.read()
-    token = _collect_token(cert)
-    _check_options("derived_params", time, utc, a, token)
+    if not config.store:
+        cert = tk.read()
+        token = _collect_token(cert)
+    else:
+        token = config._set_token()
+    _check_options(config, "derived_params", time, utc, a, token)
 
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
 @click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
-@click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
-def events(time, utc, a, tk):
+@click.option('-token', '-tk', 'tk', default=None, type=click.File('r'), help="Tokenized template file for verification")
+@click.pass_obj
+def events(config, time, utc, a, tk):
     """
     \b
      Collect all event data for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
     """
-    cert = tk.read()
-    token = _collect_token(cert)
-    _check_options("events", time, utc, a, token)
+    if not config.store:
+        cert = tk.read()
+        token = _collect_token(cert)
+    else:
+        token = config._set_token()
+    _check_options(config, "events", time, utc, a, token)
 
 # d-stream group
 dstream.add_command(welcome)
@@ -288,7 +321,7 @@ dstream.add_command(define)
 dstream.add_command(add_source)
 dstream.add_command(load)
 #
-dstream.add_command(raw)
-dstream.add_command(filtered)
-dstream.add_command(derived_params)
+# dstream.add_command(raw) #NOTE: TEMP
+# dstream.add_command(filtered)
+# dstream.add_command(derived_params)
 dstream.add_command(events)
