@@ -2,36 +2,55 @@
 import json
 from flask import Flask, request
 from flask_restful import reqparse
-from Strom.strom.dstream.dstream import DStream
-from Strom.strom.coordinator.coordinator import Coordinator
+from strom.dstream.dstream import DStream
+from strom.coordinator.coordinator import Coordinator
+from strom.kafka.producer.producer import Producer
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~``
+class Server():
+    def __init__(self):
+        self.expected_args = [
+        'template', 'data', 'source', 'topic', 'token', 'stream_data', 'stream_template', 'compression'
+        ]
+        self.parser = reqparse.RequestParser()
+        self.coordinator = Coordinator()
+        self.kafka_url = '127.0.0.1:9092'
+        self.load_producer = Producer(self.kafka_url, b'load')
+        self.dstream = None
+        for word in self.expected_args:
+            self.parser.add_argument(word)
+
+    def _dstream_new(self):
+        self.dstream = DStream()
+
+    def parse(self):
+        ret = self.parser.parse_args()
+        return ret
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 app = Flask(__name__.split('.')[0])
-
-arguments = ['template', 'data', 'source', 'topic', 'token']
-
-parser = reqparse.RequestParser()
-for word in arguments:
-    parser.add_argument(word)
-
-cd = Coordinator() # NOTE: TEMP
-
+srv = Server()
 
 def define():
-    """ Route to collect template for DStream init and return stream_token. """
-    args = parser.parse_args()
+    """ Collect template for DStream init and return stream_token. """
+    args = srv.parse()
     template = args['template'] #   dstream template
-    dstream_new = DStream()
-    json_template = json.loads(template)
-    dstream_new.load_from_json(json_template)
-    cd.process_template(dstream_new)
-    return str(dstream_new['stream_token']), 202
+    srv._dstream_new()
+    try:
+        json_template = json.loads(template)
+        srv.dstream.load_from_json(json_template)
+        srv.coordinator.process_template(srv.dstream)
+    except:
+        return '', 406
+    else:
+        return str(srv.dstream['stream_token']), 200
 
-def add_source():
-    """ Route to collect data source and set in DStream field """
-    args = parser.parse_args()
+def add_source(): #NOTE TODO
+    """ Collect data source and set in DStream field """
+    args = srv.parse()
     if args['topic'] is not None:
         topic = args['topic']   #   kafka topic
         print(topic)
@@ -39,34 +58,48 @@ def add_source():
     token = args['token']   #   stream_token
     print(source)
     print(token)
-    return 'Success.', 202
+    return 'Success.', 200
 
 def load():
-    """ Route to collect tokenized data. """
-    args = parser.parse_args()
+    """ Collect tokenized data. """
+    args = srv.parse()
     data = args['data'] #   data with token
-    json_data = json.loads(data)
-    token = json_data[0]['stream_token']
-    print(token)
-    cd.process_data_sync(json_data, token)
+    try:
+        json_data = json.loads(data)
+        token = json_data[0]['stream_token']
+        srv.coordinator.process_data_sync(json_data, token)
+    except:
+        return '', 406
+    else:
+        return 'Success.', 202
+
+def load_kafka():
+    """ Collect data and produce to kafka topic. """
+    args = srv.parse()
+    data = args['stream_data'].encode()
+    srv.load_producer.produce(data)
     return 'Success.', 202
 
 def get(this):
-    """ Route for returning data, specified by endpoint & URL params. """
+    """ Returns data, specified by endpoint & URL params. """
     time_range = request.args.get('range', '')
     time = request.args.get('time', '')
     token = request.args.get('token', '')
     print(this) #   endpoint: raw, filtered, derived_params, events
+    print(time)
+    print(time_range)
     if time_range:
         if time_range == 'ALL':
-            result = cd.get_events(token)
+            result = srv.coordinator.get_events(token)
     return ("\n" + str(result) + "\n"), 200
 
-#   POST
+# POST
 app.add_url_rule('/api/define', 'define', define, methods=['POST'])
 app.add_url_rule('/api/add-source', 'add_source', add_source, methods=['POST'])
 app.add_url_rule('/api/load', 'load', load, methods=['POST'])
-#   GET
+# KAFKA POST
+app.add_url_rule('/kafka/load', 'load_kafka', load_kafka, methods=['POST'])
+# GET
 app.add_url_rule('/api/get/<this>', 'get', get, methods=['GET'])
 
 def start():

@@ -4,11 +4,14 @@ import requests
 import json
 import os
 import datetime
+try:
+    from pyfiglet import Figlet
+except:
+    pass
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
 
-url = 'http://127.0.0.1:5000'
 
 def _print_ver(ctx, param, value):
     if not value or ctx.resilient_parsing:
@@ -33,454 +36,293 @@ def _convert_to_utc(date_string):
     dt = datetime.datetime(year, month, day, hours, minutes, seconds)
     return dt.timestamp()
 
-@click.group()
-@click.option('--version', '--v', 'version', is_flag=True, callback=_print_ver, expose_value=False, is_eager=True, help="Current version")
-def dstream():
-    """ Entry-point. Parent command for all DStream methods. """
-    pass
-
-@click.command()
-def welcome():
-    """ Usage instructions for first time users. """
-    click.secho("\nJust Do It.\n", fg='magenta', bold=True)
-    click.pause()
-
-@click.command()
-@click.argument('path')
-def locate(path):
-    """ Tool for opening specified files in file explorer. """
-    click.launch(path, locate=True)
-
-@click.command()
-@click.option('-template', '-t', 'template', prompt=True, type=click.File('r'), help="Template file with required and custom fields")
-@click.option('--yes', is_flag=True, callback=_abort_if_false, expose_value=False, prompt="\nInitialize new DStream with this template?", help="Bypass confirmation prompt")
-def define(template):
-    """ Upload template file for DStream. """
-    template_data = template.read()
-    click.secho("\nSending template file...", fg='white')
-    #Try send template to server, if success...collect stream_token
+def _api_POST(config, function, data_dict):
+    """ Takes name of endpoint and dict of data to post. """
     try:
-        ret = requests.post(url + "/api/define", data={'template':template_data})
+        ret = requests.post(config.url + "/api/{}".format(function), data=data_dict)
     except:
         click.secho("\nConnection Refused!...\n", fg='red', reverse=True)
     else:
         click.secho(str(ret.status_code), fg='yellow')
         click.secho(ret.text, fg='yellow')
-        if ret.status_code == 202:
-            token = ret.text
-        else:
-            click.secho("\nServer Error!...\n", fg='red', reverse=True)
-        #Try load template as json and set stream_token field, if success...store tokenized template in new file
+        return [ret.status_code, ret.text]
+
+def _api_GET(config, function, param, value, token):
+    """ Takes name of endpoint, time/range and its value, as well as token. """
+    try:
+        ret = requests.get(config.url + "/api/get/{}?".format(function) + "{}={}".format(param, value) + "&token={}".format(token))
+    except:
+        click.secho("\nConnection Refused!...\n", fg='red', reverse=True)
+    else:
+        click.secho(str(ret.status_code), fg='yellow')
+        click.secho(ret.text, fg='yellow')
+        return [ret.status_code, ret.text]
+
+def _collect_token(cert):
+    """ Load json-formatted input and return stream_token, if found. """
+    try:
+        json_cert = json.loads(cert)
+    except:
+        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
+    else:
         try:
-            json_template = json.loads(template_data)
-            json_template['stream_token'] = token
-            template_filename = os.path.basename(template.name) # NOTE: TEMP, REFACTOR OUT OF TRY
-            path_list = template_filename.split('.')
-            template_name = path_list[0]
-            template_ext = path_list[1] # NOTE: TEMP, FILE UPLOAD EXTENSION
-            print("Found File Extension: .{}".format(template_ext))  # NOTE: TEMP
+            token = json_cert["stream_token"]
+            if token is None:
+                raise ValueError
         except:
-            click.secho("\nProblem parsing template file!...\n", fg='red', reverse=True)
+            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
         else:
+            click.secho("Found stream_token: " + token + '\n', fg='white')
+            return token
+
+def _check_options(config, function, time, utc, a, token):
+    """ Check options given for GET methods before send. """
+    if a:
+        result = _api_GET(config, "{}".format(function), "range", "ALL", token)
+    elif utc:
+        if len(utc) == 1:
+            result = _api_GET(config, "{}".format(function), "time", utc[0], token)
+        elif len(utc) == 2:
+            result = _api_GET(config, "{}".format(function), "range", utc, token)
+        else:
+            click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
+    elif time:
+        if len(time) == 1:
+            utime = _convert_to_utc(time[0])
+            result = _api_GET(config, "{}".format(function), "time", utime, token)
+        elif len(time) == 2:
+            utime_zero = _convert_to_utc(time[0])
+            utime_one = _convert_to_utc(time[1])
+            utime = [utime_zero, utime_one]
+            result = _api_GET(config, "{}".format(function), "range", utime, token)
+        else:
+            click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
+    else:
+        click.secho("No options given, try '--all'...", fg='white')
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+class CLIConfig(object):
+    def __init__(self, verbose, store):
+        self.verbose = verbose
+        self.token = None
+        self.url = 'http://127.0.0.1:5000'
+        self.store = store
+
+    def _set_token(self):
+        f = open(".cli_token")
+        data = f.read()
+        if data is not None:
+            self.token = data
+        return self.token
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+@click.group()
+@click.option('-verbose', '-v', 'verbose', is_flag=True, help="Enables verbose mode")
+@click.option('-store', '-S', 'store', is_flag=True, help="(SHORTCUT) Stores *most recent* template token for easier retrieval. Allows omission of '-token' in each command") # TODO change to callback
+@click.option('--version', is_flag=True, callback=_print_ver, is_eager=True, expose_value=False, help="Current version")
+@click.pass_context
+def dstream(ctx, verbose, store):
+    """ Entry-point. Parent command for all DStream methods. """
+    ctx.obj = CLIConfig(verbose, store)
+
+@click.command()
+def welcome():
+    """ Usage instructions for first time users. """
+    try:
+        f = Figlet(font='slant')
+        click.secho(f.renderText("Strom-C.L.I.\n"), fg='cyan')
+    except:
+        click.secho("USAGE INSTRUCTIONS:\n", fg='cyan', underline=True)
+        click.secho("1. dstream define -template [template filepath]\n", fg='green')
+        click.secho("2. dstream load -filepath [data filepath] -token [template token file]\n", fg='green')
+        click.secho("3. dstream events --all -token [template token file]\n", fg='green')
+        click.pause()
+    else:
+        click.secho("USAGE INSTRUCTIONS:\n", fg='cyan', underline=True)
+        click.secho("1. dstream define -template [template filepath]\n", fg='green')
+        click.secho("2. dstream load -filepath [data filepath] -token [template token file]\n", fg='green')
+        click.secho("3. dstream events --all -token [template token file]\n", fg='green')
+        click.pause()
+
+@click.command()
+@click.option('-template', '-t', 'template', prompt=True, type=click.File('r'), help="Template file with required and custom fields")
+@click.option('--y', is_flag=True, callback=_abort_if_false, expose_value=False, prompt="\nInitialize new DStream with this template?", help="Bypass confirmation prompt")
+@click.pass_obj
+def define(config, template):
+    """ Upload template file for DStream. """
+    template_data = template.read()
+    if config.verbose:
+        click.secho("\nSending template file...", fg='white')
+    #Try send template to server, if success...collect stream_token
+    result = _api_POST(config, "define", {'template':template_data})
+    if result[0] == 200:
+        token = result[1]
+    else:
+        click.secho("\nServer Error!...\n", fg='red', reverse=True)
+        #Try load template as json and set stream_token field, if success...store tokenized template in new file
+    try:
+        json_template = json.loads(template_data)
+        json_template['stream_token'] = token
+        template_filename = os.path.basename(template.name) # NOTE: TEMP, REFACTOR OUT OF TRY
+        path_list = template_filename.split('.')
+        template_name = path_list[0]
+        template_ext = path_list[1]
+        if config.verbose:
+            print("Found File Extension: .{}".format(template_ext))
+    except:
+        click.secho("\nProblem parsing template file!...\n", fg='red', reverse=True)
+    else:
+        if config.verbose:
             click.secho("\nTemplate has been tokenized with...{}".format(json_template['stream_token']), fg='white')
-            template_file = open("{}_token.txt".format(template_name), "w")
-            template_file.write(json.dumps(json_template))
-            template_file.close()
-            click.secho("New template stored locally as '{}_token.txt'.\n".format(template_name))
+        template_file = open("{}_token.txt".format(template_name), "w")
+        template_file.write(json.dumps(json_template))
+        template_file.close()
+        if config.store:
+            cli_templ = open(".cli_token", "w")
+            cli_templ.write(token)
+            cli_templ.close()
+        click.secho("New template stored locally as '{}_token.txt'.\n".format(template_name))
 
 @click.command()
 @click.option('-source', '-s', 'source', prompt=True, type=click.Choice(['kafka', 'file']), help="Specify source of data")
 @click.option('--kafka-topic', default=None, help="If source is kafka, specify topic")
-@click.option('-token', '-tk', 'token', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
-def add_source(source, kafka_topic, token):
+@click.option('-token', '-tk', 'token', default=None, type=click.File('r'), help="Tokenized template file for verification")
+@click.pass_obj
+def add_source(config, source, kafka_topic, token):
     """ Declare source of data: file upload or kafka stream. """
     #Check if topic was supplied when source is kafka
     if source == 'kafka' and kafka_topic == None:
         click.secho("No topic specified, please re-run command.", fg='yellow', reverse=True)
     else:
-        cert = token.read()
-        #Try loading template as json and retrieving token, if success...pass
-        try:
-            json_cert = json.loads(cert)
-            tk = json_cert['stream_token']
-        except:
-            click.secho("\nThere was an error parsing that file and/or the token was not found!...\n", fg='yellow', reverse=True)
+        if config.store:
+            tk = config._set_token()
         else:
-            click.secho("\nFound stream_token: " + tk, fg='white')
+            cert = token.read()
+            #Try loading template as json and retrieving token, if success...pass
+            tk = _collect_token(cert)
+        if config.verbose:
             click.secho("\nSending source for this DStream...\n", fg='white')
-            #Try posting data to server, if success...return status_code
-            try:
-                ret = requests.post(url + "/api/add-source", data={'source':source, 'topic':kafka_topic, 'token':tk})
-            except:
-                click.secho("\nConnection Refused!...\n", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text + '\n', fg='yellow')
+        #Try posting data to server, if success...return status_code
+        result = _api_POST(config, "add-source", {'source':source, 'topic':kafka_topic, 'token':tk})
 
 @click.command()
 @click.option('-filepath', '-f', 'filepath', prompt=True, type=click.Path(exists=True), help="File-path of data file to upload")
-@click.option('-token', '-tk', 'token', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
-def load(filepath, token):
+@click.option('-token', '-tk', 'token', default=None, type=click.File('r'), help="Tokenized template file for verification")
+@click.pass_obj
+def load(config, filepath, token):
     """ Provide file-path of data to upload, along with tokenized_template for this DStream. """
-    click.secho("\nTokenizing data fields of {}".format(click.format_filename(filepath)), fg='white')
-    cert = token.read()
+    if config.verbose:
+        click.secho("\nTokenizing data fields of {}".format(click.format_filename(filepath)), fg='white')
+    if not config.store:
+        cert = token.read()
     #Try load client files as json, if success...pass
     try:
         json_data = json.load(open(filepath))
-        json_cert = json.loads(cert)
     except:
         click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
     else:
-        #Try collect stream_token, if success...pass
-        try:
-            tk = json_cert['stream_token']
-            if tk is None:
-                raise ValueError
-        except:
-            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
+        if config.store:
+            tk = config._set_token()
         else:
-            click.secho("Found stream_token: " + tk + '\n', fg='white')
-            #Try set stream_token fields to collected token, if success...pass
-            try:
-                with click.progressbar(json_data) as bar:
-                    for obj in bar:
-                        obj['stream_token'] = tk
-            except:
-                click.secho("Data file not correctly formatted!...\n", fg='red', reverse=True)
-            else:
-                click.secho("\nSending data...", fg='white')
-                #Try send data with token to server, if success...return status_code
-                try:
-                    ret = requests.post(url + "/api/load", data={'data':json.dumps(json_data)})
-                except:
-                    click.secho("Connection Refused!...\n", fg='red', reverse=True)
-                else:
-                    click.secho(str(ret.status_code), fg='yellow')
-                    click.secho(ret.text + '\n', fg='yellow')
+            #Try collect stream_token, if success...pass
+            tk = _collect_token(cert)
+    #Try set stream_token fields to collected token, if success...pass
+    try:
+        with click.progressbar(json_data) as bar:
+            for obj in bar:
+                obj['stream_token'] = tk
+    except:
+        click.secho("Data file not correctly formatted!...\n", fg='red', reverse=True)
+    else:
+        if config.verbose:
+            click.secho("\nSending data...", fg='white')
+        #Try send data with token to server, if success...return status_code
+        result = _api_POST(config, "load", {'data':json.dumps(json_data)})
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
 @click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
-@click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
-def raw(time, utc, a, tk):
+@click.option('-token', '-tk', 'tk', default=None, type=click.File('r'), help="Tokenized template file for verification")
+@click.pass_obj
+def raw(config, time, utc, a, tk):
     """
     \b
      Collect all raw data for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
     """
-    cert = tk.read()
-    try:
-        json_cert = json.loads(cert)
-    except:
-        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
+    if not config.store:
+        cert = tk.read()
+        token = _collect_token(cert)
     else:
-        try:
-            token = json_cert['stream_token']
-            if token is None:
-                raise ValueError
-        except:
-            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
-        else:
-            click.secho("Found stream_token: " + token + '\n', fg='white')
-    if a:
-        try:
-            ret = requests.get(url + "/api/get/raw?range=ALL&token={}".format(token))
-        except:
-            click.secho("Connection Refused!...", fg='red', reverse=True)
-        else:
-            click.secho(str(ret.status_code), fg='yellow')
-            click.secho(ret.text, fg='yellow')
-    elif utc:
-        if len(utc) == 1:
-            try:
-                ret = requests.get(url + "/api/get/raw?time={}&token={}".format(utc[0], token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
-        elif len(utc) == 2:
-            try:
-                ret = requests.get(url + "/api/get/raw?range={}&token={}".format(utc, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
-        else:
-            click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
-    elif time:
-        if len(time) == 1:
-            utime = _convert_to_utc(time[0])
-            try:
-                ret = requests.get(url + "/api/get/raw?time={}&token={}".format(utime, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
-        elif len(time) == 2:
-            utime_zero = _convert_to_utc(time[0])
-            utime_one = _convert_to_utc(time[1])
-            utime = [utime_zero, utime_one]
-            try:
-                ret = requests.get(url + "/api/get/raw?range={}&token={}".format(utime, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
-        else:
-            click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
-    else:
-        click.secho("No options given, try '--all'...", fg='white')
+        token = config._set_token()
+    _check_options(config, "raw", time, utc, a, token)
 
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
 @click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
-@click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
-def filtered(time, utc, a, tk):
+@click.option('-token', '-tk', 'tk', default=None, type=click.File('r'), help="Tokenized template file for verification")
+@click.pass_obj
+def filtered(config, time, utc, a, tk):
     """
     \b
      Collect all filtered data for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
     """
-    cert = tk.read()
-    try:
-        json_cert = json.loads(cert)
-    except:
-        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
+    if not config.store:
+        cert = tk.read()
+        token = _collect_token(cert)
     else:
-        try:
-            token = json_cert['stream_token']
-            if token is None:
-                raise ValueError
-        except:
-            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
-        else:
-            click.secho("Found stream_token: " + token + '\n', fg='white')
-    if a:
-        try:
-            ret = requests.get(url + "/api/get/filtered?range=ALL&token={}".format(token))
-        except:
-            click.secho("Connection Refused!...", fg='red', reverse=True)
-        else:
-            click.secho(str(ret.status_code), fg='yellow')
-            click.secho(ret.text, fg='yellow')
-    elif utc:
-        if len(utc) == 1:
-            try:
-                ret = requests.get(url + "/api/get/filtered?time={}&token={}".format(utc[0], token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
-        elif len(utc) == 2:
-            try:
-                ret = requests.get(url + "/api/get/filtered?range={}&token={}".format(utc, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
-        else:
-            click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
-    elif time:
-        if len(time) == 1:
-            utime = _convert_to_utc(time[0])
-            try:
-                ret = requests.get(url + "/api/get/filtered?time={}&token={}".format(utime, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
-        elif len(time) == 2:
-            utime_zero = _convert_to_utc(time[0])
-            utime_one = _convert_to_utc(time[1])
-            utime = [utime_zero, utime_one]
-            try:
-                ret = requests.get(url + "/api/get/filtered?range={}&token={}".format(utime, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
-        else:
-            click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
-    else:
-        click.secho("No options given, try '--all'...", fg='white')
-
+        token = config._set_token()
+    _check_options(config, "filtered", time, utc, a, token)
 
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
 @click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
-@click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
-def derived_params(time, utc, a, tk):
+@click.option('-token', '-tk', 'tk', default=None, type=click.File('r'), help="Tokenized template file for verification")
+@click.pass_obj
+def derived_params(config, time, utc, a, tk):
     """
     \b
      Collect all derived parameters for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
     """
-    cert = tk.read()
-    try:
-        json_cert = json.loads(cert)
-    except:
-        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
+    if not config.store:
+        cert = tk.read()
+        token = _collect_token(cert)
     else:
-        try:
-            token = json_cert['stream_token']
-            if token is None:
-                raise ValueError
-        except:
-            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
-        else:
-            click.secho("Found stream_token: " + token + '\n', fg='white')
-    if a:
-        try:
-            ret = requests.get(url + "/api/get/derived_params?range=ALL&token={}".format(token))
-        except:
-            click.secho("Connection Refused!...", fg='red', reverse=True)
-        else:
-            click.secho(str(ret.status_code), fg='yellow')
-            click.secho(ret.text, fg='yellow')
-    elif utc:
-        if len(utc) == 1:
-            try:
-                ret = requests.get(url + "/api/get/derived_params?time={}&token={}".format(utc[0], token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
-        elif len(utc) == 2:
-            try:
-                ret = requests.get(url + "/api/get/derived_params?range={}&token={}".format(utc, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
-        else:
-            click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
-    elif time:
-        if len(time) == 1:
-            utime = _convert_to_utc(time[0])
-            try:
-                ret = requests.get(url + "/api/get/derived_params?time={}&token={}".format(utime, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
-        elif len(time) == 2:
-            utime_zero = _convert_to_utc(time[0])
-            utime_one = _convert_to_utc(time[1])
-            utime = [utime_zero, utime_one]
-            try:
-                ret = requests.get(url + "/api/get/derived_params?range={}&token={}".format(utime, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
-        else:
-            click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
-    else:
-        click.secho("No options given, try '--all'...", fg='white')
-
+        token = config._set_token()
+    _check_options(config, "derived_params", time, utc, a, token)
 
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
 @click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
-@click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
-def events(time, utc, a, tk):
+@click.option('-token', '-tk', 'tk', default=None, type=click.File('r'), help="Tokenized template file for verification")
+@click.pass_obj
+def events(config, time, utc, a, tk):
     """
     \b
      Collect all event data for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
     """
-    cert = tk.read()
-    try:
-        json_cert = json.loads(cert)
-    except:
-        click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
+    if not config.store:
+        cert = tk.read()
+        token = _collect_token(cert)
     else:
-        try:
-            token = json_cert['stream_token']
-            if token is None:
-                raise ValueError
-        except:
-            click.secho("Token not found in provided template!...\n", fg='yellow', reverse=True)
-        else:
-            click.secho("Found stream_token: " + token + '\n', fg='white')
-    if a:
-        try:
-            ret = requests.get(url + "/api/get/events?range=ALL&token={}".format(token))
-        except:
-            click.secho("Connection Refused!...", fg='red', reverse=True)
-        else:
-            click.secho(str(ret.status_code), fg='yellow')
-            click.secho(ret.text, fg='yellow')
-    elif utc:
-        if len(utc) == 1:
-            try:
-                ret = requests.get(url + "/api/get/events?time={}&token={}".format(utc[0], token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
-        elif len(utc) == 2:
-            try:
-                ret = requests.get(url + "/api/get/events?range={}&token={}".format(utc, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
-        else:
-            click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
-    elif time:
-        if len(time) == 1:
-            utime = _convert_to_utc(time[0])
-            try:
-                ret = requests.get(url + "/api/get/events?time={}&token={}".format(utime, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
-        elif len(time) == 2:
-            utime_zero = _convert_to_utc(time[0])
-            utime_one = _convert_to_utc(time[1])
-            utime = [utime_zero, utime_one]
-            try:
-                ret = requests.get(url + "/api/get/events?range={}&token={}".format(utime, token))
-            except:
-                click.secho("Connection Refused!...", fg='red', reverse=True)
-            else:
-                click.secho(str(ret.status_code), fg='yellow')
-                click.secho(ret.text, fg='yellow')
-        else:
-            click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
-    else:
-        click.secho("No options given, try '--all'...", fg='white')
+        token = config._set_token()
+    _check_options(config, "events", time, utc, a, token)
 
 # d-stream group
-dstream.add_command(locate)
 dstream.add_command(welcome)
 dstream.add_command(define)
 dstream.add_command(add_source)
 dstream.add_command(load)
 #
-dstream.add_command(raw)
-dstream.add_command(filtered)
-dstream.add_command(derived_params)
+# dstream.add_command(raw) #NOTE: TEMP
+# dstream.add_command(filtered)
+# dstream.add_command(derived_params)
 dstream.add_command(events)
