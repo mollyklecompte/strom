@@ -12,7 +12,6 @@ except:
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
 
-url = 'http://127.0.0.1:5000'
 
 def _print_ver(ctx, param, value):
     if not value or ctx.resilient_parsing:
@@ -37,10 +36,10 @@ def _convert_to_utc(date_string):
     dt = datetime.datetime(year, month, day, hours, minutes, seconds)
     return dt.timestamp()
 
-def _api_POST(function, data_dict):
+def _api_POST(config, function, data_dict):
     """ Takes name of endpoint and dict of data to post. """
     try:
-        ret = requests.post(url + "/api/{}".format(function), data=data_dict)
+        ret = requests.post(config.url + "/api/{}".format(function), data=data_dict)
     except:
         click.secho("\nConnection Refused!...\n", fg='red', reverse=True)
     else:
@@ -48,10 +47,10 @@ def _api_POST(function, data_dict):
         click.secho(ret.text, fg='yellow')
         return [ret.status_code, ret.text]
 
-def _api_GET(function, param, value, token):
+def _api_GET(config, function, param, value, token):
     """ Takes name of endpoint, time/range and its value, as well as token. """
     try:
-        ret = requests.get(url + "/api/get/{}?".format(function) + "{}={}".format(param, value) + "&token={}".format(token))
+        ret = requests.get(config.url + "/api/get/{}?".format(function) + "{}={}".format(param, value) + "&token={}".format(token))
     except:
         click.secho("\nConnection Refused!...\n", fg='red', reverse=True)
     else:
@@ -76,37 +75,54 @@ def _collect_token(cert):
             click.secho("Found stream_token: " + token + '\n', fg='white')
             return token
 
-def _check_options(function, time, utc, a, token):
+def _check_options(config, function, time, utc, a, token):
     """ Check options given for GET methods before send. """
     if a:
-        result = _api_GET("{}".format(function), "range", "ALL", token)
+        result = _api_GET(config, "{}".format(function), "range", "ALL", token)
     elif utc:
         if len(utc) == 1:
-            result = _api_GET("{}".format(function), "time", utc[0], token)
+            result = _api_GET(config, "{}".format(function), "time", utc[0], token)
         elif len(utc) == 2:
-            result = _api_GET("{}".format(function), "range", utc, token)
+            result = _api_GET(config, "{}".format(function), "range", utc, token)
         else:
             click.secho("Too many arguments given!({})...".format(len(utc)), fg='yellow', reverse=True)
     elif time:
         if len(time) == 1:
             utime = _convert_to_utc(time[0])
-            result = _api_GET("{}".format(function), "time", utime, token)
+            result = _api_GET(config, "{}".format(function), "time", utime, token)
         elif len(time) == 2:
             utime_zero = _convert_to_utc(time[0])
             utime_one = _convert_to_utc(time[1])
             utime = [utime_zero, utime_one]
-            result = _api_GET("{}".format(function), "range", utime, token)
+            result = _api_GET(config, "{}".format(function), "range", utime, token)
         else:
             click.secho("Too many arguments given!({})...".format(len(time)), fg='yellow', reverse=True)
     else:
         click.secho("No options given, try '--all'...", fg='white')
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+class CLIConfig(object):
+    def __init__(self, verbose, store):
+        self.verbose = verbose
+        self.token = None
+        self.url = 'http://127.0.0.1:5000'
+        self.store = False
+
+    def _set_token(self):
+        f = open("*_token.txt")
+        data = f.read()
+        self.token = _collect_token(data)
+        return self.token
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.group()
-@click.option('--version', '--v', 'version', is_flag=True, callback=_print_ver, expose_value=False, is_eager=True, help="Current version")
-def dstream():
+@click.option('-verbose', '-v', 'verbose', is_flag=True, is_eager=True, help="Enables verbose mode")
+@click.option('-store', '-S', 'store', is_flag=True, help="Enable CLI to store token information for easier retrieval.")
+@click.option('--version', is_flag=True, callback=_print_ver, expose_value=False, help="Current version")
+@click.pass_context
+def dstream(ctx, verbose, store):
     """ Entry-point. Parent command for all DStream methods. """
-    pass
+    ctx.obj = CLIConfig(verbose, store)
 
 @click.command()
 def welcome():
@@ -130,17 +146,18 @@ def welcome():
 @click.command()
 @click.option('-template', '-t', 'template', prompt=True, type=click.File('r'), help="Template file with required and custom fields")
 @click.option('--yes', is_flag=True, callback=_abort_if_false, expose_value=False, prompt="\nInitialize new DStream with this template?", help="Bypass confirmation prompt")
-def define(template):
+@click.pass_obj
+def define(config, template):
     """ Upload template file for DStream. """
     template_data = template.read()
     click.secho("\nSending template file...", fg='white')
     #Try send template to server, if success...collect stream_token
-    result = _api_POST("define", {'template':template_data})
-    if result[0] == 202:
+    result = _api_POST(config, "define", {'template':template_data})
+    if result[0] == 200:
         token = result[1]
     else:
         click.secho("\nServer Error!...\n", fg='red', reverse=True)
-    #Try load template as json and set stream_token field, if success...store tokenized template in new file
+        #Try load template as json and set stream_token field, if success...store tokenized template in new file
     try:
         json_template = json.loads(template_data)
         json_template['stream_token'] = token
@@ -161,8 +178,9 @@ def define(template):
 @click.command()
 @click.option('-source', '-s', 'source', prompt=True, type=click.Choice(['kafka', 'file']), help="Specify source of data")
 @click.option('--kafka-topic', default=None, help="If source is kafka, specify topic")
-@click.option('-token', '-tk', 'token', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
-def add_source(source, kafka_topic, token):
+@click.option('-token', '-tk', 'token', default=None, type=click.File('r'), help="Tokenized template file for verification")
+@click.pass_obj
+def add_source(config, source, kafka_topic, token):
     """ Declare source of data: file upload or kafka stream. """
     #Check if topic was supplied when source is kafka
     if source == 'kafka' and kafka_topic == None:
@@ -173,12 +191,13 @@ def add_source(source, kafka_topic, token):
         tk = _collect_token(cert)
         click.secho("\nSending source for this DStream...\n", fg='white')
         #Try posting data to server, if success...return status_code
-        result = _api_POST("add-source", {'source':source, 'topic':kafka_topic, 'token':tk})
+        result = _api_POST(config, "add-source", {'source':source, 'topic':kafka_topic, 'token':tk})
 
 @click.command()
 @click.option('-filepath', '-f', 'filepath', prompt=True, type=click.Path(exists=True), help="File-path of data file to upload")
-@click.option('-token', '-tk', 'token', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
-def load(filepath, token):
+@click.option('-token', '-tk', 'token', type=click.File('r'), help="Tokenized template file for verification")
+@click.pass_obj
+def load(config, filepath, token):
     """ Provide file-path of data to upload, along with tokenized_template for this DStream. """
     click.secho("\nTokenizing data fields of {}".format(click.format_filename(filepath)), fg='white')
     cert = token.read()
@@ -190,24 +209,24 @@ def load(filepath, token):
     else:
         #Try collect stream_token, if success...pass
         tk = _collect_token(cert)
-        #Try set stream_token fields to collected token, if success...pass
-        try:
-            with click.progressbar(json_data) as bar:
-                for obj in bar:
-                    obj['stream_token'] = tk
-        except:
-            click.secho("Data file not correctly formatted!...\n", fg='red', reverse=True)
-        else:
-            click.secho("\nSending data...", fg='white')
-            #Try send data with token to server, if success...return status_code
-            result = _api_POST("load", {'data':json.dumps(json_data)})
+    #Try set stream_token fields to collected token, if success...pass
+    try:
+        with click.progressbar(json_data) as bar:
+            for obj in bar:
+                obj['stream_token'] = tk
+    except:
+        click.secho("Data file not correctly formatted!...\n", fg='red', reverse=True)
+    else:
+        click.secho("\nSending data...", fg='white')
+        #Try send data with token to server, if success...return status_code
+        result = _api_POST(config, "load", {'data':json.dumps(json_data)})
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.command()
 @click.option('-datetime', '-d', 'time', type=str, multiple=True, help="Datetime to collect from (YYYY-MM-DD-HH:MM:SS)")
 @click.option('-utc', type=str, multiple=True, help="UTC-formatted time to collect from")
 @click.option('--all', '--a', 'a', is_flag=True, is_eager=True, help="Collect all data")
-@click.option('-token', '-tk', 'tk', prompt=True, type=click.File('r'), help="Tokenized template file for verification")
+@click.option('-token', '-tk', 'tk', type=click.File('r'), help="Tokenized template file for verification")
 def raw(time, utc, a, tk):
     """
     \b
@@ -263,24 +282,13 @@ def events(time, utc, a, tk):
     token = _collect_token(cert)
     _check_options("events", time, utc, a, token)
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TEMP
-@click.command()
-@click.option('-data', '-d', 'd', type=click.File('r'))
-@click.option('--c', type=str)
-def test_kafka_load(d, c):
-    data = d.read()
-    ret = requests.post(url + "/kafka/load", data={'compression':c, 'stream_data':data})
-    click.secho(str(ret.status_code), fg='yellow')
-    click.secho(ret.text, fg='yellow')
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # d-stream group
 dstream.add_command(welcome)
 dstream.add_command(define)
 dstream.add_command(add_source)
 dstream.add_command(load)
 #
-# dstream.add_command(raw)  #NOTE: TEMP
-# dstream.add_command(filtered)
-# dstream.add_command(derived_params)
+dstream.add_command(raw)
+dstream.add_command(filtered)
+dstream.add_command(derived_params)
 dstream.add_command(events)
-dstream.add_command(test_kafka_load)

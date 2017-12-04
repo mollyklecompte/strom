@@ -1,34 +1,30 @@
 """ Kafka Consumer """
 from pykafka import KafkaClient
-import pykafka.utils.compression as Compression
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
 
 class Consumer():
     """ Simple balanced kafka consumer. """
-    def __init__(self, url, topic, timeout):
+    def __init__(self, url, topic, timeout=-1):
         """ Init requires kafka url:port, topic name, and timeout for listening. """
         self.client = KafkaClient(hosts=url, zookeeper_hosts=None, use_greenlets=False)
         self.topic = self.client.topics[topic]
         self.consumer = self.topic.get_balanced_consumer(
             consumer_group=b'strom',
+            zookeeper_connect=None,
             num_consumer_fetchers=1,
             reset_offset_on_start=False,
-            #zookeeper_connect=zk_url,
             auto_commit_enable=True,
-            auto_commit_interval_ms=60000,
-            queued_max_messages=2000,
-            consumer_timeout_ms=(timeout * 1000),
+            auto_commit_interval_ms=30000, #tweak
+            queued_max_messages=200, #tweak
+            consumer_timeout_ms=timeout,
             auto_start=False,
-            use_rdkafka=False)  # NOTE: may be quicker w/ alt. options
-
-    def _snappy_decompress(self, msg):
-        msg_unpkg = Compression.decode_snappy(msg)
-        return msg_unpkg
-    def _gzip_decompress(self, msg):
-        msg_unpkg = Compression.decode_gzip(msg)
-        return msg_unpkg
+            use_rdkafka=False,
+            fetch_min_bytes=1, #tweak
+            fetch_message_max_bytes=1048576, #tweak
+            fetch_wait_max_ms=100) #tweak
+            # NOTE: may be quicker w/ alt. options
 
     def consume(self, compression=None):
         """ Listen time determinied by 'timeout' param given on init. Compression options: 'snappy', 'gzip', None. """
@@ -36,10 +32,4 @@ class Consumer():
         self.consumer.start() #auto-start
         for msg in self.consumer:
             if msg is not None:
-                if compression == "snappy":
-                    com_msg = self._snappy_decompress(msg.value)
-                elif compression == "gzip":
-                    com_msg = self._gzip_decompress(msg.value)
-                else:
-                    com_msg = msg.value
-                print(str(com_msg) + ": {}".format(msg.offset))
+                print(str(msg.value) + ": {}".format(msg.offset))

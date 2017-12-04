@@ -1,6 +1,5 @@
 """ Kafka Producer """
 from pykafka import KafkaClient
-import pykafka.utils.compression as Compression
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
@@ -13,30 +12,12 @@ class Producer():
         self.producer = self.topic.get_producer(delivery_reports=True, use_rdkafka=False)
         self.count = 0
 
-    def _snappy(self, data):
-        cdata = Compression.encode_snappy(data, xerial_compatible=True, xerial_blocksize=32768)
-        return cdata
-    def _gzip(self, data):
-        cdata = Compression.encode_gzip(data)
-        return cdata
-
-    def produce(self, compression, msg):
-        """
-        \b
-        Produce to given topic and log e. 20k msg.
-        Expects type of compression and message data.
-        Compression options: 'snappy', 'gzip', None
-        """
-        if compression == "snappy":
-            com_msg = self._snappy(msg)
-        elif compression == "gzip":
-            com_msg = self._gzip(msg)
-        else:
-            com_msg = msg
+    def produce(self, compression, dmsg):
+        """ Produce to given topic and log e. 1k msg. """
         bcount = str(self.count).encode()
-        self.producer.produce(com_msg, partition_key=bcount)
+        self.producer.produce(dmsg, partition_key=bcount)
         self.count += 1
-        if self.count == 20000:
+        if self.count == 1000:
             while True:
                 try:
                     msg, exc = self.producer.get_delivery_report(block=False)
