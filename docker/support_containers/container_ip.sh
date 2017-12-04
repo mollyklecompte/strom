@@ -27,6 +27,5 @@ done
 container_name=$1
 config_name=$2
 container_ip=$(docker inspect supportcontainers_"$container_name"_1 | grep IPAddress\": | sed "s/[^0-9\.]*//g" | sed "/^$/d" | sed -n 1p)
-
 sed "/^$config_name=/d" -i $HOME/.strom/strom.ini
 echo $config_name"="$container_ip >> $HOME/.strom/strom.ini
