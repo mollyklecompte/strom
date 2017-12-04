@@ -1,8 +1,8 @@
 import json, copy
-from Strom.strom.dstream.bstream import BStream
+from strom.dstream.bstream import BStream
 ### Usage run 'python -m Strom.demo_data.format_data' in strom/python directory of repo ###
 
-demo_data_dir = "Strom/demo_data/"
+demo_data_dir = "demo_data/"
 single_data = json.load(open(demo_data_dir+"single_data.txt"))
 ds_template = json.load(open(demo_data_dir+"demo_template.txt"))
 
@@ -37,8 +37,8 @@ json.dump(out_list, open(demo_data_dir+"demo_data_log.txt", "w"))
 json.dump(out_single_trip, open(demo_data_dir+"demo_trip26.txt", "w"))
 
 ds_template["_id"] = "crowley"
-tmp_b = BStream(ds_template, out_single_trip, range(1, len(out_single_trip)+1))
-tmp_b.aggregate()
+tmp_b = BStream(ds_template, out_single_trip)
+tmp_b.aggregate
 tmp_b.apply_filters()
 tmp_b.apply_dparam_rules()
 tmp_b.find_events()

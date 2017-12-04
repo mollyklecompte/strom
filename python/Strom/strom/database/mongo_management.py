@@ -3,19 +3,17 @@
 This class contains methods for inserting and reading from Mongodb
 """
 from pymongo import MongoClient
+from strom.utils.logger.logger import logger
+from strom.utils.configer import configer as config
 
 __version__  = "0.1"
 __author__ = "Molly <molly@tura.io>"
 
-# temporary config
-config = {'mongo_host' : '0.0.0.0', 'mongo_port' : 27017, 'template_coll' : 'templates', 'derived_coll_suf' : 'derived_measures', 'event_coll_suf' : 'events', 'db' : 'strom'}
-
 
 class MongoManager(object):
-
     def __init__(self):
-        self.client = MongoClient(config['mongo_host'], config['mongo_port'])
-        self.db = self.client[config['db']]
+        self.client = MongoClient(config['mongo_host'], int(config['mongo_port']))
+        self.db = self.client[config['mongo_db']]
         self.temp_coll_name = config['template_coll']
         self.temp_collection = self.db[self.temp_coll_name]
         self.derived_coll_suffix = config['derived_coll_suf']
