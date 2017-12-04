@@ -111,7 +111,8 @@ class CLIConfig(object):
     def _set_token(self):
         f = open(".cli_token")
         data = f.read()
-        self.token = data
+        if data is not None:
+            self.token = data
         return self.token
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
