@@ -1,6 +1,9 @@
 ###### Requirements without Version Specifiers ######
 #
 pymongo
+pykafka
+Flask
+flask_restful
 #
 ###### Requirements with Version Specifiers ######
 #

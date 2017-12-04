@@ -82,4 +82,3 @@ class BStream(DStream):
         self["events"] = {}
         for event_rule in self["event_rules"].values():
             self["events"][event_rule["event_name"]] = apply_transformation(event_rule, self)
-

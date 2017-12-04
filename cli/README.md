@@ -43,10 +43,10 @@ dstream --help
 dstream define -template demo_data/demo_template
 ```
 ```commandline
-dstream add_source -source file -token tokenized_template
+dstream load -filepath demo_data/demo_data_log -token tokenized_template
 ```
 ```commandline
-dstream load -filepath demo_data/demo_data_log -token tokenized_template
+dstream events --all -token tokenized_template
 ```
 
 ##### *INCOMING*:
@@ -54,17 +54,16 @@ dstream load -filepath demo_data/demo_data_log -token tokenized_template
     *   ``` dstream raw ```
     *   ``` dstream filtered ```
     *   ``` dstream derived_params ```
-    *   ``` dstream events ```
+    * ``` dstream add_source ```
 
 #### Help:
 * ``` --help ``` can be given to each command for more information
--
 * *Yellow Errors*
-  Check:
-  * Syntax
-  * File format
+  * Check:
+    * Syntax
+    * File format
 * *Red Errors*
-  Check:
-  * Server connection
-  * File format (detrimental issue)
-  * Missing expected data
+  * Check:
+    * Server connection
+    * File format (detrimental issue)
+    * Missing expected data
