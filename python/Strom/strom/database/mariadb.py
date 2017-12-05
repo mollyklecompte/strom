@@ -11,7 +11,7 @@ import mysql.connector as mariadb
 from mysql.connector import errorcode
 # relative path works when running mariadb.py as a module
 from ..dstream.dstream import DStream
-from ..dstream.filter_rules import FilterRules
+from ..dstream.stream_rules import FilterRules
 
 class SQL_Connection:
     def __init__(self):
