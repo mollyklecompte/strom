@@ -1,5 +1,10 @@
 #!/bin/bash
 ### Script to continuously push data to the Flask server ###
+template_data=$(cat ../../python/Strom/demo_data/demo_template.txt)
+echo '{"template":'$template_data'}' > template.tmp
+curl -H "Content-Type: application/json" -X POST -d @template.tmp 127.0.0.1:5000/api/define
+sleep 2
+
 
 i="1"
 while [ $i -lt 225 ]
