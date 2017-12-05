@@ -20,8 +20,8 @@ class TopicChecker():
         res = self._list()
         return len(res)
 
-    def _check_start(self, callback, pause):
-        self.check(callback, pause)
+    def _check_start(self, callback):
+        self.check(callback)
 
     def check(self, callback):
         count = len(self.topics)
@@ -29,3 +29,4 @@ class TopicChecker():
         while count == counting:
             counting = self._get_len()
         callback()
+        self._check_start(callback) # comment out to disable re-running check() on new topic
