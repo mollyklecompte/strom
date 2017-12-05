@@ -23,10 +23,9 @@ class TopicChecker():
     def _check_start(self, callback, pause):
         self.check(callback, pause)
 
-    def check(self):
+    def check(self, callback):
         count = len(self.topics)
         counting = count
         while count == counting:
             counting = self._get_len()
-        print(count)
-        print(counting)
+        callback()
