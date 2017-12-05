@@ -26,7 +26,7 @@ class Consumer():
             fetch_wait_max_ms=100) #tweak
             # NOTE: may be quicker w/ alt. options
 
-    def consume(self, compression=None):
+    def consume(self):
         """ Listen time determinied by 'timeout' param given on init. Compression options: 'snappy', 'gzip', None. """
         # NOTE: TODO Check diffs b/w for-loop and consumer.consume()
         self.consumer.start() #auto-start
