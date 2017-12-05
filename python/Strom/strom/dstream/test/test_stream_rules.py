@@ -16,7 +16,7 @@ class TestRuleDict(unittest.TestCase):
         self.assertIn("name", rd2)
         self.assertEqual(rd2["name"], "David")
         self.assertNotIn("feet", rd2)
-        self.assertIsNone()
+        self.assertIsNone(rd2["noise"])
 
 class TestFilterRules(unittest.TestCase):
     def setUp(self):
