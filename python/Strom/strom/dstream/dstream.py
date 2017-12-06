@@ -1,6 +1,5 @@
 """Base class for dstream"""
 import uuid
-from logging import (NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL)
 from strom.utils.logger.logger import logger
 
 
