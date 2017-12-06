@@ -12,7 +12,6 @@ class Consumer():
         self.topic = self.client.topics[topic]
         self.consumer = self.topic.get_balanced_consumer(
             consumer_group=b'strom',
-            zookeeper_connect=None,
             num_consumer_fetchers=1,
             reset_offset_on_start=False,
             auto_commit_enable=True,
@@ -27,9 +26,15 @@ class Consumer():
             # NOTE: may be quicker w/ alt. options
 
     def consume(self):
-        """ Listen time determinied by 'timeout' param given on init. Compression options: 'snappy', 'gzip', None. """
+        """  """
         # NOTE: TODO Check diffs b/w for-loop and consumer.consume()
         self.consumer.start() #auto-start
         for msg in self.consumer:
             if msg is not None:
                 print(str(msg.value) + ": {}".format(msg.offset))
+
+    def engorge(self):
+        """ Consume multiple messages in queue at once and exit. """
+        self.consumer.start()
+        result = self.consumer.consume()
+        return result.value

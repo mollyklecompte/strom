@@ -20,16 +20,17 @@ class TopicChecker():
         res = self._list()
         return len(res)
 
-    def _check_start(self, callback, pause):
-        self.check(callback, pause)
+    def _check_start(self, callback):
+        self.check(callback)
 
-    def test(self, par):
-        print("callback called with {}".format(par))
-
-    def check(self, callback, pause):
+    def check(self, keep=False, callback=None):
         count = len(self.topics)
         counting = count
         while count == counting:
             counting = self._get_len()
-        callback
-        self._check_start(callback, pause)
+        if callback is not None:
+            callback()
+        if keep:
+            self._check_start(callback)
+        else:
+            return (counting - count)
