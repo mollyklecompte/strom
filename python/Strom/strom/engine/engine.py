@@ -139,7 +139,7 @@ class TopicCheckThread(Thread):
         self.listening = False
 
 
-class Engine:
+class Engine(object):
     def __init__(self):
         self.coordinator = Coordinator()
         self.topics = []
@@ -191,3 +191,8 @@ class Engine:
         self._start_all_engine_threads()
         if listen:
             self._listen_for_new_topics(keep_listening=keep_listening)
+
+def main():
+    topics = ['load']
+    engine = Engine()
+    engine.run_from_list(topics, listen=False)

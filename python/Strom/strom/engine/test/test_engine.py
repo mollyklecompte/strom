@@ -126,14 +126,16 @@ class TestTopicCheckThread(unittest.TestCase):
     def setUp(self):
         self.checker = TopicChecker()
         self.checker_thread_no_keep = TopicCheckThread(self.checker, callback=self.callback_dummy)
-        self.checker_thread_keep = TopicCheckThread(self.checker)
+        self.checker_thread_keep = TopicCheckThread(self.checker, callback=self.callback_dummy())
         self.dummy_topics = []
 
     def callback_dummy(self):
         self.dummy_topics.append("topic")
 
-
-
+    def test_init(self):
+        self.assertIsInstance(self.checker, TopicChecker)
+        self.assertIsInstance(self.checker_thread_keep, TopicCheckThread)
+        self.assertIsInstance(self.checker_thread_no_keep, TopicCheckThread)
 
 
 class TestEngine(unittest.TestCase):
