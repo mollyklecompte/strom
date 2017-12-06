@@ -69,7 +69,7 @@ class EngineConsumer(Consumer):
                 # processor = ProcessBstreamThread(msg.value, self.coordinator)
                 # processor.start()
 
-    def _update_buffer(self, buffer):
+    def update_buffer(self, buffer):
         self.buffer = buffer
 
 
