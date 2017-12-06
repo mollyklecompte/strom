@@ -12,7 +12,7 @@ class Producer():
         self.producer = self.topic.get_producer(delivery_reports=True, use_rdkafka=False)
         self.count = 0
 
-    def produce(self, compression, dmsg):
+    def produce(self, dmsg):
         """ Produce to given topic w/ partition_key and log e. 1k msg. """
         bcount = str(self.count).encode()
         self.producer.produce(dmsg, partition_key=bcount)
