@@ -13,7 +13,7 @@ __author__ = 'Adrian Agnic <adrian@tura.io>'
 class Server():
     def __init__(self):
         self.expected_args = [
-        'template', 'data', 'source', 'topic', 'token', 'stream_data', 'stream_template', 'compression'
+        'template', 'data', 'source', 'topic', 'token', 'stream_data', 'stream_template'
         ]
         self.parser = reqparse.RequestParser()
         self.coordinator = Coordinator()
@@ -44,7 +44,7 @@ def define():
         srv.dstream.load_from_json(json_template)
         srv.coordinator.process_template(srv.dstream)
     except:
-        return '', 406
+        return '', 400
     else:
         return str(srv.dstream['stream_token']), 200
 
@@ -69,7 +69,7 @@ def load():
         token = json_data[0]['stream_token']
         srv.coordinator.process_data_sync(json_data, token)
     except:
-        return '', 406
+        return '', 400
     else:
         return 'Success.', 202
 
