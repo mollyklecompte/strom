@@ -24,18 +24,17 @@ generate...
 from threading import Thread
 from ast import literal_eval
 from copy import deepcopy
-from time import time
-from strom.kafka.consumer import Consumer
+from time import time, sleep
+from strom.kafka.consumer.consumer import Consumer
 from strom.coordinator.coordinator import Coordinator
-from strom.utils.stopwatch import Stopwatch
-from strom.utils.configer import configer
+from strom.utils.configer import configer as config
 
 
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"
 
 
-class ProcessBstreamThread(Thread):
+class ProcessBStreamThread(Thread):
     """
     Creates thread to call coordinator's process_data on batch of data from kafka
     """
@@ -50,19 +49,20 @@ class ProcessBstreamThread(Thread):
         self.coordinator = coordinator
 
     def run(self):
+        print("processor thread!")
         self.coordinator.process_data_sync(self.data, self.data[0]["stream_token"])
 
 
 class EngineConsumer(Consumer):
-    def __init__(self, url, topic, buffer):
-        super().__init__(url, topic)
+    def __init__(self, url, topic, buffer, timeout=-1):
+        super().__init__(url, topic, timeout=timeout)
         self.buffer = buffer
 
-    def consume(self, compression=None):
+    def consume(self):
         self.consumer.start()  # auto-start
         for msg in self.consumer:
             if msg is not None:
-                print(str(msg.value) + ": {}".format(msg.offset))
+                # print(str(msg.value) + ": {}".format(msg.offset))
                 self.buffer.extend(literal_eval(msg.value.decode("utf-8")))
                 # processor = ProcessBstreamThread(msg.value, self.coordinator)
                 # processor.start()
@@ -72,51 +72,67 @@ class EngineConsumer(Consumer):
 
 
 class ConsumerThread(Thread):
-    def __init__(self, url, topic, buffer):
+    def __init__(self, url, topic, buffer, timeout=-1):
         super().__init__()
-        self.consumer = EngineConsumer(url, topic, buffer)
+        self.consumer = EngineConsumer(url, topic, buffer, timeout=timeout)
+        self.consumer_running = None
 
     def run(self):
-        while True:
-            self.consumer.consume()
+        self.consumer_running = True
+        self.consumer.consume()
+        self.consumer_running = False
+        if self.consumer_running is False:
+            print('IT IS FUCKING FALSE')
 
     def _update_buffer(self, buffer):
         self.buffer = buffer
 
 
 class EngineThread(Thread):
-    def __init__(self, url, topic, coordinator):
+    def __init__(self, url, topic, coordinator, consumer_timeout=-1):
         super().__init__()
         self.coordinator = coordinator
         self.buffer = []
         self.url = url
         self.topic = topic
-        self.consumer_thread = ConsumerThread(self.url, self.topic, self.buffer)
+        self.consumer_thread = ConsumerThread(self.url, self.topic, self.buffer, timeout=consumer_timeout)
 
     def _empty_buffer(self):
         self.buffer = []
-        self.consumer_thread._update_buffer(self.buffer)
-        self.consumer_thread.consumer._update_buffer(self.consumer_thread.buffer)
+        self.consumer_thread.consumer._update_buffer(self.buffer)
+
+    def _check_consumer(self):
+        if self.consumer_thread.consumer_running:
+            return True
+        else:
+            return False
 
     def run(self):
         self.consumer_thread.start()
         timer = time()
 
-        while True:
-            while len(self.buffer) < 1000 and time() - timer < 0.3:
+        while self.consumer_thread.is_alive():
+            print("Starting outer while")
+            while len(self.buffer) < 300 and time() - timer < 10:
                 pass
-            buffer_data = deepcopy(self.buffer)
-            self._empty_buffer()
-            processor = ProcessBstreamThread(buffer_data, self.coordinator)
-            processor.start()
+            print("starting process")
+            if len(self.buffer):
+                buffer_data = deepcopy(self.buffer)
+                self._empty_buffer()
+                processor = ProcessBStreamThread(buffer_data, self.coordinator)
+                processor.start()
             timer = time()
+            print("is consumer running?")
+            result = self._check_consumer()
+            print(result)
+
 
 
 class Engine(object):
     def __init__(self):
         self.coordinator = Coordinator()
         self.topics = []
-        self.kafka_url = 'localhost:9092'
+        self.kafka_url = config["kafka_url"]
 
     def _add_topics_from_list(self, topics):
         self.topics.extend(topics)

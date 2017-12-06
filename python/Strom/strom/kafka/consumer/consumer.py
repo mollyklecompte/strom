@@ -12,7 +12,6 @@ class Consumer():
         self.topic = self.client.topics[topic]
         self.consumer = self.topic.get_balanced_consumer(
             consumer_group=b'strom',
-            zookeeper_connect=None,
             num_consumer_fetchers=1,
             reset_offset_on_start=False,
             auto_commit_enable=True,
