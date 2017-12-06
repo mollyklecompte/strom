@@ -38,10 +38,14 @@ def _convert_to_utc(date_string):
 
 def _api_POST(config, function, data_dict):
     """ Takes name of endpoint and dict of data to post. """
+    if config.verbose:
+        click.secho("POSTing {} to /{}".format(data_dict, function), fg='cyan')
     try:
         ret = requests.post(config.url + "/api/{}".format(function), data=data_dict)
     except:
         click.secho("\nConnection Refused!...\n", fg='red', reverse=True)
+        if config.verbose:
+            click.secho("Server connection was denied. Check your internet connections and try again. Otherwise contact support.", fg='cyan')
     else:
         click.secho(str(ret.status_code), fg='yellow')
         click.secho(ret.text, fg='yellow')
@@ -49,21 +53,29 @@ def _api_POST(config, function, data_dict):
 
 def _api_GET(config, function, param, value, token):
     """ Takes name of endpoint, time/range and its value, as well as token. """
+    if config.verbose:
+        click.secho("GETing {}={} from {} with {}".format(param, value, function, token), fg='cyan')
     try:
         ret = requests.get(config.url + "/api/get/{}?".format(function) + "{}={}".format(param, value) + "&token={}".format(token))
     except:
         click.secho("\nConnection Refused!...\n", fg='red', reverse=True)
+        if config.verbose:
+            click.secho("Server connection was denied. Check your internet connections and try again. Otherwise contact support.", fg='cyan')
     else:
         click.secho(str(ret.status_code), fg='yellow')
         click.secho(ret.text, fg='yellow')
         return [ret.status_code, ret.text]
 
-def _collect_token(cert):
+def _collect_token(config, cert):
     """ Load json-formatted input and return stream_token, if found. """
+    if config.verbose:
+        click.secho("Searching for token...", fg='cyan')
     try:
         json_cert = json.loads(cert)
     except:
         click.secho("There was an error accessing/parsing those files!...\n", fg='red', reverse=True)
+        if config.verbose:
+            click.secho("")
     else:
         try:
             token = json_cert["stream_token"]
@@ -118,7 +130,7 @@ class CLIConfig(object):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.group()
 @click.option('-verbose', '-v', 'verbose', is_flag=True, help="Enables verbose mode")
-@click.option('-store', '-S', 'store', is_flag=True, help="(SHORTCUT) Stores *most recent* template token for easier retrieval. Allows omission of '-token' in each command") # TODO change to callback
+@click.option('-store', '-S', 'store', is_flag=True, help="(SHORTCUT) Don't use if defining multiple templates") # TODO change to callback
 @click.option('--version', is_flag=True, callback=_print_ver, is_eager=True, expose_value=False, help="Current version")
 @click.pass_context
 def dstream(ctx, verbose, store):
