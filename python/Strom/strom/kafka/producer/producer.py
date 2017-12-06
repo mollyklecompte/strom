@@ -7,7 +7,7 @@ __author__ = 'Adrian Agnic <adrian@tura.io>'
 class Producer():
     """ Simple kafka producer, accepts kafka url string and topic name byte-string. """
     def __init__(self, url, topic):
-        self.client = KafkaClient(hosts=url, zookeeper_hosts=None, use_greenlets=False)
+        self.client = KafkaClient(hosts=url, use_greenlets=False)
         self.topic = self.client.topics[topic]
         self.producer = self.topic.get_producer(delivery_reports=True, use_rdkafka=False)
         self.count = 0

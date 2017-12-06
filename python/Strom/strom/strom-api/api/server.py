@@ -43,8 +43,8 @@ def define():
         json_template = json.loads(template)
         srv.dstream.load_from_json(json_template)
         srv.coordinator.process_template(srv.dstream)
-    except:
-        return '', 400
+    except Exception as ex:
+        return '{}'.format(ex), 400
     else:
         return str(srv.dstream['stream_token']), 200
 
@@ -68,8 +68,8 @@ def load():
         json_data = json.loads(data)
         token = json_data[0]['stream_token']
         srv.coordinator.process_data_sync(json_data, token)
-    except:
-        return '', 400
+    except Exception as ex:
+        return '{}'.format(ex), 400
     else:
         return 'Success.', 202
 
