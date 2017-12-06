@@ -3,7 +3,8 @@ import json
 import time
 from copy import deepcopy
 from strom.kafka.producer.producer import Producer
-from strom.engine.engine import ProcessBStreamThread, EngineConsumer, ConsumerThread, EngineThread, Engine
+from strom.kafka.topics.checker import TopicChecker
+from strom.engine.engine import ProcessBStreamThread, EngineConsumer, ConsumerThread, TopicCheckThread, EngineThread, Engine
 from strom.utils.stopwatch import Timer
 from strom.utils.configer import configer as config
 from strom.coordinator.coordinator import Coordinator
@@ -121,18 +122,27 @@ class TestEngineThread(unittest.TestCase):
         print(len(stored_events2))
         self.assertTrue(len(stored_events2) >= 2)
 
+class TestTopicCheckThread(unittest.TestCase):
+    def setUp(self):
+        self.checker = TopicChecker()
+        self.checker_thread_no_keep = TopicCheckThread(self.checker, callback=self.callback_dummy)
+        self.checker_thread_keep = TopicCheckThread(self.checker)
+        self.dummy_topics = []
+
+    def callback_dummy(self):
+        self.dummy_topics.append("topic")
 
 
 
 
-"""
+
 class TestEngine(unittest.TestCase):
 
     def setUp(self):
         demo_data_dir = "demo_data/"
         self.dstreams = json.load(open(demo_data_dir + "demo_trip26.txt"))
         self.producer = Producer(config["kafka_url"], b'test')
-"""
+
 
 
 

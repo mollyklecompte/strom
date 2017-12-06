@@ -25,6 +25,7 @@ from threading import Thread
 from ast import literal_eval
 from copy import deepcopy
 from time import time, sleep
+from strom.kafka.topics.checker import TopicChecker
 from strom.kafka.consumer.consumer import Consumer
 from strom.coordinator.coordinator import Coordinator
 from strom.utils.configer import configer as config
@@ -84,9 +85,6 @@ class ConsumerThread(Thread):
         if self.consumer_running is False:
             print('IT IS FUCKING FALSE')
 
-    def _update_buffer(self, buffer):
-        self.buffer = buffer
-
 
 class EngineThread(Thread):
     def __init__(self, url, topic, coordinator, consumer_timeout=-1):
@@ -99,7 +97,7 @@ class EngineThread(Thread):
 
     def _empty_buffer(self):
         self.buffer = []
-        self.consumer_thread.consumer._update_buffer(self.buffer)
+        self.consumer_thread.consumer.update_buffer(self.buffer)
 
     def _check_consumer(self):
         if self.consumer_thread.consumer_running:
@@ -127,28 +125,69 @@ class EngineThread(Thread):
             print(result)
 
 
+class TopicCheckThread(Thread):
+    def __init__(self, checker, keep=False, callback=None):
+        super().__init__()
+        self.checker = checker
+        self.listening = False
+        self.keep = keep
+        self.callback = callback
 
-class Engine(object):
+    def run(self):
+        self.listening = True
+        self.checker.check(keep=self.keep, callback=self.callback)
+        self.listening = False
+
+
+class Engine:
     def __init__(self):
         self.coordinator = Coordinator()
         self.topics = []
         self.kafka_url = config["kafka_url"]
+        self.topic_buddy = TopicChecker(self.kafka_url)
 
     def _add_topics_from_list(self, topics):
         self.topics.extend(topics)
 
+    def _add_topics_from_client(self):
+        self.topics = self.topic_buddy.list()
+
     def _add_topic(self, topic):
         self.topics.append(topic)
 
-    def topic_in_list(self, topic):
+    def _topic_in_list(self, topic):
         if topic in self.topics:
             return True
+        else:
+            return False
 
-    def new_engine_thread(self, topic):
+    def _listen_for_new_topics(self, keep_listening=False):
+        checker = TopicCheckThread(self.topic_buddy, keep=keep_listening, callback=self._new_topic_from_checker)
+        checker.start()
+
+    def _new_topic_from_checker(self):
+        for topic in self.topic_buddy.list():
+            if not self._topic_in_list(topic):
+                self._add_topic(topic)
+                self._new_engine_thread(topic)
+
+    def _new_engine_thread(self, topic):
         engine_thread = EngineThread(self.kafka_url, topic.encode(), self.coordinator)
         engine_thread.start()
 
-    def start_all_engine_threads(self):
+    def _start_all_engine_threads(self):
         for topic in self.topics:
             engine_thread = EngineThread(self.kafka_url, topic.encode(), self.coordinator)
             engine_thread.start()
+
+    def run_from_list(self, topics, listen=True, keep_listening=False):
+        self._add_topics_from_list(topics)
+        self._start_all_engine_threads()
+        if listen:
+            self._listen_for_new_topics(keep_listening=keep_listening)
+
+    def run_from_topic_buddy(self, listen=True, keep_listening=False):
+        self._add_topics_from_client()
+        self._start_all_engine_threads()
+        if listen:
+            self._listen_for_new_topics(keep_listening=keep_listening)

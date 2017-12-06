@@ -12,12 +12,12 @@ class TopicChecker():
     def _update(self):
         self.client.update_cluster()
 
-    def _list(self):
+    def list(self):
         self._update()
         return self.topics
 
     def _get_len(self):
-        res = self._list()
+        res = self.list()
         return len(res)
 
     def _check_start(self, callback):
