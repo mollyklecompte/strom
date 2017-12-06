@@ -1,5 +1,6 @@
 """ Kafka Producer """
 from pykafka import KafkaClient
+from strom.utils.logger.logger import logger
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
@@ -22,6 +23,7 @@ class Producer():
                 try:
                     msg, exc = self.producer.get_delivery_report(block=False)
                     if exc is not None:
+                        logger.warn("Kafka Producer Error: {} from {}".format(exc, msg.partition_key))
                         print("Delivery Fail: {}: {}".format(msg.partition_key, repr(exc))) #replace w/ logger
                     else:
                         print("Success: {}".format(msg.partition_key))
