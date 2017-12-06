@@ -4,8 +4,8 @@ from strom.kafka.consumer.consumer import Consumer
 
 class TestKafka(unittest.TestCase):
     def setUp(self):
-        self.producer = Producer('127.0.0.1:9092', b'test')
-        self.consumer = Consumer('127.0.0.1:9092', b'test', 10000)
+        self.producer = Producer('127.0.0.1:9092', b'kafkatest')
+        self.consumer = Consumer('127.0.0.1:9092', b'kafkatest', 10000)
 
     def test_kafka_init(self):
         self.assertIsInstance(self.producer, Producer)
