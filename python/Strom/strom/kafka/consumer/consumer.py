@@ -32,3 +32,9 @@ class Consumer():
         for msg in self.consumer:
             if msg is not None:
                 print(str(msg.value) + ": {}".format(msg.offset))
+
+    def engorge(self):
+        """ Consume multiple messages in queue at once and exit. """
+        self.consumer.start()
+        result = self.consumer.consume()
+        return result.value
