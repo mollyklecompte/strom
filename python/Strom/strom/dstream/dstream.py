@@ -84,7 +84,7 @@ class DStream(dict):
         for key in json_file.keys():
             if key != 'stream_token':
                 self[key] = json_file[key]
-                logger.debug("added key %" % (key))
+                logger.debug("added key %s" % (key))
 
     def define_dstream(self, storage_rules, ingestion_rules, source_dict, measure_list, field_names, user_id_names,
                       tag_list, filter_list, dparam_rule_list, event_list):
