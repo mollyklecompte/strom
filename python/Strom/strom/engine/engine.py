@@ -65,7 +65,9 @@ class EngineConsumer(Consumer):
         for msg in self.consumer:
             if msg is not None:
                 # print(str(msg.value) + ": {}".format(msg.offset))
-                self.buffer.extend(json.loads(msg.value.decode("utf-8")))
+                message = json.loads(msg.value.decode("utf-8"))
+                message_format = literal_eval(message)
+                self.buffer.extend(message_format)
                 # processor = ProcessBstreamThread(msg.value, self.coordinator)
                 # processor.start()
 
@@ -78,6 +80,7 @@ class ConsumerThread(Thread):
         super().__init__()
         self.consumer = EngineConsumer(url, topic, buffer, timeout=timeout)
         self.consumer_running = None
+        print("consumer timeout", timeout)
 
     def run(self):
         self.consumer_running = True
@@ -99,7 +102,6 @@ class EngineThread(Thread):
     def _empty_buffer(self):
         self.buffer = []
         self.consumer_thread.consumer.update_buffer(self.buffer)
-
     def _check_consumer(self):
         if self.consumer_thread.consumer_running:
             return True
