@@ -11,6 +11,7 @@ class TopicChecker():
 
     def _update(self):
         self.client.update_cluster()
+        self.topics = self.client.topics
 
     def list(self):
         self._update()
@@ -20,17 +21,17 @@ class TopicChecker():
         res = self.list()
         return len(res)
 
-    def _check_start(self, callback):
-        self.check(callback)
+    #def _check_start(self, callback):
+    #    self.check(callback)
 
-    def check(self, keep=False, callback=None):
-        count = len(self.topics)
-        counting = count
-        while count == counting:
-            counting = self._get_len()
-        if callback is not None:
-            callback()
-        if keep:
-            self._check_start(callback)
-        else:
-            return (counting - count)
+    #def check(self, keep=False, callback=None):
+    #    count = len(self.topics)
+    #    counting = count
+    #    while count == counting:
+    #        counting = self._get_len()
+    #    if callback is not None:
+    #        callback()
+    #    if keep:
+    #        self._check_start(callback)
+    #    else:
+    #        return (counting - count)

@@ -24,7 +24,7 @@ generate...
 from threading import Thread
 from ast import literal_eval
 from copy import deepcopy
-from time import time, sleep
+from time import time
 from strom.kafka.topics.checker import TopicChecker
 from strom.kafka.consumer.consumer import Consumer
 from strom.coordinator.coordinator import Coordinator
@@ -68,7 +68,7 @@ class EngineConsumer(Consumer):
                 # processor = ProcessBstreamThread(msg.value, self.coordinator)
                 # processor.start()
 
-    def _update_buffer(self, buffer):
+    def update_buffer(self, buffer):
         self.buffer = buffer
 
 
@@ -111,7 +111,7 @@ class EngineThread(Thread):
 
         while self.consumer_thread.is_alive():
             print("Starting outer while")
-            while len(self.buffer) < 300 and time() - timer < 10:
+            while len(self.buffer) < 45 and time() - timer < 5:
                 pass
             print("starting process")
             if len(self.buffer):
@@ -125,32 +125,21 @@ class EngineThread(Thread):
             print(result)
 
 
-class TopicCheckThread(Thread):
-    def __init__(self, checker, keep=False, callback=None):
-        super().__init__()
-        self.checker = checker
-        self.listening = False
-        self.keep = keep
-        self.callback = callback
-
-    def run(self):
-        self.listening = True
-        self.checker.check(keep=self.keep, callback=self.callback)
-        self.listening = False
-
-
 class Engine(object):
     def __init__(self):
         self.coordinator = Coordinator()
         self.topics = []
         self.kafka_url = config["kafka_url"]
         self.topic_buddy = TopicChecker(self.kafka_url)
+        self.engine_threads = []
 
     def _add_topics_from_list(self, topics):
         self.topics.extend(topics)
 
     def _add_topics_from_client(self):
-        self.topics = self.topic_buddy.list()
+        topics = self.topic_buddy.list()
+        self.topics = [k.decode('utf-8') for k,v in topics.items()]
+
 
     def _add_topic(self, topic):
         self.topics.append(topic)
@@ -161,38 +150,30 @@ class Engine(object):
         else:
             return False
 
-    def _listen_for_new_topics(self, keep_listening=False):
-        checker = TopicCheckThread(self.topic_buddy, keep=keep_listening, callback=self._new_topic_from_checker)
-        checker.start()
-
-    def _new_topic_from_checker(self):
-        for topic in self.topic_buddy.list():
-            if not self._topic_in_list(topic):
-                self._add_topic(topic)
-                self._new_engine_thread(topic)
-
-    def _new_engine_thread(self, topic):
-        engine_thread = EngineThread(self.kafka_url, topic.encode(), self.coordinator)
+    def _new_engine_thread(self, topic, consumer_timeout=-1):
+        engine_thread = EngineThread(self.kafka_url, topic.encode(), self.coordinator, consumer_timeout=consumer_timeout)
         engine_thread.start()
 
-    def _start_all_engine_threads(self):
+    def _start_all_engine_threads(self, consumer_timeout=-1):
         for topic in self.topics:
-            engine_thread = EngineThread(self.kafka_url, topic.encode(), self.coordinator)
+            engine_thread = EngineThread(self.kafka_url, topic.encode(), self.coordinator, consumer_timeout=consumer_timeout)
             engine_thread.start()
+            self.engine_threads.append(engine_thread)
 
-    def run_from_list(self, topics, listen=True, keep_listening=False):
+
+    def run_from_list(self, topics, consumer_timeout=-1):
         self._add_topics_from_list(topics)
-        self._start_all_engine_threads()
-        if listen:
-            self._listen_for_new_topics(keep_listening=keep_listening)
+        self._start_all_engine_threads(consumer_timeout=consumer_timeout)
+        # if listen:
+        #    self._listen_for_new_topics(keep_listening=keep_listening)
 
-    def run_from_topic_buddy(self, listen=True, keep_listening=False):
+    def run_from_topic_buddy(self, consumer_timeout=-1):
         self._add_topics_from_client()
-        self._start_all_engine_threads()
-        if listen:
-            self._listen_for_new_topics(keep_listening=keep_listening)
+        self._start_all_engine_threads(consumer_timeout=consumer_timeout)
+        # if listen:
+        #    self._listen_for_new_topics(keep_listening=keep_listening)
 
 def main():
     topics = ['load']
     engine = Engine()
-    engine.run_from_list(topics, listen=False)
+    engine.run_from_list(topics)

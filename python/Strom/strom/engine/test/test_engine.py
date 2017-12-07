@@ -4,7 +4,7 @@ import time
 from copy import deepcopy
 from strom.kafka.producer.producer import Producer
 from strom.kafka.topics.checker import TopicChecker
-from strom.engine.engine import ProcessBStreamThread, EngineConsumer, ConsumerThread, TopicCheckThread, EngineThread, Engine
+from strom.engine.engine import ProcessBStreamThread, EngineConsumer, ConsumerThread, EngineThread, Engine
 from strom.utils.stopwatch import Timer
 from strom.utils.configer import configer as config
 from strom.coordinator.coordinator import Coordinator
@@ -58,7 +58,7 @@ class TestEngineConsumer(unittest.TestCase):
 
     def test_update_buffer(self):
         new_buff = [1,2,3]
-        self.consumer._update_buffer(new_buff)
+        self.consumer.update_buffer(new_buff)
 
         self.assertEqual(self.consumer.buffer, new_buff)
 
@@ -97,13 +97,11 @@ class TestEngineThread(unittest.TestCase):
         self.engine_thread = EngineThread(self.url, self.topic, self.coordinator, consumer_timeout=10000)
 
     def test_run(self):
-
         self.coordinator.process_template(self.template)
         stringified = str(self.dstreams)
         self.producer.produce(stringified.encode())
 
         self.engine_thread.start()
-
 
         stored_events = self.mongo.get_all_coll("event", self.token)
         self.producer.produce(stringified.encode())
@@ -115,37 +113,84 @@ class TestEngineThread(unittest.TestCase):
         self.producer.produce(stringified.encode())
         time.sleep(9)
 
-
         self.engine_thread.join()
         stored_events2 = self.mongo.get_all_coll("event", self.token)
         print("events length second")
         print(len(stored_events2))
         self.assertTrue(len(stored_events2) >= 2)
 
-class TestTopicCheckThread(unittest.TestCase):
-    def setUp(self):
-        self.checker = TopicChecker()
-        self.checker_thread_no_keep = TopicCheckThread(self.checker, callback=self.callback_dummy)
-        self.checker_thread_keep = TopicCheckThread(self.checker, callback=self.callback_dummy())
-        self.dummy_topics = []
-
-    def callback_dummy(self):
-        self.dummy_topics.append("topic")
-
-    def test_init(self):
-        self.assertIsInstance(self.checker, TopicChecker)
-        self.assertIsInstance(self.checker_thread_keep, TopicCheckThread)
-        self.assertIsInstance(self.checker_thread_no_keep, TopicCheckThread)
-
 
 class TestEngine(unittest.TestCase):
-
     def setUp(self):
-        demo_data_dir = "demo_data/"
-        self.dstreams = json.load(open(demo_data_dir + "demo_trip26.txt"))
-        self.producer = Producer(config["kafka_url"], b'test')
+        self.dstreams1 = deepcopy(dstreams)
+        for i in self.dstreams1:
+            i['stream_token'] = "stream1"
+        self.template1 = deepcopy(template)
+        self.template1['stream_token'] = "stream1"
+        self.token1 = "stream1"
 
+        self.dstreams2 = deepcopy(dstreams)
+        for i in self.dstreams2:
+            i['stream_token'] = "stream2"
+        self.template2 = deepcopy(template)
+        self.template2['stream_token'] = "stream2"
+        self.token2 = "stream2"
 
+        self.producer1 = Producer(config["kafka_url"], b'beeper1')
+        self.producer2 = Producer(config["kafka_url"], b'beeper2')
+        self.producer3 = Producer(config["kafka_url"], b'stream1')
+        self.producer4 = Producer(config["kafka_url"], b'stream2')
+        self.engine = Engine()
+
+    def test_engine_init(self):
+        self.assertIsInstance(self.engine, Engine)
+        self.assertIsInstance(self.engine.coordinator, Coordinator)
+
+    def test_add_topic(self):
+        self.engine._add_topic('topictest')
+        self.assertIn('topictest', self.engine.topics)
+
+    def test_add_topics_from_client(self):
+        self.producer1.produce(b'beep')
+        self.producer2.produce(b'beep')
+        self.engine.topic_buddy._update()
+        self.engine._add_topics_from_client()
+        self.assertIn('beeper1', self.engine.topics)
+        self.assertIn('beeper2', self.engine.topics)
+
+    def test_add_topic_from_list(self):
+        topic_list = ['one', 'two', 'three']
+        self.engine._add_topics_from_list(topic_list)
+        self.assertIn('one', self.engine.topics)
+        self.assertIn('two', self.engine.topics)
+        self.assertIn('three', self.engine.topics)
+
+    def test_topic_in_list(self):
+        self.engine._add_topic('test')
+        result = self.engine._topic_in_list('test')
+        self.assertTrue(result)
+
+    def test_start_all_engine_threads(self):
+        self.engine.coordinator.process_template(self.template1)
+        self.engine.coordinator.process_template(self.template2)
+        stringified1 = str(self.dstreams1)
+        self.producer3.produce(stringified1.encode())
+        stringified2 = str(self.dstreams2)
+        self.producer4.produce(stringified2.encode())
+        self.engine.topics = ['stream1', 'stream2']
+
+        self.engine._start_all_engine_threads(consumer_timeout=5000)
+        for thread in self.engine.engine_threads:
+            self.assertTrue(thread.is_alive())
+        time.sleep(15)
+        stream1_events = self.engine.coordinator.mongo.get_all_coll("event", self.token1)
+        stream2_events = self.engine.coordinator.mongo.get_all_coll("event", self.token2)
+
+        print("lengths")
+        print(len(stream1_events))
+        print(len(stream2_events))
+        self.assertTrue(len(stream1_events) >= 1)
+        self.assertTrue(len(stream2_events) >= 1)
 
 
 if __name__ == "__main__":
