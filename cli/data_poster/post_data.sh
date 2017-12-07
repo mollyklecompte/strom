@@ -1,5 +1,6 @@
 #!/bin/bash
 ### Script to continuously push data to the Flask server ###
+rm -f template.tmp stream_token.tmp
 template_data=$(sed "s/\"/\\\\\"/g" ../../python/Strom/demo_data/demo_template.txt | awk '{printf"\"%s\"",$0}')
 echo '{"template":'$template_data'}'  > template.tmp
 curl -H "Content-Type: application/json" -X POST -d @template.tmp 127.0.0.1:5000/api/define > stream_token.tmp
