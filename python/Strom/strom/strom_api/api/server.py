@@ -96,6 +96,9 @@ def load_kafka():
     else:
         return 'Success.', 202
 
+def index():
+    return 'STROM-API is UP', 200
+
 def get(this):
     """ Returns data, specified by endpoint & URL params. """
     time_range = request.args.get('range', '')
@@ -118,6 +121,7 @@ app.add_url_rule('/api/load', 'load', load, methods=['POST'])
 # KAFKA POST
 app.add_url_rule('/kafka/load', 'load_kafka', load_kafka, methods=['POST'])
 # GET
+app.add_url_rule('/', 'index', index, methods=['GET'])
 app.add_url_rule('/api/get/<this>', 'get', get, methods=['GET'])
 
 def start():
