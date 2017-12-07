@@ -23,6 +23,7 @@ generate...
 
 from threading import Thread
 from ast import literal_eval
+import json
 from copy import deepcopy
 from time import time
 from strom.kafka.topics.checker import TopicChecker
@@ -64,7 +65,7 @@ class EngineConsumer(Consumer):
         for msg in self.consumer:
             if msg is not None:
                 # print(str(msg.value) + ": {}".format(msg.offset))
-                self.buffer.extend(literal_eval(msg.value.decode("utf-8")))
+                self.buffer.extend(json.loads(msg.value.decode("utf-8")))
                 # processor = ProcessBstreamThread(msg.value, self.coordinator)
                 # processor.start()
 
@@ -177,3 +178,6 @@ def main():
     topics = ['load']
     engine = Engine()
     engine.run_from_list(topics)
+
+if __name__=="__main__":
+    main()
