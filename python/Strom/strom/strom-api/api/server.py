@@ -5,11 +5,12 @@ from flask_restful import reqparse
 from strom.dstream.dstream import DStream
 from strom.coordinator.coordinator import Coordinator
 from strom.kafka.producer.producer import Producer
+from strom.utils.logger.logger import logger
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~``
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 class Server():
     def __init__(self):
         self.expected_args = [
@@ -43,8 +44,9 @@ def define():
         json_template = json.loads(template)
         srv.dstream.load_from_json(json_template)
         srv.coordinator.process_template(srv.dstream)
-    except:
-        return '', 400
+    except Exception as ex:
+        logger.info("Server Error in define: Template loading/processing - {}".format(ex))
+        return '{}'.format(ex), 400
     else:
         return str(srv.dstream['stream_token']), 200
 
@@ -68,8 +70,9 @@ def load():
         json_data = json.loads(data)
         token = json_data[0]['stream_token']
         srv.coordinator.process_data_sync(json_data, token)
-    except:
-        return '', 400
+    except Exception as ex:
+        logger.info("Server Error in load: Data loading/processing - {}".format(ex))
+        return '{}'.format(ex), 400
     else:
         return 'Success.', 202
 

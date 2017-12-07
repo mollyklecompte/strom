@@ -50,20 +50,11 @@ dstream events --all -token tokenized_template
 ```
 
 ##### *INCOMING*:
-*   'GET' methods for data
+  *   'GET' methods for data
     *   ``` dstream raw ```
     *   ``` dstream filtered ```
     *   ``` dstream derived_params ```
-    * ``` dstream add_source ```
+  * ``` dstream add_source ```
 
 #### Help:
 * ``` --help ``` can be given to each command for more information
-* *Yellow Errors*
-  * Check:
-    * Syntax
-    * File format
-* *Red Errors*
-  * Check:
-    * Server connection
-    * File format (detrimental issue)
-    * Missing expected data
