@@ -3,6 +3,7 @@ from copy import deepcopy
 from abc import ABCMeta, abstractmethod
 from .transform import Transformer
 from .event import Event
+from strom.utils.logger.logger import logger
 
 class DetectEvent(Transformer):
     __metaclass__ = ABCMeta
@@ -11,6 +12,7 @@ class DetectEvent(Transformer):
         super().__init__()
 
     def load_params(self, params):
+        logger.debug("loading event_rules event_name stream_token")
         self.params["event_rules"] = params["event_rules"]
         self.params["event_name"] = params["event_name"]
         self.params["stream_token"] = params["stream_token"]
@@ -19,6 +21,7 @@ class DetectEvent(Transformer):
         return self.params
 
     def add_timestamp(self, timestamp_list):
+        logger.debug("adding timestamp[s]")
         self.data["timestamp"] = {"val":timestamp_list, "dtype":"decimal"}
 
     @abstractmethod
@@ -31,15 +34,19 @@ class DetectThreshold(DetectEvent):
         super().__init__()
         self.params["event_rules"] = {"measure":"measure_name", "threshold_value":"value to compare against",
                                        "comparison_operator":["==", "!=", ">=", "<=", ">", "<"]}
+        logger.debug("initialized DetectThreshold. Use get_params() to see parameter values")
+
 
     @staticmethod
     def compare_threshold(data_array, comparison_operator, comparision_val):
+        logger.debug("comparing: %s %d" %(comparison_operator, comparision_val))
         comparisons= {"==":np.equal, "!=":np.not_equal, ">=":np.greater_equal, "<=":np.less_equal, ">":np.greater, "<":np.less}
         cur_comp = comparisons[comparison_operator]
         match_inds = np.nonzero(cur_comp(np.nan_to_num(data_array), comparision_val))
         return match_inds[0]
 
     def create_events(self, event_inds):
+        logger.debug("creating events")
         event_list = []
         for e_ind in event_inds:
             cur_event = Event()
@@ -49,6 +56,7 @@ class DetectThreshold(DetectEvent):
             cur_event["stream_token"] = self.params["stream_token"]
             cur_event["timestamp"] = self.data["timestamp"]["val"][e_ind]
             for key, val in self.data.items():
+                logger.debug("added %s to event_context" % (key))
                 if key != "timestamp":
                     cur_event["event_context"][key] = val["val"][e_ind]
             event_list.append(deepcopy(cur_event))
@@ -56,6 +64,7 @@ class DetectThreshold(DetectEvent):
 
 
     def transform_data(self):
+        logger.debug("transforming data")
         measure_array = np.array(self.data[self.params["event_rules"]["measure"]]["val"], dtype=float)
         event_inds = self.compare_threshold(measure_array, self.params["event_rules"]["comparison_operator"], self.params["event_rules"]["threshold_value"])
         return self.create_events(event_inds)

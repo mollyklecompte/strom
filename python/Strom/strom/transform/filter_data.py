@@ -3,9 +3,11 @@ import numpy as np
 from abc import ABCMeta, abstractmethod
 from scipy.signal import butter, filtfilt
 from .transform import Transformer
+from strom.utils.logger.logger import logger
 
 
 def window_data(in_array, window_len):
+    logger.debug("Windowing data with window length %d" % (window_len))
     w_data = np.convolve(in_array, np.ones(window_len), "valid") / window_len
     # Dealing with the special case for endpoints of in_array
     ends_divisor = np.arange(1, window_len, 2)
@@ -23,6 +25,7 @@ class Filter(Transformer):
 
     def load_params(self, params):
         """Load func_params dict into filter.params"""
+        logger.debug("loading func_params and filter_name")
         self.params["func_params"] = params["func_params"]
         self.params["filter_name"] = params["filter_name"]
 
@@ -41,14 +44,17 @@ class ButterLowpass(Filter):
         super().__init__()
         self.params["func_params"] ={"order":3, "nyquist":0.05}
         self.params["filter_name"] =  "buttered"
+        logger.debug("initialized ButterLowpass. Use get_params() to see parameter values")
 
     @staticmethod
     def butter_data(data_array, order, nyquist):
+        logger.debug("buttering data")
         b, a = butter(order, nyquist)
         return filtfilt(b, a, data_array)
 
     def transform_data(self):
         buttered_data = {}
+        logger.debug("transforming_data")
         for key in self.data.keys():
             key_array = np.array(self.data[key]["val"], dtype=float)
             if len(key_array.shape) > 1:
@@ -69,8 +75,11 @@ class WindowAverage(Filter):
         super().__init__()
         self.params["func_params"] = {"window_len": 2}
         self.params["filter_name"] = "windowed"
+        logger.debug("initialized WindowAverage. Use get_params() to see parameter values")
+
 
     def transform_data(self):
+        logger.debug("transforming_data")
         windowed_data = {}
         for key in self.data.keys():
             key_array = np.array(self.data[key]["val"], dtype=float)
