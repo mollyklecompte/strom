@@ -40,11 +40,8 @@ def define():
     template = args['template'] #   dstream template
     srv._dstream_new()
     try:
-        print("Template ", template)
         json_template = json.loads(template)
-        print("JSON TEMPLATE", json_template)
         srv.dstream.load_from_json(json_template)
-        print("loaded")
         srv.coordinator.process_template(srv.dstream)
     except:
         return '', 400
