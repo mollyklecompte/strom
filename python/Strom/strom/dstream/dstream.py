@@ -1,5 +1,7 @@
 """Base class for dstream"""
 import uuid
+from strom.utils.logger.logger import logger
+
 
 __version__  = "0.1"
 __author__ = "David <david@tura.io>"
@@ -23,6 +25,7 @@ class DStream(dict):
         self["filters"] = []
         self["dparam_rules"] = []
         self["event_rules"] = {}
+        logger.debug("DStream initialize")
 
 
     def _add_source(self, source_name, source_location):
@@ -32,45 +35,56 @@ class DStream(dict):
             if type == kafka, we also have
             topic: kafka topic name"""
         self["sources"][source_name] = source_location
+        logger.debug("added source %s" % (source_name))
 
     def _add_measure(self, measure_name, dtype):
         """Creates entry in measures dict for new measure"""
         self["measures"][measure_name] = {"val":None, "dtype":dtype}
+        logger.debug("added measure %s" % (measure_name))
 
     def _add_field(self, field_name):
         self["fields"][field_name] = {}
+        logger.debug("added field %s" % (field_name))
 
     def _add_user_id(self, id_name):
         self["user_ids"][id_name] = {}
+        logger.debug("added id_name %s" % (id_name))
 
     def _add_tag(self, tag_name):
         self["tags"][tag_name] = {}
+        logger.debug("added tag %s" % (tag_name))
 
     def _add_fk(self, foreign_key):
         self["foreign_keys"][foreign_key] = {}
+        logger.debug("added key %s" % (foreign_key))
 
     def _add_filter(self, filter_dict):
         """Add filter to our storage.
          filter_dict: dict of parameters for filter class object"""
         self["filters"].append(filter_dict)
+        logger.debug("added filter")
 
     def _add_derived_param(self, dparam_dict):
         """Add dparam_dict to our dparam_rules
         dparam_dict: dict of the parameters needed to create the derived parameter"""
         self["dparam_rules"].append(dparam_dict)
+        logger.debug("added derived parameter")
 
     def _add_event(self, event_name, event_dict):
         """Add rules for event definition to our storage"""
         self["event_rules"][event_name] = event_dict
+        logger.debug("adding event %s" % (event_name))
 
     def _publish_version(self):
         """Increment version number"""
         self["version"] += 1
+        logger.debug("version now %s" % (str(self['version'])))
 
     def load_from_json(self, json_file):
         for key in json_file.keys():
             if key != 'stream_token':
                 self[key] = json_file[key]
+                logger.debug("added key %" % (key))
 
     def define_dstream(self, storage_rules, ingestion_rules, source_dict, measure_list, field_names, user_id_names,
                       tag_list, filter_list, dparam_rule_list, event_list):
@@ -85,7 +99,7 @@ class DStream(dict):
         dparam_rule_list: list of dparam_rules, which are dicts
         event_list: list of tuples: (event_name, event_rules)
         """
-
+        logger.warning("Don't use this method, it is cumbersome")
         self["storage_rules"] = storage_rules
         self["ingest_rules"] = ingestion_rules
         for key in source_dict.keys():
