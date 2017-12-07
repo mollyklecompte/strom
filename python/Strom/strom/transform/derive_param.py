@@ -3,6 +3,7 @@ import numpy as np
 from abc import ABCMeta, abstractmethod
 from .transform import Transformer
 from .filter_data import window_data
+from strom.utils.logger.logger import logger
 
 
 class DeriveParam(Transformer):
@@ -12,6 +13,7 @@ class DeriveParam(Transformer):
         super().__init__()
 
     def load_params(self, params):
+        logger.debug("loading func_params and measure_rules")
         self.params["func_params"] = params["func_params"]
         self.params["measure_rules"] = params["measure_rules"] #Must have output_name key
 
@@ -32,8 +34,11 @@ class DeriveSlope(DeriveParam):
         self.params["measure_rules"] ={"rise_measure":"measure y values (or rise in rise/run calculation of slope)",
                                        "run_measure":"measure containing x values (or run in rise/run calculation of slope)",
                                        "output_name":"name of returned measure"}
+        logger.debug("initialized DeriveSlope. Use get_params() to see parameter values")
+
     @staticmethod
     def sloper(rise_array, run_array, window_len):
+        logger.debug("calculating slope")
         dx = np.diff(run_array)
         dy = np.diff(rise_array)
 
@@ -44,6 +49,7 @@ class DeriveSlope(DeriveParam):
         return sloped
 
     def transform_data(self):
+        logger.debug("transforming data to %s" (self.params["measure_rules"]["output_name"))
         window_len = self.params["func_params"]["window"]
         xrun = np.array(self.data[self.params["measure_rules"]["run_measure"]]["val"], dtype=float)
         yrise = np.array(self.data[self.params["measure_rules"]["rise_measure"]]["val"], dtype=float)
@@ -55,9 +61,12 @@ class DeriveChange(DeriveParam):
         super().__init__()
         self.params["func_params"] = {"window":1, "angle_change":False}
         self.params["measure_rules"] ={"target_measure":"measure_name", "output_name":"name of returned measure"}
+        logger.debug("initialized DeriveChange. Use get_params() to see parameter values")
+
 
     @staticmethod
     def diff_data(data_array, window_len, angle_diff):
+        logger.debug("diffing data")
         diffed_data = np.diff(data_array)
         if angle_diff:
             diffed_data = (diffed_data + 180.0) % 360 - 180
@@ -66,6 +75,7 @@ class DeriveChange(DeriveParam):
         return diffed_data
 
     def transform_data(self):
+        logger.debug("transforming data to %s" (self.params["measure_rules"]["output_name"))
         window_len = self.params["func_params"]["window"]
         target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
         diffed_data = self.diff_data(target_array, window_len, self.params["func_params"]["angle_change"])
@@ -76,12 +86,16 @@ class DeriveCumsum(DeriveParam):
         super().__init__()
         self.params["func_params"] = {}
         self.params["measure_rules"] = {"target_measure":"measure_name", "output_name":"name of returned measure"}
+        logger.debug("initialized DeriveCumsum. Use get_params() to see parameter values")
+
 
     @staticmethod
     def cumsum(data_array):
+        logger.debug("cumsum")
         return np.cumsum(data_array)
 
     def transform_data(self):
+        logger.debug("transforming data to %s" (self.params["measure_rules"]["output_name"))
         target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
         cumsum_array = self.cumsum(target_array)
         return {self.params["measure_rules"]["output_name"]:cumsum_array}
@@ -93,9 +107,12 @@ class DeriveDistance(DeriveParam):
         self.params["func_params"] = {"window":1, "distance_func": "euclidean", "swap_lon_lat":False}
         self.params["supported_distances"] = ["euclidean", "great_circle"]
         self.params["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
+        logger.debug("initialized DeriveDistance. Use get_params() to see parameter values")
+
 
     @staticmethod
     def euclidean_dist(position_array, window_len):
+        logger.debug("calculating euclidean distance")
         euclid_array = np.sqrt(np.sum(np.diff(position_array, axis=0)**2, axis=1))
         if window_len > 1:
             euclid_array = window_data(euclid_array, window_len)
@@ -103,6 +120,7 @@ class DeriveDistance(DeriveParam):
 
     @staticmethod
     def great_circle(position_array, window_len, units="mi"):
+        logger.debug("calculating great circle distance")
         lat1 = position_array[:-1, 0]
         lat2 = position_array[1:, 0]
         lon1 = position_array[:-1, 1]
@@ -124,6 +142,7 @@ class DeriveDistance(DeriveParam):
 
 
     def transform_data(self):
+        logger.debug("transforming data to %s" (self.params["measure_rules"]["output_name"))
         window_len = self.params["func_params"]["window"]
         position_array = np.array(self.data[self.params["measure_rules"]["spatial_measure"]]["val"], dtype=float)
         if self.params["func_params"]["swap_lon_lat"]:
@@ -140,9 +159,12 @@ class DeriveHeading(DeriveParam):
         super().__init__()
         self.params["func_params"] = {"window":1, "units":"deg", "heading_type":"bearing", "swap_lon_lat":False}
         self.params["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
+        logger.debug("initialized DeriveHeading. Use get_params() to see parameter values")
+
 
     @staticmethod
     def flat_angle(position_array, window_len, units="deg"):
+        logger.debug("finding cartesian angle of vector")
         diff_array = np.diff(position_array, axis=0)
         diff_angle = np.arctan2(diff_array[:,1], diff_array[:,0])
         if units == "deg":
@@ -154,6 +176,7 @@ class DeriveHeading(DeriveParam):
 
     @staticmethod
     def bearing(position_array, window_len, units="deg"):
+        logger.debug("finding bearing of vector")
         lat1 = position_array[:-1, 0]
         lat2 = position_array[1:, 0]
         lon1 = position_array[:-1, 1]
@@ -170,6 +193,7 @@ class DeriveHeading(DeriveParam):
         return cur_bear
 
     def transform_data(self):
+        logger.debug("transforming data to %s" (self.params["measure_rules"]["output_name"))
         window_len = self.params["func_params"]["window"]
         position_array = np.array(self.data[self.params["measure_rules"]["spatial_measure"]]["val"], dtype=float)
         if self.params["func_params"]["swap_lon_lat"]:
