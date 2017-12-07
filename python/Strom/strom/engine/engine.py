@@ -40,15 +40,14 @@ class ProcessBStreamThread(Thread):
     """
     Creates thread to call coordinator's process_data on batch of data from kafka
     """
-    def __init__(self, data, coordinator):
+    def __init__(self, data):
         """
         Initializes the thread, decoding message
         :param data: message passed from kafka consumer, in bytes
-        :param coordinator: a Coordinator instance, initialized by Engine
         """
         super().__init__()
         self.data = data
-        self.coordinator = coordinator
+        self.coordinator = Coordinator()
 
     def run(self):
         print("processor thread!")
@@ -66,10 +65,8 @@ class EngineConsumer(Consumer):
             if msg is not None:
                 # print(str(msg.value) + ": {}".format(msg.offset))
                 message = json.loads(msg.value.decode("utf-8"))
-                message_format = literal_eval(message)
-                self.buffer.extend(message_format)
-                # processor = ProcessBstreamThread(msg.value, self.coordinator)
-                # processor.start()
+                #message_format = json.loads((message))
+                self.buffer.extend(message)
 
     def update_buffer(self, buffer):
         self.buffer = buffer
@@ -91,9 +88,8 @@ class ConsumerThread(Thread):
 
 
 class EngineThread(Thread):
-    def __init__(self, url, topic, coordinator, consumer_timeout=-1):
+    def __init__(self, url, topic, consumer_timeout=-1):
         super().__init__()
-        self.coordinator = coordinator
         self.buffer = []
         self.url = url
         self.topic = topic
@@ -120,7 +116,7 @@ class EngineThread(Thread):
             if len(self.buffer):
                 buffer_data = deepcopy(self.buffer)
                 self._empty_buffer()
-                processor = ProcessBStreamThread(buffer_data, self.coordinator)
+                processor = ProcessBStreamThread(buffer_data)
                 processor.start()
             timer = time()
             print("is consumer running?")
@@ -130,7 +126,6 @@ class EngineThread(Thread):
 
 class Engine(object):
     def __init__(self):
-        self.coordinator = Coordinator()
         self.topics = []
         self.kafka_url = config["kafka_url"]
         self.topic_buddy = TopicChecker(self.kafka_url)
@@ -154,12 +149,12 @@ class Engine(object):
             return False
 
     def _new_engine_thread(self, topic, consumer_timeout=-1):
-        engine_thread = EngineThread(self.kafka_url, topic.encode(), self.coordinator, consumer_timeout=consumer_timeout)
+        engine_thread = EngineThread(self.kafka_url, topic.encode(), consumer_timeout=consumer_timeout)
         engine_thread.start()
 
     def _start_all_engine_threads(self, consumer_timeout=-1):
         for topic in self.topics:
-            engine_thread = EngineThread(self.kafka_url, topic.encode(), self.coordinator, consumer_timeout=consumer_timeout)
+            engine_thread = EngineThread(self.kafka_url, topic.encode(), consumer_timeout=consumer_timeout)
             engine_thread.start()
             self.engine_threads.append(engine_thread)
 
