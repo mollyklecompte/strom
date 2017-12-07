@@ -1,4 +1,4 @@
-""" CLI tool for communications b/w client and API. ANSI Color methodology: !!"""
+""" CLI tool for communications b/w client and API."""
 import click
 import requests
 import json

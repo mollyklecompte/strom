@@ -1,3 +1,3 @@
 ### Run:
-  * ``` cd strom/python/ ```
-    * ``` python -m Strom.strom.strom-api.api.server ```
+  * ``` cd strom/python/Strom/ ```
+    * ``` python -m strom.strom-api.api.server ```
