@@ -49,7 +49,7 @@ class DeriveSlope(DeriveParam):
         return sloped
 
     def transform_data(self):
-        logger.debug("transforming data to %s" (self.params["measure_rules"]["output_name"))
+        logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
         window_len = self.params["func_params"]["window"]
         xrun = np.array(self.data[self.params["measure_rules"]["run_measure"]]["val"], dtype=float)
         yrise = np.array(self.data[self.params["measure_rules"]["rise_measure"]]["val"], dtype=float)
@@ -75,7 +75,7 @@ class DeriveChange(DeriveParam):
         return diffed_data
 
     def transform_data(self):
-        logger.debug("transforming data to %s" (self.params["measure_rules"]["output_name"))
+        logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
         window_len = self.params["func_params"]["window"]
         target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
         diffed_data = self.diff_data(target_array, window_len, self.params["func_params"]["angle_change"])
@@ -95,7 +95,7 @@ class DeriveCumsum(DeriveParam):
         return np.cumsum(data_array)
 
     def transform_data(self):
-        logger.debug("transforming data to %s" (self.params["measure_rules"]["output_name"))
+        logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
         target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
         cumsum_array = self.cumsum(target_array)
         return {self.params["measure_rules"]["output_name"]:cumsum_array}
@@ -142,7 +142,7 @@ class DeriveDistance(DeriveParam):
 
 
     def transform_data(self):
-        logger.debug("transforming data to %s" (self.params["measure_rules"]["output_name"))
+        logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
         window_len = self.params["func_params"]["window"]
         position_array = np.array(self.data[self.params["measure_rules"]["spatial_measure"]]["val"], dtype=float)
         if self.params["func_params"]["swap_lon_lat"]:
@@ -193,7 +193,7 @@ class DeriveHeading(DeriveParam):
         return cur_bear
 
     def transform_data(self):
-        logger.debug("transforming data to %s" (self.params["measure_rules"]["output_name"))
+        logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
         window_len = self.params["func_params"]["window"]
         position_array = np.array(self.data[self.params["measure_rules"]["spatial_measure"]]["val"], dtype=float)
         if self.params["func_params"]["swap_lon_lat"]:
