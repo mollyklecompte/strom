@@ -41,6 +41,13 @@ class DParamRules(RuleDict):
         expected_keys = ["func_type", "func_name", "", "func_params", "measure_rules", "measures", "derived_measures", ]
         super().__init__(expected_keys=expected_keys)
 
+class EventRules(RuleDict):
+    def __init__(self, *args, **kwargs):
+        self.update(*args, **kwargs)
+        expected_keys = ["func_type", "func_name", "", "func_params", "event_rules", "measures", "derived_measures", "event_name", "stream_token"]
+        super().__init__(expected_keys=expected_keys)
+
+
 class StorageRules(RuleDict):
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)

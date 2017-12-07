@@ -60,7 +60,11 @@ class TestDStream(unittest.TestCase):
         self.assertEqual(old_version+1, self.dstream["version"])
 
     def test_load_from_json(self):
-        pass
+        test_dict = {"stream_token":"foo", "version":900}
+        self.dstream.load_from_json((test_dict))
+        self.assertEqual(test_dict["version"], self.dstream["version"])
+        self.assertIsInstance(self.dstream["stream_token"], uuid.UUID)
+
 
     def test_define(self):
         storage_rules = {"store":"yes"}
