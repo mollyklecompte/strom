@@ -120,3 +120,6 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+#log file
+**/strom.log

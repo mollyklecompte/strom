@@ -63,6 +63,7 @@ class EngineConsumer(Consumer):
         super().__init__(url, topic, timeout=timeout)
         self.buffer = buffer
         self.topic = topic
+        self.topic_name = topic.decode('utf-8')
         logger.info("Initializing EngineConsumer with timeout: {} ms".format(timeout))
 
     def consume(self):
@@ -96,6 +97,7 @@ class ConsumerThread(Thread):
         self.consumer.consume()
         self.consumer_running = False
         if self.consumer_running is False:
+            self.consumer.stahp()
             logger.debug("Consumer terminated")
 
 
