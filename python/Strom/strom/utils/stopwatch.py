@@ -42,7 +42,7 @@ class Timer:
     Timer class.
     """
 
-    def __init__(self, name='DEFAULT', output_to_logger=True, logger_level=DEBUG):
+    def __init__(self, name='DEFAULT', output_to_logger=True, logger_level=INFO):
         self.name = name
         self.laps = []
         self._start_time = time()

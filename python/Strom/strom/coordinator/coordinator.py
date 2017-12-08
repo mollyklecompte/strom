@@ -7,6 +7,9 @@ from bson.objectid import ObjectId
 from strom.dstream.bstream import BStream
 from strom.database.mongo_management import MongoManager
 from strom.database.maria_management import SQL_Connection
+from strom.dstream.stream_rules import StorageRules
+from strom.storage_thread.storage_thread import *
+from strom.utils.logger.logger import logger
 
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"
@@ -16,6 +19,7 @@ class Coordinator(object):
     def __init__(self):
         self.mongo = MongoManager()
         self.maria = SQL_Connection()
+        self.threads = []
 
     def _store_json(self, data, data_type):
         insert_id = self.mongo.insert(data, data_type)
@@ -151,6 +155,53 @@ class Coordinator(object):
         # store events
         self._store_json(bstream, 'event')
         print("whoop WHOOOOP")
+
+    def process_data_async(self, dstream_list, token):
+        # use StorageRules to validate
+        # {"store_raw": True, "store_filtered": True, "store_derived": True}
+        # retrieve most recent versioned dstream template
+        template = self._retrieve_current_template(token)
+        storage_rules = template['storage_rules']
+
+        # create bstream for dstream list
+        bstream = self._list_to_bstream(template, dstream_list)
+
+        # thread store raw measures from bstream
+        # logging for else case?
+        if storage_rules['store_raw'] :
+            self.threads.append('raw_thread')
+            raw_thread = StorageRawThread(bstream)
+            raw_thread.start()
+            logger.debug('store_raw thread started')
+
+        # filter bstream data
+        bstream.apply_filters()
+
+        # thread store filtered dstream data
+        if storage_rules['store_filtered'] :
+            self.threads.append('filtered_thread')
+            filtered_thread = StorageFilteredThread(bstream)
+            filtered_thread.start()
+            logger.debug('store_filtered thread started')
+
+        # apply derived param transforms
+        bstream.apply_dparam_rules()
+
+        # thread store derived params
+        if storage_rules['store_derived'] :
+            self.threads.append('derived_thread')
+            derived_thread = StorageJsonThread(bstream,'derived')
+            derived_thread.start()
+            logger.debug('store_json thread started')
+
+        # apply event transforms
+        bstream.find_events()
+        # thread store events
+        # self._store_json(bstream, 'event')
+        event_thread = StorageJsonThread(bstream,'event')
+        event_thread.start()
+        print("whoop WHOOOOP")
+
 
     def get_events(self, token):
         return self.mongo.get_all_coll("event", token)
