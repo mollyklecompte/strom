@@ -15,3 +15,5 @@ derived_coll_suf=derived_measures
 event_coll_suf=events
 mongo_db=strom
 kafka_url=localhost:9092
+buffer_record_limit=45
+buffer_time_limit_s=5

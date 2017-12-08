@@ -22,7 +22,6 @@ generate...
 """
 
 from threading import Thread
-from ast import literal_eval
 import json
 from copy import deepcopy
 from time import time
@@ -30,6 +29,7 @@ from strom.kafka.topics.checker import TopicChecker
 from strom.kafka.consumer.consumer import Consumer
 from strom.coordinator.coordinator import Coordinator
 from strom.utils.configer import configer as config
+from strom.utils.logger.logger import logger
 
 
 __version__ = "0.1"
@@ -50,26 +50,31 @@ class ProcessBStreamThread(Thread):
         self.coordinator = Coordinator()
 
     def run(self):
-        print("processor thread!")
+        logger.info("Starting processor thread")
         self.coordinator.process_data_sync(self.data, self.data[0]["stream_token"])
+        logger.info("Terminating processor thread")
 
 
 class EngineConsumer(Consumer):
     def __init__(self, url, topic, buffer, timeout=-1):
         super().__init__(url, topic, timeout=timeout)
         self.buffer = buffer
+        logger.info("Initializing EngineConsumer with timeout: {} ms".format(timeout))
 
     def consume(self):
         self.consumer.start()  # auto-start
+        logger.info("Consumer starting")
         for msg in self.consumer:
             if msg is not None:
-                # print(str(msg.value) + ": {}".format(msg.offset))
                 message = json.loads(msg.value.decode("utf-8"))
-                #message_format = json.loads((message))
+                logger.debug("Message consumed: offset {}".format(msg.offset))
                 self.buffer.extend(message)
+            else:
+                logger.warn("Consumed empty message")
 
     def update_buffer(self, buffer):
         self.buffer = buffer
+        logger.debug("Resetting Engine Consumer buffer")
 
 
 class ConsumerThread(Thread):
@@ -77,14 +82,15 @@ class ConsumerThread(Thread):
         super().__init__()
         self.consumer = EngineConsumer(url, topic, buffer, timeout=timeout)
         self.consumer_running = None
-        print("consumer timeout", timeout)
+        logger.info("Initializing Consumer Thread with timeout: {} ms".format(timeout))
 
     def run(self):
         self.consumer_running = True
+        logger.info("Now consuming messages")
         self.consumer.consume()
         self.consumer_running = False
         if self.consumer_running is False:
-            print('IT IS FUCKING FALSE')
+            logger.info("Consumer terminated")
 
 
 class EngineThread(Thread):
@@ -94,10 +100,15 @@ class EngineThread(Thread):
         self.url = url
         self.topic = topic
         self.consumer_thread = ConsumerThread(self.url, self.topic, self.buffer, timeout=consumer_timeout)
+        logger.info("Initializing Engine Thread with Consumer timeout: {}".format(consumer_timeout))
+        logger.info("Buffer records max: {}".format(config["buffer_record_limit"]))
+        logger.info("Buffer time max: {} seconds".format(config["buffer_time_limit_s"]))
 
     def _empty_buffer(self):
         self.buffer = []
         self.consumer_thread.consumer.update_buffer(self.buffer)
+        logger.debug("Emptying buffer")
+
     def _check_consumer(self):
         if self.consumer_thread.consumer_running:
             return True
@@ -106,22 +117,26 @@ class EngineThread(Thread):
 
     def run(self):
         self.consumer_thread.start()
+        logger.info("Starting Consumer Thread")
         timer = time()
 
         while self.consumer_thread.is_alive():
-            print("Starting outer while")
-            while len(self.buffer) < 45 and time() - timer < 5:
+            logger.debug("Consumer thread running")
+            logger.debug("Checking buffer")
+            while len(self.buffer) < int(config["buffer_record_limit"]) and time() - timer < int(config["buffer_time_limit_s"]):
                 pass
-            print("starting process")
+            logger.debug("Buffer max reached, exiting inner loop")
             if len(self.buffer):
                 buffer_data = deepcopy(self.buffer)
                 self._empty_buffer()
                 processor = ProcessBStreamThread(buffer_data)
                 processor.start()
+            else:
+                logger.warn("No records in buffer to process")
             timer = time()
-            print("is consumer running?")
             result = self._check_consumer()
-            print(result)
+            logger.debug("Consumer running: {}".format(result))
+        logger.info("Terminating Engine Thread")
 
 
 class Engine(object):
@@ -130,17 +145,22 @@ class Engine(object):
         self.kafka_url = config["kafka_url"]
         self.topic_buddy = TopicChecker(self.kafka_url)
         self.engine_threads = []
+        logger.info("Engine initializing")
+        logger.debug("Kafka URL: {}".format(self.kafka_url))
 
     def _add_topics_from_list(self, topics):
         self.topics.extend(topics)
+        logger.info("Registered topics: {}".format(self.topics))
 
     def _add_topics_from_client(self):
         topics = self.topic_buddy.list()
         self.topics = [k.decode('utf-8') for k,v in topics.items()]
+        logger.info("Registered topics: {}".format(self.topics))
 
 
     def _add_topic(self, topic):
         self.topics.append(topic)
+        logger.info("Registered topic: {}".format(topic))
 
     def _topic_in_list(self, topic):
         if topic in self.topics:
@@ -150,11 +170,13 @@ class Engine(object):
 
     def _new_engine_thread(self, topic, consumer_timeout=-1):
         engine_thread = EngineThread(self.kafka_url, topic.encode(), consumer_timeout=consumer_timeout)
+        logger.info("Starting engine thread for topic {} with Consumer timeout {}".format(topic, consumer_timeout))
         engine_thread.start()
 
     def _start_all_engine_threads(self, consumer_timeout=-1):
         for topic in self.topics:
             engine_thread = EngineThread(self.kafka_url, topic.encode(), consumer_timeout=consumer_timeout)
+            logger.info("Starting engine thread for topic {} with Consumer timeout {}".format(topic, consumer_timeout))
             engine_thread.start()
             self.engine_threads.append(engine_thread)
 
