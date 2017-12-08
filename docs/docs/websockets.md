@@ -1,5 +1,11 @@
 ### WebSockets, SocketIO, and Flask-SocketIO
 
+## Contents
+- What are WebSockets?
+- SocketIO
+- Flask-SocketIO
+- Examples
+
 ## What are WebSockets?
 
 WebSockets are one of several communication protocols for transmitting data (the
