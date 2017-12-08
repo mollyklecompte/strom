@@ -14,3 +14,4 @@ template_coll=templates
 derived_coll_suf=derived_measures
 event_coll_suf=events
 mongo_db=strom
+kafka_url=localhost:9092
