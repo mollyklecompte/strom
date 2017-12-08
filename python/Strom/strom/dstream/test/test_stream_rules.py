@@ -32,6 +32,13 @@ class TestDParamRules(unittest.TestCase):
     def test_init(self):
         self.assertEqual(self.dpr.get_expected_keys(), ["func_type", "func_name", "", "func_params", "measure_rules", "measures", "derived_measures", ])
 
+class TestEventRules(unittest.TestCase):
+    def setUp(self):
+        self.er = EventRules()
+
+    def test_init(self):
+        self.assertEqual(self.er.get_expected_keys(), ["func_type", "func_name", "", "func_params", "event_rules", "measures", "derived_measures", "event_name", "stream_token"])
+
 class TestStorageRules(unittest.TestCase):
     def setUp(self):
         self.sr = StorageRules()

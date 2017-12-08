@@ -1,10 +1,12 @@
 """Filter class to augment filter dictionary with a func_param_name and dtype to create the stream lookup table"""
+from strom.utils.logger.logger import logger
 
 __version__  = "0.1"
 __author__ = "Justine <justine@tura.io>"
 
 class RuleDict(dict):
     def __init__(self, *args, **kwargs):
+        logger.debug("Initialize RuleDict")
         self.update(*args, **kwargs)
         if "expected_keys" in kwargs:
             self.expected_keys = kwargs["expected_keys"]
@@ -15,11 +17,14 @@ class RuleDict(dict):
         for key in self.keys():
             if not key in self.expected_keys:
                 bad_keys.append(key)
+                logger.debug("non expected key found: %s" % (key))
         for key in bad_keys:
             del self[key]
         for key in self.expected_keys:
             if key not in self:
+                logger.debug("No value supplied for %s, setting to None" % (key))
                 self[key] = None
+
     def get_expected_keys(self):
         return self.expected_keys
 
@@ -35,6 +40,13 @@ class DParamRules(RuleDict):
         self.update(*args, **kwargs)
         expected_keys = ["func_type", "func_name", "", "func_params", "measure_rules", "measures", "derived_measures", ]
         super().__init__(expected_keys=expected_keys)
+
+class EventRules(RuleDict):
+    def __init__(self, *args, **kwargs):
+        self.update(*args, **kwargs)
+        expected_keys = ["func_type", "func_name", "", "func_params", "event_rules", "measures", "derived_measures", "event_name", "stream_token"]
+        super().__init__(expected_keys=expected_keys)
+
 
 class StorageRules(RuleDict):
     def __init__(self, *args, **kwargs):

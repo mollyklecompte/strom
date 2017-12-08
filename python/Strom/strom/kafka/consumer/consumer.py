@@ -8,7 +8,7 @@ class Consumer():
     """ Simple balanced kafka consumer. Accepts kafka url string and topic name byte-string. (Optional) Time in ms to stay active. """
     def __init__(self, url, topic, timeout=-1):
         """ Init requires kafka url:port, topic name, and timeout for listening. """
-        self.client = KafkaClient(hosts=url, zookeeper_hosts=None, use_greenlets=False)
+        self.client = KafkaClient(hosts=url, use_greenlets=False)
         self.topic = self.client.topics[topic]
         self.consumer = self.topic.get_balanced_consumer(
             consumer_group=b'strom',
