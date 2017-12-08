@@ -39,3 +39,8 @@ class Consumer():
         result = self.consumer.consume()
         self.consumer.stop()
         return result.value
+
+    def stahp(self):
+        """ Wrapper function for stopping Client consumer. """
+        self.consumer.stop()
+        return True

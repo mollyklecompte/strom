@@ -270,7 +270,7 @@ def load(config, filepath, token):
         if config.verbose:
             click.secho("\nSending data...", fg='white')
         #Try send data with token to server, if success...return status_code
-        result = _api_POST(config, "load", {'data':json.dumps(json_data)})
+        result = _api_POST(config, "kafka/load", {'stream_data':json.dumps(json_data)})
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.command()
