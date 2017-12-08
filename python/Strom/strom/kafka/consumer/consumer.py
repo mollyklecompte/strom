@@ -37,4 +37,5 @@ class Consumer():
         """ Consume multiple messages in queue at once and exit. """
         self.consumer.start()
         result = self.consumer.consume()
+        self.consumer.stop()
         return result.value
