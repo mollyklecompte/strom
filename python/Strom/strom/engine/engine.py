@@ -30,6 +30,7 @@ from strom.kafka.consumer.consumer import Consumer
 from strom.coordinator.coordinator import Coordinator
 from strom.utils.configer import configer as config
 from strom.utils.logger.logger import logger
+from strom.utils.stopwatch
 
 
 __version__ = "0.1"
@@ -50,9 +51,9 @@ class ProcessBStreamThread(Thread):
         self.coordinator = Coordinator()
 
     def run(self):
-        logger.info("Starting processor thread")
+        logger.debug("Starting processor thread")
         self.coordinator.process_data_sync(self.data, self.data[0]["stream_token"])
-        logger.info("Terminating processor thread")
+        logger.debug("Terminating processor thread")
 
 
 class EngineConsumer(Consumer):
@@ -63,14 +64,14 @@ class EngineConsumer(Consumer):
 
     def consume(self):
         self.consumer.start()  # auto-start
-        logger.info("Consumer starting")
+        logger.debug("Consuming messages")
         for msg in self.consumer:
             if msg is not None:
                 message = json.loads(msg.value.decode("utf-8"))
                 logger.debug("Message consumed: offset {}".format(msg.offset))
                 self.buffer.extend(message)
             else:
-                logger.warn("Consumed empty message")
+                logger.warning("Consumed empty message")
 
     def update_buffer(self, buffer):
         self.buffer = buffer
@@ -82,15 +83,15 @@ class ConsumerThread(Thread):
         super().__init__()
         self.consumer = EngineConsumer(url, topic, buffer, timeout=timeout)
         self.consumer_running = None
-        logger.info("Initializing Consumer Thread with timeout: {} ms".format(timeout))
+        logger.debug("Initializing Consumer Thread with timeout: {} ms".format(timeout))
 
     def run(self):
         self.consumer_running = True
-        logger.info("Now consuming messages")
+        logger.debug("Starting consumer")
         self.consumer.consume()
         self.consumer_running = False
         if self.consumer_running is False:
-            logger.info("Consumer terminated")
+            logger.debug("Consumer terminated")
 
 
 class EngineThread(Thread):
@@ -100,9 +101,8 @@ class EngineThread(Thread):
         self.url = url
         self.topic = topic
         self.consumer_thread = ConsumerThread(self.url, self.topic, self.buffer, timeout=consumer_timeout)
-        logger.info("Initializing Engine Thread with Consumer timeout: {}".format(consumer_timeout))
-        logger.info("Buffer records max: {}".format(config["buffer_record_limit"]))
-        logger.info("Buffer time max: {} seconds".format(config["buffer_time_limit_s"]))
+        logger.info("Initializing Engine Thread for topic {} with Consumer timeout: {}".format(self.topic, consumer_timeout))
+        logger.debug("Buffer limit params: {} records or {} seconds".format(config["buffer_record_limit"], config["buffer_time_limit_s"]))
 
     def _empty_buffer(self):
         self.buffer = []
@@ -132,7 +132,7 @@ class EngineThread(Thread):
                 processor = ProcessBStreamThread(buffer_data)
                 processor.start()
             else:
-                logger.warn("No records in buffer to process")
+                logger.warning("No records in buffer to process")
             timer = time()
             result = self._check_consumer()
             logger.debug("Consumer running: {}".format(result))
