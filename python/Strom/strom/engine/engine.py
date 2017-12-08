@@ -30,7 +30,7 @@ from strom.kafka.consumer.consumer import Consumer
 from strom.coordinator.coordinator import Coordinator
 from strom.utils.configer import configer as config
 from strom.utils.logger.logger import logger
-from strom.utils.stopwatch
+from strom.utils.stopwatch import stopwatch
 
 
 __version__ = "0.1"
@@ -51,8 +51,10 @@ class ProcessBStreamThread(Thread):
         self.coordinator = Coordinator()
 
     def run(self):
+        stopwatch['processor timer {}'.format(self.name)].start()
         logger.debug("Starting processor thread")
         self.coordinator.process_data_sync(self.data, self.data[0]["stream_token"])
+        stopwatch['processor_timer {}'.format(self.name)].stop()
         logger.debug("Terminating processor thread")
 
 
@@ -60,6 +62,7 @@ class EngineConsumer(Consumer):
     def __init__(self, url, topic, buffer, timeout=-1):
         super().__init__(url, topic, timeout=timeout)
         self.buffer = buffer
+        self.topic = topic
         logger.info("Initializing EngineConsumer with timeout: {} ms".format(timeout))
 
     def consume(self):
@@ -67,9 +70,11 @@ class EngineConsumer(Consumer):
         logger.debug("Consuming messages")
         for msg in self.consumer:
             if msg is not None:
+                stopwatch['{}_consumer_timer'.format(self.topic_name)].start()
                 message = json.loads(msg.value.decode("utf-8"))
                 logger.debug("Message consumed: offset {}".format(msg.offset))
                 self.buffer.extend(message)
+                stopwatch['{}_consumer_timer'.format(self.topic_name)].stop()
             else:
                 logger.warning("Consumed empty message")
 
@@ -100,9 +105,10 @@ class EngineThread(Thread):
         self.buffer = []
         self.url = url
         self.topic = topic
+        self.topic_name = topic.decode('utf-8')
         self.consumer_thread = ConsumerThread(self.url, self.topic, self.buffer, timeout=consumer_timeout)
-        logger.info("Initializing Engine Thread for topic {} with Consumer timeout: {}".format(self.topic, consumer_timeout))
-        logger.debug("Buffer limit params: {} records or {} seconds".format(config["buffer_record_limit"], config["buffer_time_limit_s"]))
+        logger.info("Initializing Engine Thread for topic {} with Consumer timeout: {}".format(self.topic_name, consumer_timeout))
+        #logger.debug("Buffer limit params: {} records or {} seconds".format(config["buffer_record_limit"], config["buffer_time_limit_s"]))
 
     def _empty_buffer(self):
         self.buffer = []
