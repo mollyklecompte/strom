@@ -11,14 +11,18 @@
       "level": "DEBUG",
       "formatter": "simple",
       "stream": "ext://sys.stdout"
+    },
+    "file":{
+      "class": "logging.FileHandler",
+      "level": "DEBUG",
+      "formatter": "simple",
+      "filename": "strom.log"
     }
   },
   "loggers": {
     "stromLogger": {
       "level": "INFO",
-      "handlers": [
-        "console"
-      ],
+      "handlers": ["console", "file"],
       "propagate": "no"
     },
     "root": {
