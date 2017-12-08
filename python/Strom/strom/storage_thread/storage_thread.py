@@ -5,8 +5,9 @@ StorageThread class
 from strom.database.mongo_management import MongoManager
 from strom.database.maria_management import SQL_Connection
 from strom.utils.stopwatch import *
-import threading
 
+from logging import DEBUG
+import threading
 __version__ = "0.1"
 __author__ = "Jessica <jessica@tura.io>"
 
@@ -17,6 +18,7 @@ class StorageRawThread(threading.Thread):
         self._bstream = bstream
         self.maria = SQL_Connection()
         self.rows_inserted = None
+        stopwatch['raw_thread'].logger_level = DEBUG
         stopwatch['raw_thread'].start()
 
     def run(self):
@@ -29,6 +31,7 @@ class StorageFilteredThread(threading.Thread):
         self._bstream = bstream
         self.maria = SQL_Connection()
         self.rows_inserted = None
+        stopwatch['filtered_thread'].logger_level = DEBUG
         stopwatch['filtered_thread'].start()
 
     def run(self):
@@ -44,6 +47,7 @@ class StorageJsonThread(threading.Thread):
         self._data_type = data_type
         self.mongo = MongoManager()
         self.insert_id = None
+        stopwatch['mongo_thread'].logger_level = DEBUG
         stopwatch['mongo_thread'].start()
 
     def run(self):

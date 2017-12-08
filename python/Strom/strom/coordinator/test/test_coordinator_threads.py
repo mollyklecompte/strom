@@ -1,5 +1,6 @@
 import unittest
 import json
+import time
 from copy import deepcopy
 from strom.coordinator.coordinator import Coordinator
 from strom.dstream.bstream import BStream
@@ -121,19 +122,7 @@ class TestCoordinator(unittest.TestCase):
         qt = self.coordinator._retrieve_current_template(tpt_dstream["stream_token"])
         self.assertEqual(qt["version"], 1)
 
-    # def test_process_data_sync(self):
-    #     tpds_dstream = deepcopy(self.dstream_template)
-    #     # tpds_dstream["stream_token"] = "the final token"
-    #     tpds_dstream.pop("_id", None)
-    #     self.coordinator.process_template(tpds_dstream)
-    #     self.coordinator.process_data_sync(self.dstreams, tpds_dstream["stream_token"])
-    #     stored_events = self.coordinator.get_events(tpds_dstream["stream_token"])
-    #     self.assertIn("events", stored_events[0])
-    #     for event in tpds_dstream["event_rules"].keys():
-    #         self.assertIn(event, stored_events[0]["events"])
-
     def test_process_data_async(self):
-        import time
         tpds_dstream = deepcopy(self.dstream_template)
         # tpds_dstream["stream_token"] = "the final token"
         tpds_dstream.pop("_id", None)
@@ -152,20 +141,13 @@ class TestCoordinator(unittest.TestCase):
         self.assertEqual(storage_rules['store_raw'],'raw_thread' in self.coordinator.threads)
         self.assertEqual(storage_rules['store_filtered'],'filtered_thread' in self.coordinator.threads)
         self.assertEqual(storage_rules['store_derived'],'derived_thread' in self.coordinator.threads)
-        if storage_rules['store_raw'] :
-            self.assertTrue('raw_thread' in self.coordinator.threads)
-        if storage_rules['store_filtered'] :
-            self.assertTrue('filtered_thread' in self.coordinator.threads)
-        if storage_rules['store_derived'] :
-            self.assertTrue('derived_thread' in self.coordinator.threads)
 
     def test_process_data_async_sr_off(self):
         #toggle the storage rules off
-        import time
 
         # new token
-        self.dstream_template["stream_token"] = "abc123nosr"
         tpds_dstream = deepcopy(self.dstream_template)
+        tpds_dstream["stream_token"] = "abc123nosr"
 
         #toggle the storage rules
         tpds_dstream['storage_rules'] = {'store_raw': False, 'store_filtered': False, 'store_derived': False}
@@ -174,7 +156,7 @@ class TestCoordinator(unittest.TestCase):
         self.coordinator.process_data_async(self.dstreams, tpds_dstream["stream_token"])
 
         # pause to let threaded storage complete
-        time.sleep(3)
+        time.sleep(1)
         stored_events = self.coordinator.get_events(tpds_dstream["stream_token"])
         self.assertIn("events", stored_events[0])
         for event in tpds_dstream["event_rules"].keys():
@@ -182,9 +164,6 @@ class TestCoordinator(unittest.TestCase):
 
         # verify storage rules (OFF)
         storage_rules = tpds_dstream['storage_rules']
-        print('storage rules off',storage_rules['store_raw'])
-        print('storage rules off',storage_rules['store_filtered'])
-        print('storage rules off',storage_rules['store_derived'])
         self.assertEqual(storage_rules['store_raw'],'raw_thread' in self.coordinator.threads)
         self.assertEqual(storage_rules['store_filtered'],'filtered_thread' in self.coordinator.threads)
         self.assertEqual(storage_rules['store_derived'],'derived_thread' in self.coordinator.threads)
