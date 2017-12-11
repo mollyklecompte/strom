@@ -43,3 +43,5 @@ Resources:
 ## Examples
 
 See example project: https://github.com/stellarluna/flask_socket_example
+
+Contains an example of a server-initiated event and a client-initiated event.
