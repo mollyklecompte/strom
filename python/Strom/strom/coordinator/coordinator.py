@@ -7,7 +7,6 @@ from bson.objectid import ObjectId
 from strom.dstream.bstream import BStream
 from strom.database.mongo_management import MongoManager
 from strom.database.maria_management import SQL_Connection
-from strom.dstream.stream_rules import StorageRules
 from strom.storage_thread.storage_thread import *
 from strom.utils.logger.logger import logger
 
