@@ -37,4 +37,10 @@ class Consumer():
         """ Consume multiple messages in queue at once and exit. """
         self.consumer.start()
         result = self.consumer.consume()
+        self.consumer.stop()
         return result.value
+
+    def stahp(self):
+        """ Wrapper function for stopping Client consumer. """
+        self.consumer.stop()
+        return True

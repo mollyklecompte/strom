@@ -18,16 +18,16 @@ class Event(dict):
             del self[key]
 
         if not "event_name" in self.keys():
-            logger.warning("No event_name found")
+            logger.info("No event_name found")
             self["event_name"] = ""
         if not "event_rules" in self.keys():
-            logger.warning("No event_rules found")
+            logger.info("No event_rules found")
             self["event_rules"] = {}
         if not "timestamp" in self.keys():
             logger.debug("no timestamp supplied")
             self["timestamp"] = 0
         if not "stream_token" in self.keys():
-            logger.warning("no stream_token supllied")
+            logger.info("no stream_token supllied")
             self["stream_token"] = ""
         if not "event_context" in self.keys():
             logger.debug("No context")

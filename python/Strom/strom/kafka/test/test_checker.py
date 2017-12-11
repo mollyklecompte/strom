@@ -11,7 +11,7 @@ class TestTopicChecker(unittest.TestCase):
         startnum = self.tc._get_len()
         self.producer = Producer('127.0.0.1:9092', b'topictest')
         endnum = self.tc._get_len()
-        topics = self.tc._list()
+        topics = self.tc.list()
         self.assertNotEqual(endnum, startnum)
         self.assertIn(b'topictest', topics)
 
