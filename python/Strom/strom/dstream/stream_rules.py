@@ -71,6 +71,9 @@ class EventRules(RuleDict):
          measure: list of str, list of the measure names to find events in
          filter_measures: list of str, list of the filtered measures to find events in
          derived_measures: list of str, list of the derived measures to find events in
+         event_name: str, name of event
+         stream_token: str, dstream identifying stream token
+         callback_rules: CallbackRules()
          """
         self.update(*args, **kwargs)
         expected_keys = ["func_type", "func_name", "event_rules", "measures", "filter_measures", "derived_measures", "event_name", "stream_token", "callback_rules"]
