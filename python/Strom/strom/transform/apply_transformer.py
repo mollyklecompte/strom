@@ -36,10 +36,14 @@ def select_dparam(func_name):
         func = DeriveSlope()
     elif func_name == "DeriveChange":
         func = DeriveChange()
+    elif func_name == "DeriveCumsum":
+        func = DeriveCumsum()
     elif func_name == "DeriveDistance":
         func = DeriveDistance()
     elif func_name == "DeriveHeading":
         func = DeriveHeading()
+    elif func_name == "DeriveWindowSum":
+        func = DeriveWindowSum()
     else:
         raise ValueError("%s not supported" % func_name)
     return func
