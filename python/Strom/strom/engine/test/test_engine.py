@@ -23,7 +23,7 @@ class TestProcessBstreamThread(unittest.TestCase):
         self.coordinator = Coordinator()
         self.processor = ProcessBStreamThread(self.dstreams)
         self.mongo = MongoManager()
-        self.token = "abc123"
+        self.token = template["stream_token"]
 
     def test_init(self):
         self.assertIsInstance(self.processor, ProcessBStreamThread)
