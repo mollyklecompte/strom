@@ -27,6 +27,17 @@ const StromClient = ({url='http://127.0.0.1:5000', /*socket=io(url),*/ tokens={}
     };
     ping_r.send();
   },
+  formatData(template, data) {
+    let json_tmpl = JSON.parse(template);
+    let json_data = JSON.parse(data);
+    json_tmpl.timestamp = json_data.timestamp;
+    json_tmpl.measures.location.val = json_data.location;
+    json_tmpl.fields.region-code = json_data.region-code;
+    json_tmpl.user_ids.id = json_data.id;
+    json_tmpl.user_ids.driver-id = json_data.driver-id;
+    tmpl = JSON.stringify(json_tmpl);
+    return tmpl;
+  },
   tokenizeData(name, data) {
     let token = this.tokens[name];
     str_data = JSON.stringify(data);
@@ -54,7 +65,7 @@ const StromClient = ({url='http://127.0.0.1:5000', /*socket=io(url),*/ tokens={}
   registerEvent(name, callback) {
     // TODO
   },
-  send(name, data) {
+  process(name, data) {
     let token_data = this.tokenizeData(name, data);
     send_r = new XMLHttpRequest();
     send_r.open('POST', this.url + '/api/kafka/load', true);

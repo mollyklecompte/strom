@@ -8,7 +8,7 @@ client._ping();
 
 client.registerDevice('device-1', template);
 
-client.send('device-1', data);
+client.process('device-1', data);
 
 console.log(client.tokens);
 console.log(client.tokens['device-1']);
