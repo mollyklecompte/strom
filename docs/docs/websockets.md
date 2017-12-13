@@ -42,6 +42,8 @@ Resources:
 
 ## Examples
 
-See example project: https://github.com/stellarluna/flask_socket_example
+Example project (no server-initiated events): https://tutorials.technology/tutorials/61-Create-an-application-with-websockets-and-flask.html
 
-Contains an example of a server-initiated event and a client-initiated event.
+See github 'final' branch: https://github.com/tutorialstechnology/flask_websockets/tree/final
+
+Contains an example of a server-initiated event and a client-initiated event: https://github.com/stellarluna/flask_socket_example
