@@ -6,9 +6,10 @@ Uses only native Javascript.
 author: Adrian Agnic <adrian@tura.io>
 */
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// NOTE move return to limit prop access, will need getters for tokens
-const StromClient = ({url='http://127.0.0.1:5000', tokens={'test': 123}} = {}) => ({
+
+const StromClient = ({url='http://127.0.0.1:5000', socket=io(url), tokens={}} = {}) => ({
   url,
+  socket,
   tokens,
 
   _setToken(name, token) {
@@ -68,5 +69,4 @@ const StromClient = ({url='http://127.0.0.1:5000', tokens={'test': 123}} = {}) =
     send_r.send('stream_data=' + encodeURIComponent(token_data));
   }
 });
-
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
