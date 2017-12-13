@@ -35,7 +35,7 @@ const StromClient = ({url='http://127.0.0.1:5000', /*socket=io(url),*/ tokens={}
     json_tmpl.fields.region-code = json_data.region-code;
     json_tmpl.user_ids.id = json_data.id;
     json_tmpl.user_ids.driver-id = json_data.driver-id;
-    tmpl = JSON.stringify(json_tmpl);
+    let tmpl = JSON.stringify(json_tmpl);
     return tmpl;
   },
   tokenizeData(name, data) {
