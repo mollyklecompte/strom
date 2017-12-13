@@ -1,15 +1,15 @@
 /*
 Factory function for Strom Javascript client.
 This methods allows more flexibility for users to inherit/extend methods w/o typical JS hiccups.
-Uses only native Javascript.
+Uses only native Javascript + socket.io.
 
 author: Adrian Agnic <adrian@tura.io>
 */
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-const StromClient = ({url='http://127.0.0.1:5000', socket=io(url), tokens={}} = {}) => ({
+const StromClient = ({url='http://127.0.0.1:5000', /*socket=io(url),*/ tokens={}} = {}) => ({
   url,
-  socket,
+  //socket,
   tokens,
 
   _setToken(name, token) {
