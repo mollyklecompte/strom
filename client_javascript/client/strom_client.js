@@ -6,74 +6,55 @@ Uses only native Javascript.
 author: Adrian Agnic <adrian@tura.io>
 */
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-ping_r = new XMLHttpRequest();
-
-const StromClient = ({
-    url='http://127.0.0.1:5000',
-    tokens={}
-  } = {}) => ({
+// NOTE move return to limit prop access, will need getters for tokens
+const StromClient = ({url='http://127.0.0.1:5000', tokens={'test': 123}} = {}) => ({
   url,
   tokens,
 
-  _setUrl(url) {
-    this.url = url;
-  },
   _setToken(name, token) {
     this.tokens[name] = token;
   },
   _ping() {
-    // Sends GET request to server index route. Response should be 'STROM-API is UP'.
-    // const ping_r = new XMLHttpRequest();
-    ping_r.onreadystatechange = () => {
-      if (ping_r.readyState === XMLHttpRequest.DONE) {
+    let ping_r = new XMLHttpRequest();
+    ping_r.open('GET', this.url, true);
+    ping_r.onreadystatechange = function() {
+      if (ping_r.readyState === 4) {
         if (ping_r.status === 200) {
           console.log(ping_r.responseText);
         }
       }
-    };
-    ping_r.open('GET', this.url);
+    }
     ping_r.send();
   },
-
-  register_device(name, template) {
-    // POSTS template to server and returns stream_token for this device.
+  tokenizeData(name, data) {
+    let token = this.tokens[name];
+    json_data = JSON.parse(data);
+    for (let i = 0;i <= json_data.length;i++) {
+      json_data['stream_token'] = token;
+    }
+    return JSON.stringify(json_data);
+  },
+  registerDevice(name, template) {
     thus = this;
-    const ping_r = new XMLHttpRequest();
-    ping_r.onreadystatechange = function () {
-      if (ping_r.readyState === XMLHttpRequest.DONE) {
-        if (ping_r.status === 200) {
-          let result = ping_r.responseText;
-          console.log(result);
-          while (thus.tokens[name] == undefined) {
-            thus._setToken(name, result);
-          };
-          return true;
+    let regDev_r = new XMLHttpRequest();
+    regDev_r.open('POST', this.url + '/api/define', false);
+    regDev_r.onreadystatechange = function() {
+      if (regDev_r.readyState === 4) {
+        if (regDev_r.status === 200) {
+          console.log('Registration Success.');
+          thus._setToken(name, regDev_r.responseText);
         }
       }
-    };
-    ping_r.open('POST', this.url + '/api/define');
-    ping_r.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    ping_r.send('template=' + encodeURIComponent(template));
+    }
+    regDev_r.setRequestHeader('Content-type', 'application/x-www-form-urlencoded')
+    regDev_r.send('template=' + encodeURIComponent(template));
   },
-
-  register_event(token, callback) {
-    // Sends token and callback function to server
-    //TODO
+  registerEvent(name, callback) {
+    // TODO
   },
-
-  send(token, data) {
-    const send_r = new XMLHttpRequest();
-    send_r.open('POST', this.url + '/api/kafka/load', true);
-    send_r.onreadystatechange = () => {
-      if (send_r.readyState === XMLHttpRequest.DONE) {
-        if (send_r.status === 202) {
-          return send_r.responseText;
-        }
-      }
-    };
-    send_r.send();
+  send(name, data) {
+    // TODO
   }
-
-
 });
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
