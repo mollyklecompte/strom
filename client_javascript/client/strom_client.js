@@ -23,12 +23,13 @@ const StromClient = ({url='http://127.0.0.1:5000', tokens={'test': 123}} = {}) =
           console.log(ping_r.responseText);
         }
       }
-    }
+    };
     ping_r.send();
   },
   tokenizeData(name, data) {
     let token = this.tokens[name];
-    json_data = JSON.parse(data);
+    str_data = JSON.stringify(data);
+    json_data = JSON.parse(str_data);
     for (let i = 0;i <= json_data.length;i++) {
       json_data['stream_token'] = token;
     }
@@ -45,15 +46,26 @@ const StromClient = ({url='http://127.0.0.1:5000', tokens={'test': 123}} = {}) =
           thus._setToken(name, regDev_r.responseText);
         }
       }
-    }
-    regDev_r.setRequestHeader('Content-type', 'application/x-www-form-urlencoded')
+    };
+    regDev_r.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     regDev_r.send('template=' + encodeURIComponent(template));
   },
   registerEvent(name, callback) {
     // TODO
   },
   send(name, data) {
-    // TODO
+    let token_data = this.tokenizeData(name, data);
+    send_r = new XMLHttpRequest();
+    send_r.open('POST', this.url + '/api/kafka/load', true);
+    send_r.onreadystatechange = function() {
+      if (send_r.readyState === 4) {
+        if (send_r.status === 202) {
+          console.log('Data sent.');
+        }
+      }
+    };
+    send_r.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    send_r.send('stream_data=' + encodeURIComponent(token_data));
   }
 });
 
