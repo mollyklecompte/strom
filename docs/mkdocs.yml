@@ -1,1 +1,8 @@
 site_name: My Docs
+site_description: Documentation for the strom project
+theme: readthedocs
+pages:
+- Index: 'index.md'
+- Project Components:
+    - MariaDB: 'maria.md'
+    - Web Sockets: 'web_sockets.md'
