@@ -15,3 +15,11 @@ For full documentation visit [mkdocs.org](http://mkdocs.org).
     docs/
         index.md  # The documentation homepage.
         ...       # Other markdown pages, images and other files.
+
+## To Add a Page
+
+    Add a markdown file to the docs folder and add to the pages
+    configuration in `mkdocs.yml`.
+
+    Format:
+        - <Page Name>: '<source file for documentation>'
