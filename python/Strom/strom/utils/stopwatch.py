@@ -117,6 +117,8 @@ class StopWatch(dict):
 
     def __init__(self):
         self.__timers = {}
+        # setting default log level (log_level)
+        self.__log_level = INFO
 
     def __setitem__(self, key, value):
         raise AttributeError
@@ -126,11 +128,46 @@ class StopWatch(dict):
             if item in self.__timers:
                 return self.__timers[item]
             else:
-                timer = Timer(name=item)
+                timer = Timer(name=item, logger_level=self.log_level)
                 self.__timers[item] = timer
                 return timer
         else:
             ValueError
+
+    @property
+    def log_level(self):
+        return self.__log_level
+
+    @log_level.setter
+    def log_level(self, value):
+        if isinstance(value, str):
+            level_map = {'NOTSET': NOTSET,
+                         'NONE': NOTSET,
+                         'DEBUG': DEBUG,
+                         'INFO': INFO,
+                         'WARN': WARNING,
+                         'WARNING': WARNING,
+                         'ERROR': ERROR,
+                         'FATAL': CRITICAL,
+                         'CRITICAL': CRITICAL}
+            if value.upper() in level_map:
+                for (name, timer) in self.__timers.items():
+                    timer.logger_level = level_map[value.upper()]
+                # setting the private log_level attribute
+                self.__log_level = level_map[value.upper()]
+            else:
+                logger.warn("Invalid log_level value: %s" % value)
+                raise ValueError
+        else:
+            try:
+                log_level = int(value)
+                for (name, timer) in self.__timers.items():
+                    timer.logger_level = log_level
+                # setting the private log_level attribute
+                self.__log_level = log_level
+            except ValueError:
+                logger.warn("Invalid log_level value: %s" % value)
+                raise ValueError
 
     @staticmethod
     def sleep(seconds):
