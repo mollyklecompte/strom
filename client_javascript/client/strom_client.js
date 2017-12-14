@@ -7,9 +7,9 @@ author: Adrian Agnic <adrian@tura.io>
 */
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-const StromClient = ({url='http://127.0.0.1:5000', /*socket=io(url),*/ tokens={}} = {}) => ({
+const StromClient = ({url='http://127.0.0.1:5000', socket=io('http://127.0.0.1:5002'), tokens={}} = {}) => ({
   url,
-  //socket,
+  socket,
   tokens,
 
   _setToken(name, token) {
@@ -65,8 +65,8 @@ const StromClient = ({url='http://127.0.0.1:5000', /*socket=io(url),*/ tokens={}
     regDev_r.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     regDev_r.send('template=' + encodeURIComponent(new_tmpl));
   },
-  registerEvent(eventName, ctx, callback) {
-    socket.on(eventName, ctx.callback());
+  registerEvent(eventName) {
+    socket.on(eventName, (data) => {console.log(data);});
   },
   process(name, topic, data) {
     let token_data = this.tokenizeData(name, data);
