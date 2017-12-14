@@ -4,7 +4,7 @@ rm -f template.tmp stream_token.tmp
 template_data=$(sed "s/\"/\\\\\"/g" ../../python/Strom/demo_data/demo_template.txt | awk '{printf"\"%s\"",$0}')
 echo '{"template":'$template_data'}'  > template.tmp
 curl -H "Content-Type: application/json" -X POST -d @template.tmp 127.0.0.1:5000/api/define > stream_token.tmp
-kafka_topic=$(awk -F"engine_rules" '{print $2}' ../../python/Strom/demo_data/demo_template.txt | awk -F"kafka" '{print $2}' | sed "s/[^a-zA-Z0-9]//g" | awk '{printf"\"%s\"",$0}')
+kafka_topic=$(awk -F"engine_rules" '{print $2}' ../../python/Strom/demo_data/demo_template.txt | awk -F"kafka" '{print $2}' | sed "s/[^a-zA-Z0-9\-\_]//g" | awk '{printf"\"%s\"",$0}')
 st=$(cat stream_token.tmp)
 echo $st
 i="1"
