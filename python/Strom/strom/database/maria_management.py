@@ -193,7 +193,7 @@ class SQL_Connection:
 
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
 
-        table = ("CREATE TABLE %s ("
+        table = ("CREATE TABLE `%s` ("
             "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
             "  `version` decimal(10, 2) NOT NULL,"
             "  `time_stamp` decimal(20, 5) NOT NULL,"
@@ -204,16 +204,17 @@ class SQL_Connection:
             "  `fields` varchar(60),"
             "  PRIMARY KEY (`unique_id`)"
             ") ENGINE=InnoDB" % (stringified_stream_token_uuid, measure_columns, uid_columns, filter_columns))
-
+        logger.info(table)
         dstream_particulars = (measure_columns, uid_columns, filter_columns)
         try:
             logger.info("Creating stream lookup table")
             self.cursor.execute(table)
         except pymysql.err.ProgrammingError as err:
-            if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-                logger.error("table already exists")
-            else:
-                raise err
+            raise err
+            # if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
+            #     logger.error("table already exists")
+            # else:
+            #     raise err
 
     def _insert_row_into_stream_lookup_table(self, dstream):
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
@@ -379,7 +380,7 @@ class SQL_Connection:
 
         filter_table_stream_token_uuid = _stringify_uuid(dstream["stream_token"]) + "_filter"
 
-        table = ("CREATE TABLE %s ("
+        table = ("CREATE TABLE `%s` ("
             "  `unique_id` int(10) NOT NULL AUTO_INCREMENT,"
             # "  `version` decimal(10, 2) NOT NULL,"
             "%s"
@@ -391,10 +392,11 @@ class SQL_Connection:
             logger.info("Creating filtered measures table for stream")
             self.cursor.execute(table)
         except pymysql.err.ProgrammingError as err:
-            if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-                logger.error("table already exists")
-            else:
-                raise err
+            raise err
+            # if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
+            #     logger.error("table already exists")
+            # else:
+            #     raise err
 
     def _insert_rows_into_stream_filtered_table(self, dictionary):
         """Insert row into table for storing filtered measures
