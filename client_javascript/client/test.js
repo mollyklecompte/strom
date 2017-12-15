@@ -11,7 +11,7 @@ const client = StromClient();
 
 client._ping();
 
-client.registerDevice('device-1', template, ['one', 'two', 'three']);
+client.registerDevice('device-1', template, 'one');
 
 client.registerEvent('event');
 
