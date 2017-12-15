@@ -7,9 +7,9 @@ author: Adrian Agnic <adrian@tura.io>
 */
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-const StromClient = ({url='http://127.0.0.1:5000', /*socket=io(url),*/ tokens={}} = {}) => ({
+const StromClient = ({url='http://127.0.0.1:5000', socket=io(url), tokens={}} = {}) => ({
   url,
-  //socket,
+  socket,
   tokens,
 
   _setToken(name, token) {
@@ -47,8 +47,11 @@ const StromClient = ({url='http://127.0.0.1:5000', /*socket=io(url),*/ tokens={}
     }
     return JSON.stringify(json_data);
   },
-  registerDevice(name, template) {
+  registerDevice(name, template, topics) {
     thus = this;
+    json_tmpl = JSON.parse(template);
+    json_tmpl['engine_rules']['kafka'] = topics;
+    new_tmpl = JSON.stringify(json_tmpl);
     let regDev_r = new XMLHttpRequest();
     regDev_r.open('POST', this.url + '/api/define', false);
     regDev_r.onreadystatechange = function() {
@@ -60,12 +63,12 @@ const StromClient = ({url='http://127.0.0.1:5000', /*socket=io(url),*/ tokens={}
       }
     };
     regDev_r.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-    regDev_r.send('template=' + encodeURIComponent(template));
+    regDev_r.send('template=' + encodeURIComponent(new_tmpl));
   },
-  registerEvent(name, callback) {
-    // TODO
+  registerEvent(eventName) {
+    socket.on(eventName, (data) => {console.log(data);});
   },
-  process(name, data) {
+  process(name, topic, data) {
     let token_data = this.tokenizeData(name, data);
     send_r = new XMLHttpRequest();
     send_r.open('POST', this.url + '/api/kafka/load', true);
@@ -77,7 +80,7 @@ const StromClient = ({url='http://127.0.0.1:5000', /*socket=io(url),*/ tokens={}
       }
     };
     send_r.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-    send_r.send('stream_data=' + encodeURIComponent(token_data));
+    send_r.send('stream_data=' + encodeURIComponent(token_data) + '&topic=' + topic);
   }
 });
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
