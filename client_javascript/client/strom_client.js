@@ -47,10 +47,10 @@ const StromClient = ({url='http://127.0.0.1:5000', socket=io(url), tokens={}} = 
     }
     return JSON.stringify(json_data);
   },
-  registerDevice(name, template, topics) {
+  registerDevice(name, template, topic) {
     thus = this;
     json_tmpl = JSON.parse(template);
-    json_tmpl['engine_rules']['kafka'] = topics;
+    json_tmpl['engine_rules']['kafka'] = topic;
     new_tmpl = JSON.stringify(json_tmpl);
     let regDev_r = new XMLHttpRequest();
     regDev_r.open('POST', this.url + '/api/define', false);
@@ -65,8 +65,16 @@ const StromClient = ({url='http://127.0.0.1:5000', socket=io(url), tokens={}} = 
     regDev_r.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     regDev_r.send('template=' + encodeURIComponent(new_tmpl));
   },
-  registerEvent(eventName) {
-    socket.on(eventName, (data) => {console.log(data);});
+  registerEvent(eventName, cb=null, passData=false) {
+    if (callback != null) {
+      if (passData == true) {
+        socket.on(eventName, (cb, data) => {cb(data);});
+      } else {
+        socket.on(eventName, (cb) => {cb();});
+      }
+    } else {
+      socket.on(eventName, (data) => {console.log(data);});
+    }
   },
   process(name, topic, data) {
     let token_data = this.tokenizeData(name, data);
