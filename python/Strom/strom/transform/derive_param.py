@@ -204,3 +204,31 @@ class DeriveHeading(DeriveParam):
             angle_array = self.flat_angle(position_array, window_len, self.params["func_params"]["units"])
 
         return {self.params["measure_rules"]["output_name"]:angle_array}
+
+class DeriveWindowSum(DeriveParam):
+    def __init__(self):
+        super().__init__()
+        self.params["func_params"] = {"window":2}
+        self.params["measure_rules"] =  {"target_measure":"measure_name", "output_name":"name of returned measure"}
+        logger.debug("Initialized DerivedWindowSum. Use get_params() to see parameter values")
+
+    @staticmethod
+    def window_sum(in_array, window_len):
+        logger.debug("Summing the data with window length %d" % (window_len))
+        w_data = np.convolve(in_array, np.ones(window_len), "valid")
+        # Dealing with the special case for endpoints of in_array
+        start = np.cumsum(in_array[:window_len - 1])
+        start = start[int(np.floor(window_len/2.0))::]
+        stop = np.cumsum(in_array[:-window_len:-1])
+        stop = stop[int(np.floor(window_len/2.0))-1::][::-1]
+        if in_array.shape[0] - w_data.shape[0] - start.shape[0] < stop.shape[0]:
+            logger.debug("Window size did not divide easily into input vector length. Adjusting the endpoint values")
+            stop = stop[:-1]
+        return np.concatenate((start, w_data, stop))
+
+    def transform_data(self):
+        logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
+        window_len = self.params["func_params"]["window"]
+        target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
+        summed_data = self.window_sum(target_array, window_len)
+        return  {self.params["measure_rules"]["output_name"]:summed_data}

@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from strom.transform.derive_param import DeriveParam, DeriveSlope, DeriveChange, DeriveCumsum, DeriveDistance, DeriveHeading
+from strom.transform.derive_param import *
 
 
 class TestDeriveParam(unittest.TestCase):
@@ -40,7 +40,7 @@ class TestDeriveCumsum(unittest.TestCase):
         self.dc = DeriveCumsum()
         params = {}
         params["func_params"] = {}
-        params["measure_rules"] = {"target_measure": "viscosity", "output_name": "viscous_difference"}
+        params["measure_rules"] = {"target_measure": "viscosity", "output_name": "viscous_cumsum"}
         self.dc.load_params(params)
         test_data_len = 200
         test_data = np.random.randint(0, 15, (test_data_len,))
@@ -49,7 +49,7 @@ class TestDeriveCumsum(unittest.TestCase):
 
     def test_cumsum(self):
         cumsum_array = self.dc.transform_data()
-        self.assertIn("viscous_difference", cumsum_array)
+        self.assertIn("viscous_cumsum", cumsum_array)
 
 
 class TestDeriveSlope(unittest.TestCase):
@@ -140,6 +140,29 @@ class TestDeriveHeading(unittest.TestCase):
         fa = self.dh.transform_data()
         self.assertIn("angle", fa)
 
+class TestDeriveWindowSum(unittest.TestCase):
+    def setUp(self):
+        self.dws = DeriveWindowSum()
+        params = {}
+        params["func_params"] = {"window": 3}
+        params["measure_rules"] = {"target_measure": "viscosity", "output_name": "viscous_winsum"}
+        self.dws.load_params(params)
+        measures = {"viscosity":{"val":np.ones(10),"dtype":"decimil"}}
+        self.dws.load_measures(measures)
+        self.measures = measures
+    def test_window_sum(self):
+        win_sum = self.dws.transform_data()
+        self.assertIn("viscous_winsum", win_sum)
+        print(win_sum["viscous_winsum"])
+        # self.assertEqual(win_sum["viscous_winsum"][0], 2)
+        # self.assertEqual(win_sum["viscous_winsum"][1], 3)
+        # self.assertEqual(win_sum["viscous_winsum"][2], 3)
+        # self.assertEqual(win_sum["viscous_winsum"][-1], 2)
+        self.dws.params["func_params"]["window"] = 5
+        print(self.dws.transform_data()["viscous_winsum"])
+        # self.assertEqual(win_sum["viscous_winsum"][-1], 2)
+        self.dws.params["func_params"]["window"] = 4
+        print(self.dws.transform_data()["viscous_winsum"])
 
 
 if __name__ == "__main__":
