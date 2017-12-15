@@ -49,11 +49,8 @@ class DetectThreshold(DetectEvent):
         logger.debug("creating events")
         event_list = []
         for e_ind in event_inds:
-            cur_event = Event()
+            cur_event = Event({"event_name":self.params["event_name"], "event_rules":self.params["event_rules"],"stream_token":self.params["stream_token"]})
             cur_event["event_ind"] = int(e_ind)
-            cur_event["event_name"] = self.params["event_name"]
-            cur_event["event_rules"] = self.params["event_rules"]
-            cur_event["stream_token"] = self.params["stream_token"]
             cur_event["timestamp"] = self.data["timestamp"]["val"][e_ind]
             for key, val in self.data.items():
                 logger.debug("added %s to event_context" % (key))
