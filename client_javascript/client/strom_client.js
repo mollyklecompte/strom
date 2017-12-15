@@ -88,7 +88,7 @@ const StromClient = ({url='http://127.0.0.1:5000', socket=io(url), tokens={}} = 
       }
     };
     send_r.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-    send_r.send('stream_data=' + encodeURIComponent(token_data) + '&topic=' + topic);
+    send_r.send('stream_data=' + encodeURIComponent(token_data) + '&topic=' + encodeURIComponent(topic));
   }
 });
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
