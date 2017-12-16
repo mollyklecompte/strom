@@ -202,7 +202,7 @@ class Engine(object):
         #    self._listen_for_new_topics(keep_listening=keep_listening)
 
 def main():
-    topics = ['load']
+    topics = ['Parham', 'Molly', 'David', 'Justine', 'Adrian', 'Kody', 'Lucy', 'Lucky', 'Ricky', 'Allison']
     engine = Engine()
     engine.run_from_list(topics)
 
