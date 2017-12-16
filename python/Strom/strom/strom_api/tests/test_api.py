@@ -2,6 +2,7 @@ import unittest
 import requests
 import json
 
+
 class TestServer(unittest.TestCase):
     def setUp(self):
         self.dir = "demo_data/"

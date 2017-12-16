@@ -2,6 +2,7 @@
 Coordinator class
 
 """
+import requests
 from copy import deepcopy
 from bson.objectid import ObjectId
 from strom.dstream.bstream import BStream
@@ -9,6 +10,7 @@ from strom.database.mongo_management import MongoManager
 from strom.database.maria_management import SQL_Connection
 from strom.storage_thread.storage_thread import *
 from strom.utils.logger.logger import logger
+from strom.utils.configer import configer as config
 
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"
@@ -111,6 +113,24 @@ class Coordinator(object):
             end = time[1]
             return self.maria._retrieve_by_timestamp_range(dstream, start, end)
 
+    def _parse_events(self, bstream):
+        parsed_events = [{"event": "{}_{}".format(event_name.replace(" ", ""), bstream['engine_rules']['kafka']), "data": event_list} for event_name, event_list in bstream[config['event_coll_suf']].items()]
+        return parsed_events
+
+    def _post_events(self, event_data):
+        endpoint = 'http://{}:{}/new_event'.format(config['server_host'], config['server_port'])
+        r = requests.post(endpoint, json=event_data)
+
+        return 'request status: ' + str(r.status_code)
+
+    def _post_parsed_events(self, bstream):
+        events = self._parse_events(bstream)
+        if len(events) >= 1:
+            for event in events:
+                self._post_events(event)
+        else:
+            logger.warning("No events detected")
+
     def process_template(self, temp_dstream):
         temp_dstream = deepcopy(temp_dstream)
         token = temp_dstream["stream_token"]
@@ -151,6 +171,7 @@ class Coordinator(object):
 
         # apply event transforms
         bstream.find_events()
+
         # store events
         self._store_json(bstream, 'event')
         print("whoop WHOOOOP")
@@ -195,8 +216,11 @@ class Coordinator(object):
 
         # apply event transforms
         bstream.find_events()
+
+        # post events to server
+        self._post_parsed_events(bstream)
+
         # thread store events
-        # self._store_json(bstream, 'event')
         event_thread = StorageJsonThread(bstream,'event')
         event_thread.start()
         print("whoop WHOOOOP")

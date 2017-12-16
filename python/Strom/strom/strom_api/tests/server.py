@@ -1,5 +1,6 @@
 """ Flask-API server for communications b/w CLI and services. """
 import json
+import os
 from flask import Flask, request, Response, jsonify, render_template
 from flask_restful import reqparse
 from flask_socketio import SocketIO, emit, send
@@ -15,31 +16,31 @@ __author__ = 'Adrian Agnic <adrian@tura.io>'
 class Server():
     def __init__(self):
         self.expected_args = [
-        'template', 'data', 'source', 'topic', 'token', 'stream_data', 'stream_template'
+        'template', 'data', 'source', 'topic', 'token', 'stream_data', 'stream_template', 'key'
         ]
         self.parser = reqparse.RequestParser()
         self.coordinator = Coordinator()
         self.kafka_url = '127.0.0.1:9092'
         self.load_producer = Producer(self.kafka_url, b'load')
-        self.producers = {}
         self.dstream = None
         for word in self.expected_args:
             self.parser.add_argument(word)
+        # ToDo socket verification for unittest only, remove later
+        self._socket_verification = False
 
     def _dstream_new(self):
         dstream = DStream() # NOTE TODO
         return dstream
-
-    def producer_new(self, topic):
-        self.producers[topic] = Producer(self.kafka_url, topic.encode())
 
     def parse(self):
         ret = self.parser.parse_args()
         return ret
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-app = Flask(__name__.split('.')[0])
+app = Flask(__name__)
 socketio = SocketIO(app)
+socketio.check_msg = False
+socketio.index_path = ''
 srv = Server()
 
 def define():
@@ -54,14 +55,12 @@ def define():
         cur_dstream.load_from_json(json_template)
         logger.debug("define: dstream.load_from_json done")
         srv.coordinator.process_template(cur_dstream)
-        srv.producer_new(cur_dstream["engine_rules"]["kafka"])
         logger.debug("define: coordinator.process-template done")
     except Exception as ex:
         logger.warning("Server Error in define: Template loading/processing - {}".format(ex))
-        # bad_resp = Response(ex, 400)
-        # bad_resp.headers['Access-Control-Allow-Origin']='*'
-        # return bad_resp
-        return '{}'.format(ex), 400
+        bad_resp = Response(ex, 400)
+        bad_resp.headers['Access-Control-Allow-Origin']='*'
+        return bad_resp
     else:
         resp = Response(str(cur_dstream['stream_token']), 200)
         resp.headers['Access-Control-Allow-Origin']='*'
@@ -102,17 +101,13 @@ def load_kafka():
     try:
         data = args['stream_data'].encode()
         logger.debug("load_kafka: encode stream_data done")
-        kafka_topic = args['topic']
-        logger.debug("load_kafka: encode topic done")
-        # srv.load_producer.produce(data)
-        srv.producers[kafka_topic].produce(data)
+        srv.load_producer.produce(data)
         logger.debug("load_kafka: producer.produce done")
     except Exception as ex:
         logger.fatal("Server Error in kafka_load: Encoding/producing data - {}".format(ex))
-        # bad_resp = Response(ex, 400)
-        # bad_resp.headers['Access-Control-Allow-Origin']='*'
-        # return bad_resp
-        return '{}'.format(ex), 400
+        bad_resp = Response(ex, 400)
+        bad_resp.headers['Access-Control-Allow-Origin']='*'
+        return bad_resp
     else:
         resp = Response('Success.', 202)
         resp.headers['Access-Control-Allow-Origin']='*'
@@ -141,6 +136,26 @@ def get(this):
         else:
             return '', 403
 
+# Flask-SocketIO handler and visual check
+# spin up a webpage
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+app.check = False
+
+@socketio.on('message')
+def handle_client_message(json):
+    socketio.check_msg = True
+    print('###____#### Handle Client Message {0}'.format(json))
+    print('socket check ', socketio.check_msg)
+
+@socketio.on('lucy_on_couch_kody')
+def handle_client_message(data):
+    socketio.check_msg = True
+    print('LUCY IS ON THE COUCH OH MY GOD!!'.format(data))
+    print('socket check ', socketio.check_msg)
+
 def handle_event_detection():
     json_data = request.get_json()
     if json_data is not None:
@@ -156,6 +171,11 @@ def handle_event_detection():
 
     return jsonify(json_data)
 
+def terminate():
+    socketio.stop()
+
+    return "Server terminated"
+
 # POST
 app.add_url_rule('/api/define', 'define', define, methods=['POST'])
 app.add_url_rule('/api/add-source', 'add_source', add_source, methods=['POST'])
@@ -167,11 +187,14 @@ app.add_url_rule('/api/kafka/load', 'load_kafka', load_kafka, methods=['POST'])
 # GET
 app.add_url_rule('/', 'index', index, methods=['GET'])
 app.add_url_rule('/api/get/<this>', 'get', get, methods=['GET'])
+# TERMINATE APP.RUN
+app.add_url_rule('/terminate', 'terminate', terminate, methods=['GET'])
 
 
 
 def start():
     """ Entry-point """
+    # app.run()
     socketio.run(app)
 if __name__ == '__main__':
     start()

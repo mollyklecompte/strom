@@ -17,3 +17,5 @@ mongo_db=strom
 kafka_url=localhost:9092
 buffer_record_limit=45
 buffer_time_limit_s=5
+server_host=localhost
+server_port=5000
