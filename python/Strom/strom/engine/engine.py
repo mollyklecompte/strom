@@ -108,6 +108,8 @@ class EngineThread(Thread):
         self.url = url
         self.topic = topic
         self.topic_name = topic.decode('utf-8')
+        self.buffer_record_limit = config["buffer_record_limit"]
+        self.buffer_time_limit_s = config["buffer_time_limit_s"]
         self.consumer_thread = ConsumerThread(self.url, self.topic, self.buffer, timeout=consumer_timeout)
         logger.info("Initializing Engine Thread for topic {} with Consumer timeout: {}".format(self.topic_name, consumer_timeout))
         #logger.debug("Buffer limit params: {} records or {} seconds".format(config["buffer_record_limit"], config["buffer_time_limit_s"]))
@@ -129,9 +131,9 @@ class EngineThread(Thread):
         timer = time()
 
         while self.consumer_thread.is_alive():
-            logger.debug("Consumer thread running")
-            logger.debug("Checking buffer")
-            while len(self.buffer) < int(config["buffer_record_limit"]) and time() - timer < int(config["buffer_time_limit_s"]):
+            # logger.debug("Consumer thread running")
+            # logger.debug("Checking buffer")
+            while len(self.buffer) < int(self.buffer_record_limit) and time() - timer < int(self.buffer_time_limit_s):
                 pass
             logger.debug("Buffer max reached, exiting inner loop")
             if len(self.buffer):
