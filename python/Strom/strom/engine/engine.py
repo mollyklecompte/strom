@@ -21,10 +21,12 @@ generate...
 
 """
 
-from threading import Thread
+
 import json
+import ast
 from copy import deepcopy
 from time import time
+from threading import Thread
 from strom.kafka.topics.checker import TopicChecker
 from strom.kafka.consumer.consumer import Consumer
 from strom.coordinator.coordinator import Coordinator
@@ -53,6 +55,9 @@ class ProcessBStreamThread(Thread):
     def run(self):
         stopwatch['processor timer {}'.format(self.name)].start()
         logger.debug("Starting processor thread")
+        logger.fatal("BAD MESSAGE")
+        logger.fatal(self.data[0])
+        # self.data = [json.loads(data) for data in self.data]
         self.coordinator.process_data_async(self.data, self.data[0]["stream_token"])
         stopwatch['processor_timer {}'.format(self.name)].stop()
         logger.debug("Terminating processor thread")
@@ -72,8 +77,10 @@ class EngineConsumer(Consumer):
         for msg in self.consumer:
             if msg is not None:
                 stopwatch['{}_consumer_timer'.format(self.topic_name)].start()
+                # logger.fatal(msg.value.decode("utf-8"))
                 message = json.loads(msg.value.decode("utf-8"))
                 logger.debug("Message consumed: offset {}".format(msg.offset))
+                logger.debug("Message type: {}".format(type(message)))
                 self.buffer.extend(message)
                 stopwatch['{}_consumer_timer'.format(self.topic_name)].stop()
             else:
@@ -135,8 +142,8 @@ class EngineThread(Thread):
             # logger.debug("Checking buffer")
             while len(self.buffer) < int(self.buffer_record_limit) and time() - timer < int(self.buffer_time_limit_s):
                 pass
-            logger.debug("Buffer max reached, exiting inner loop")
             if len(self.buffer):
+                logger.debug("Buffer max reached, exiting inner loop")
                 buffer_data = deepcopy(self.buffer)
                 self._empty_buffer()
                 processor = ProcessBStreamThread(buffer_data)
