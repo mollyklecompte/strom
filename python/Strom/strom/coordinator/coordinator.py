@@ -119,6 +119,7 @@ class Coordinator(object):
 
     def _post_events(self, event_data):
         endpoint = 'http://{}:{}/new_event'.format(config['server_host'], config['server_port'])
+        logger.fatal(event_data)
         r = requests.post(endpoint, json=event_data)
 
         return 'request status: ' + str(r.status_code)

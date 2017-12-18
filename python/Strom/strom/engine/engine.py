@@ -55,8 +55,7 @@ class ProcessBStreamThread(Thread):
     def run(self):
         stopwatch['processor timer {}'.format(self.name)].start()
         logger.debug("Starting processor thread")
-        logger.fatal("BAD MESSAGE")
-        logger.fatal(self.data[0])
+        logger.debug(self.data[0])
         # self.data = [json.loads(data) for data in self.data]
         self.coordinator.process_data_async(self.data, self.data[0]["stream_token"])
         stopwatch['processor_timer {}'.format(self.name)].stop()
