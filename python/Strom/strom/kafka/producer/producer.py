@@ -1,6 +1,7 @@
 """ Kafka Producer """
 from pykafka import KafkaClient
 from strom.utils.logger.logger import logger
+from utils.stopwatch import stopwatch as tk
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
@@ -18,10 +19,14 @@ class Producer():
 
     def produce(self, dmsg):
         """ Produce to given topic w/ partition_key and log e. 1k msg. """
+        tk['Producer.produce'].start()
         bcount = str(self.count).encode()
+        tk['Producer.produce : self.producer.produce'].start()
         self.producer.produce(dmsg, partition_key=bcount)
+        tk['Producer.produce : self.producer.produce'].stop()
         logger.debug("Just produced a message")
         self.count += 1
+        tk['Producer.produce'].stop()
         if self.count == 1000:
             while True:
                 try:
