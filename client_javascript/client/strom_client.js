@@ -1,4 +1,4 @@
-/*
+/*/*
 Factory function for Strom Javascript client.
 This methods allows more flexibility for users to inherit/extend methods w/o typical JS hiccups.
 Uses only native Javascript + socket.io.
@@ -65,16 +65,14 @@ const StromClient = ({url='http://127.0.0.1:5000', socket=io(url), tokens={}} = 
     regDev_r.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     regDev_r.send('template=' + encodeURIComponent(new_tmpl));
   },
-  registerEvent(eventName, cb=null, passData=false) {
-    if (cb != null) {
+  registerEvent(eventName, cb, passData=true) {
+    socket.on(eventName, function(data) {
       if (passData == true) {
-        socket.on(eventName, (cb, data) => {cb(data);});
+        cb(data);
       } else {
-        socket.on(eventName, (cb) => {cb();});
+        cb();
       }
-    } else {
-      socket.on(eventName, (data) => {console.log(data);});
-    }
+    });
   },
   process(name, topic, data) {
     let token_data = this.tokenizeData(name, data);
