@@ -20,6 +20,7 @@ git clone git@github.com:tura-io/strom.git
 ```
 
 #### Install:
+* ``` pip install strom-cli ```
 *   Navigate to project directory
 ```commandline
     cd strom/cli/
