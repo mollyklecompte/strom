@@ -11,6 +11,7 @@ numpy>=1.13.3
 scipy>=0.19.1K
 PyMySQL==0.7.11
 pymongo==3.5.1
+Werkzeug==0.12.2
 #
 ###### Refer to other requirements files ######
 #
