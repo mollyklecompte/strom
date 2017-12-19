@@ -80,7 +80,7 @@ def apply_transformation(param_dict, bstream):
         for measure_name in param_dict["measures"]:
             logger.debug("adding %s" % (measure_name))
             if measure_name == "timestamp":
-                transformer.add_measure(measure_name, {"val":bstream[measure_name], "dtype":"integer")
+                transformer.add_measure(measure_name, {"val":bstream[measure_name], "dtype":"integer"})
             else:
                 transformer.add_measure(measure_name, bstream["measures"][measure_name])
     if "filter_measures" in param_dict.keys():
