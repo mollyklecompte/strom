@@ -20,6 +20,7 @@ class BStream(DStream):
         self.dstreams = dstreams
         self["template_id"] = template["_id"]
         self._load_from_dict(template)
+        self["stream_token"] = str(template["stream_token"])
 
     # def _set_from_temp(self):
         # self["stream_name"] = self.template["stream_name"]
