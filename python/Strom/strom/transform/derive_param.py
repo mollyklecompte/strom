@@ -162,7 +162,6 @@ class DeriveHeading(DeriveParam):
         self.params["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
         logger.debug("initialized DeriveHeading. Use get_params() to see parameter values")
 
-
     @staticmethod
     def flat_angle(position_array, window_len, units="deg"):
         logger.debug("finding cartesian angle of vector")
@@ -211,7 +210,7 @@ class DeriveWindowSum(DeriveParam):
         super().__init__()
         self.params["func_params"] = {"window":2}
         self.params["measure_rules"] =  {"target_measure":"measure_name", "output_name":"name of returned measure"}
-        logger.debug("Initialized DerivedWindowSum. Use get_params() to see parameter values")
+        logger.debug("Initialized DeriveWindowSum. Use get_params() to see parameter values")
 
     @staticmethod
     def window_sum(in_array, window_len):
@@ -233,3 +232,40 @@ class DeriveWindowSum(DeriveParam):
         target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
         summed_data = self.window_sum(target_array, window_len)
         return  {self.params["measure_rules"]["output_name"]:summed_data}
+
+class DeriveScaled(DeriveParam):
+    def __init__(self):
+        super().__init__()
+        self.params["func_params"] = {"scalar":1}
+        self.params["measure_rules"] =  {"target_measure":"measure_name", "output_name":"name of returned measure"}
+        logger.debug("Initialized DeriveScaled. Use get_params() to see parameter values")
+
+    @staticmethod
+    def scale_data(in_array, scalar):
+        return scalar*in_array
+
+    def transform_data(self):
+        logger.debug("transforming data to %s" %(self.params["measure_rules"]["output_name"]))
+        target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
+        scaled_out =self.scale_data(target_array, self.params["func_params"]["scalar"])
+        return  {self.params["measure_rules"]["output_name"]:scaled_out}
+
+class DeriveInBox(DeriveParam):
+    def __init__(self):
+        super().__init__()
+        self.params["func_params"] = {"upper_left_corner":(0,1), "lower_right_corner":(1,0)}
+        self.params["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
+        logger.debug("initialized DeriveInBox. Use get_params() to see parameter values")
+
+    @staticmethod
+    def in_box(spatial_array, upper_left, lower_right):
+        return np.logical_and(np.logical_and(spatial_array[:,0]>= upper_left[0], spatial_array[:,0]<= lower_right[0]), np.logical_and(spatial_array[:,1]<= upper_left[1], spatial_array[:,1]>= lower_right[1]))
+
+    def transform_data(self):
+        logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
+        spatial_array = np.array(self.data[self.params["measure_rules"]["spatial_measure"]]["val"], dtype=float)
+        box_bool = self.in_box(spatial_array, self.params["func_params"]["upper_left_corner"], self.params["func_params"]["lower_right_corner"])
+        return {self.params["measure_rules"]["output_name"]:box_bool}
+
+
+
