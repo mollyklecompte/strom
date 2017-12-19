@@ -46,7 +46,7 @@ def select_dparam(func_name):
         func = DeriveWindowSum()
     elif func_name == "DeriveScaled":
         func = DeriveScaled()
-    elif func_name = "DeriveInBox":
+    elif func_name == "DeriveInBox":
         func = DeriveInBox()
     else:
         raise ValueError("%s not supported" % func_name)
