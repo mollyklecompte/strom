@@ -1,5 +1,6 @@
 """ Kafka Consumer """
 from pykafka import KafkaClient
+from strom.utils.stopwatch import stopwatch as tk
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
@@ -28,19 +29,31 @@ class Consumer():
     def consume(self):
         """  """
         # NOTE: TODO Check diffs b/w for-loop and consumer.consume()
+        tk['Consumer.consume : self.consumer.start'].start()
         self.consumer.start() #auto-start
+        tk['Consumer.consume : self.consumer.start'].stop()
         for msg in self.consumer:
             if msg is not None:
                 print(str(msg.value) + ": {}".format(msg.offset))
 
     def engorge(self):
         """ Consume multiple messages in queue at once and exit. """
+        tk["Consumer.engorge"].start()
+        tk['Consumer.engorge : self.consumer.start'].start()
         self.consumer.start()
+        tk['Consumer.engorge : self.consumer.start'].stop()
+        tk['Consumer.engorge : self.consumer.consume'].start()
         result = self.consumer.consume()
+        tk['Consumer.engorge : self.consumer.consume'].stop()
+        tk['Consumer.engorge : self.consumer.stop'].start()
         self.consumer.stop()
+        tk['Consumer.engorge : self.consumer.stop'].stop()
+        tk["Consumer.engorge"].stop()
         return result.value
 
     def stahp(self):
         """ Wrapper function for stopping Client consumer. """
+        tk["Consumer.stahp"].start()
         self.consumer.stop()
+        tk["Consumer.stahp"].stop()
         return True
