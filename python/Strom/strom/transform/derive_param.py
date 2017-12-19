@@ -85,20 +85,20 @@ class DeriveChange(DeriveParam):
 class DeriveCumsum(DeriveParam):
     def __init__(self):
         super().__init__()
-        self.params["func_params"] = {}
+        self.params["func_params"] = {"offset":0}
         self.params["measure_rules"] = {"target_measure":"measure_name", "output_name":"name of returned measure"}
         logger.debug("initialized DeriveCumsum. Use get_params() to see parameter values")
 
 
     @staticmethod
-    def cumsum(data_array):
+    def cumsum(data_array, offset=0):
         logger.debug("cumsum")
-        return np.cumsum(data_array)
+        return np.cumsum(data_array)+offset
 
     def transform_data(self):
         logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
         target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
-        cumsum_array = self.cumsum(target_array)
+        cumsum_array = self.cumsum(target_array, self.params["func_params"]["offset"])
         return {self.params["measure_rules"]["output_name"]:cumsum_array}
 
 

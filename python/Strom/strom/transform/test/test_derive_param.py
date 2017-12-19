@@ -39,7 +39,7 @@ class TestDeriveCumsum(unittest.TestCase):
     def setUp(self):
         self.dc = DeriveCumsum()
         params = {}
-        params["func_params"] = {}
+        params["func_params"] = {"offset":0}
         params["measure_rules"] = {"target_measure": "viscosity", "output_name": "viscous_cumsum"}
         self.dc.load_params(params)
         test_data_len = 200

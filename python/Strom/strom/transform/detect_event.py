@@ -65,5 +65,9 @@ class DetectThreshold(DetectEvent):
     def transform_data(self):
         logger.debug("transforming data")
         measure_array = np.array(self.data[self.params["event_rules"]["measure"]]["val"], dtype=float)
-        event_inds = self.compare_threshold(measure_array, self.params["event_rules"]["comparison_operator"], self.params["event_rules"]["threshold_value"])
+        if "absolute_compare" in self.params["event_rules"]:
+            abs_comp = self.params["event_rules"]["absolute_compare"]
+        else:
+            abs_comp = False
+        event_inds = self.compare_threshold(measure_array, self.params["event_rules"]["comparison_operator"], self.params["event_rules"]["threshold_value"], abs_comp)
         return self.create_events(event_inds)
