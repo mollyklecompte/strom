@@ -29,28 +29,28 @@ const StromClient = ({url='http://127.0.0.1:5000', socket=io(url), tokens={}} = 
   },
   formatData(template, data) {
     let json_tmpl = JSON.parse(template);
-    let json_data = JSON.parse(data);
+    let json_data = data;
     json_tmpl.timestamp = json_data.timestamp;
     json_tmpl.measures.location.val = json_data.location;
     json_tmpl.fields["region-code"] = json_data["region-code"];
     json_tmpl.user_ids.id = json_data.id;
     json_tmpl.user_ids["driver-id"] = json_data["driver-id"];
-    let tmpl = JSON.stringify(json_tmpl);
+    json_tmpl.engine_rules["kafka"] = json_data["driver-id"].replace(/\s/g, "");
+    let tmpl = json_tmpl;
     return tmpl;
   },
   tokenizeData(name, data) {
     let token = this.tokens[name];
-    str_data = JSON.stringify(data);
-    json_data = JSON.parse(str_data);
-    for (let i = 0;i <= json_data.length;i++) {
-      json_data['stream_token'] = token;
+    let json_data = data;;
+    for (let i = 0; i < json_data.length; i++) {
+      json_data[i]['stream_token'] = token;
     }
     return JSON.stringify(json_data);
   },
-  registerDevice(name, template, topics) {
+  registerDevice(name, template, topic) {
     thus = this;
     json_tmpl = JSON.parse(template);
-    json_tmpl['engine_rules']['kafka'] = topics;
+    json_tmpl['engine_rules']['kafka'] = topic;
     new_tmpl = JSON.stringify(json_tmpl);
     let regDev_r = new XMLHttpRequest();
     regDev_r.open('POST', this.url + '/api/define', false);
@@ -65,8 +65,16 @@ const StromClient = ({url='http://127.0.0.1:5000', socket=io(url), tokens={}} = 
     regDev_r.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     regDev_r.send('template=' + encodeURIComponent(new_tmpl));
   },
-  registerEvent(eventName) {
-    socket.on(eventName, (data) => {console.log(data);});
+  registerEvent(eventName, cb=null, passData=false) {
+    if (cb != null) {
+      if (passData == true) {
+        socket.on(eventName, (cb, data) => {cb(data);});
+      } else {
+        socket.on(eventName, (cb) => {cb();});
+      }
+    } else {
+      socket.on(eventName, (data) => {console.log(data);});
+    }
   },
   process(name, topic, data) {
     let token_data = this.tokenizeData(name, data);
@@ -75,12 +83,12 @@ const StromClient = ({url='http://127.0.0.1:5000', socket=io(url), tokens={}} = 
     send_r.onreadystatechange = function() {
       if (send_r.readyState === 4) {
         if (send_r.status === 202) {
-          console.log('Data sent.');
+          console.log('Socket data sent.');
         }
       }
     };
     send_r.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-    send_r.send('stream_data=' + encodeURIComponent(token_data) + '&topic=' + topic);
+    send_r.send('stream_data=' + encodeURIComponent(token_data) + '&topic=' + encodeURIComponent(topic));
   }
 });
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
