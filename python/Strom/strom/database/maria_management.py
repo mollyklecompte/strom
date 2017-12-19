@@ -259,7 +259,7 @@ class SQL_Connection:
             "%s)"
         % (dstream["version"], dstream["timestamp"], measure_values, uid_values, _stringify_by_adding_quotes(dstream["tags"]), _stringify_by_adding_quotes(dstream["fields"])))
 
-        query = ("INSERT INTO %s %s VALUES %s" % (stringified_stream_token_uuid, columns, values))
+        query = ("INSERT INTO `%s` %s VALUES %s" % (stringified_stream_token_uuid, columns, values))
 
         try:
             logger.info("Inserting row into table " + stringified_stream_token_uuid)
@@ -313,7 +313,7 @@ class SQL_Connection:
         # string interpolations dynamically for the query values. There will always be at least one '%s', so the value_interpolations
         # variable will be the length of one tuple minus 1.
         value_interpolations = (len(value_tuples[0]) - 1) * ", %s"
-        query = ("INSERT INTO %s %s " % (stringified_stream_token_uuid, columns)) + "VALUES (%s" + value_interpolations + ")"
+        query = ("INSERT INTO `%s` %s " % (stringified_stream_token_uuid, columns)) + "VALUES (%s" + value_interpolations + ")"
         try:
             logger.info("Inserting rows into table " + stringified_stream_token_uuid)
             self.cursor.executemany(query, value_tuples)
@@ -326,7 +326,7 @@ class SQL_Connection:
 
     def _insert_filtered_measure_into_stream_lookup_table(self, stream_token, filtered_measure, value, unique_id):
         stringified_stream_token_uuid = _stringify_uuid(stream_token)
-        query = ("UPDATE %s SET %s " % (stringified_stream_token_uuid, filtered_measure)) + "= %s WHERE unique_id = %s"
+        query = ("UPDATE `%s` SET %s " % (stringified_stream_token_uuid, filtered_measure)) + "= %s WHERE unique_id = %s"
         parameters = (value, unique_id)
         try:
             logger.info("Updating", filtered_measure, "at", unique_id)
@@ -342,7 +342,7 @@ class SQL_Connection:
     def _retrieve_by_timestamp_range(self, dstream, start, end):
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
         dstream_particulars = (stringified_stream_token_uuid, start, end)
-        query = ("SELECT * FROM %s " % (stringified_stream_token_uuid)) + "WHERE time_stamp BETWEEN %s AND %s"
+        query = ("SELECT * FROM `%s` " % (stringified_stream_token_uuid)) + "WHERE time_stamp BETWEEN %s AND %s"
         try:
             logger.info("Returning all records within timestamp range")
             self.cursor.execute(query, [start, end])
@@ -356,7 +356,7 @@ class SQL_Connection:
 
     def _select_all_from_stream_lookup_table(self, dstream):
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
-        query = ("SELECT * FROM %s" % stringified_stream_token_uuid)
+        query = ("SELECT * FROM `%s`" % stringified_stream_token_uuid)
         try:
             logger.info("Returning all records from stream lookup table " + stringified_stream_token_uuid)
             self.cursor.execute(query)
@@ -428,7 +428,7 @@ class SQL_Connection:
         # string interpolations dynamically for the query values. There will always be at least one '%s', so the value_interpolations
         # variable will be the length of one tuple minus 1.
         value_interpolations = (len(value_tuples[0]) - 1) * ", %s"
-        query = ("INSERT INTO %s (%s) " % (filter_table_stream_token_uuid, columns)) + "VALUES (%s" + value_interpolations + ")"
+        query = ("INSERT INTO `%s` (%s) " % (filter_table_stream_token_uuid, columns)) + "VALUES (%s" + value_interpolations + ")"
         try:
             logger.info("Inserting rows into table " + filter_table_stream_token_uuid)
             self.cursor.executemany(query, value_tuples)
@@ -442,7 +442,7 @@ class SQL_Connection:
     def _select_data_by_column_where(self, dstream, data_column, filter_column, value):
         # Method created for testing purposes. Not intended for use by the coordinator (for now).
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
-        query = ("SELECT %s FROM %s WHERE %s = %s" % (data_column, stringified_stream_token_uuid, filter_column, value))
+        query = ("SELECT `%s` FROM %s WHERE %s = %s" % (data_column, stringified_stream_token_uuid, filter_column, value))
         try:
             logger.info("Returning data")
             self.cursor.execute(query)
