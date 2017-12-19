@@ -1,6 +1,6 @@
 """ Kafka Consumer """
 from pykafka import KafkaClient
-from utils.stopwatch import stopwatch as tk
+from strom.utils.stopwatch import stopwatch as tk
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
