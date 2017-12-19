@@ -1,6 +1,6 @@
 ###### Requirements without Version Specifiers ######
 #
-pymongo
+
 pykafka
 Flask
 flask_restful
@@ -10,6 +10,7 @@ flask_restful
 numpy>=1.13.3
 scipy>=0.19.1K
 PyMySQL==0.7.11
+pymongo==3.5.1
 #
 ###### Refer to other requirements files ######
 #
