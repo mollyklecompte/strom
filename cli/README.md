@@ -21,18 +21,7 @@ git clone git@github.com:tura-io/strom.git
 
 #### Install:
 * ``` pip install strom-cli ```
-*   Navigate to project directory
-```commandline
-    cd strom/cli/
-```
-*   Install using Pip
-```commandline
-    pip install .
-```
-*   (Optional) Enable auto-complete in Bash
-    ```commandline
-    eval "$(_DSTREAM_COMPLETE=source dstream)"
-    ```
+
 
 #### Run:
 ```commandline
