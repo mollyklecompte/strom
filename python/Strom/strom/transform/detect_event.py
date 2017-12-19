@@ -33,13 +33,15 @@ class DetectThreshold(DetectEvent):
     def __init__(self):
         super().__init__()
         self.params["event_rules"] = {"measure":"measure_name", "threshold_value":"value to compare against",
-                                       "comparison_operator":["==", "!=", ">=", "<=", ">", "<"]}
+                                       "comparison_operator":["==", "!=", ">=", "<=", ">", "<"], "absolute_compare":False}
         logger.debug("initialized DetectThreshold. Use get_params() to see parameter values")
 
 
     @staticmethod
-    def compare_threshold(data_array, comparison_operator, comparision_val):
+    def compare_threshold(data_array, comparison_operator, comparision_val, absolute_compare=False):
         logger.debug("comparing: %s %d" %(comparison_operator, comparision_val))
+        if absolute_compare:
+            data_array = np.abs(data_array)
         comparisons= {"==":np.equal, "!=":np.not_equal, ">=":np.greater_equal, "<=":np.less_equal, ">":np.greater, "<":np.less}
         cur_comp = comparisons[comparison_operator]
         match_inds = np.nonzero(cur_comp(np.nan_to_num(data_array), comparision_val))

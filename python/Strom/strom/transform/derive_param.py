@@ -53,7 +53,8 @@ class DeriveSlope(DeriveParam):
         window_len = self.params["func_params"]["window"]
         xrun = np.array(self.data[self.params["measure_rules"]["run_measure"]]["val"], dtype=float)
         yrise = np.array(self.data[self.params["measure_rules"]["rise_measure"]]["val"], dtype=float)
-        sloped = self.sloper(yrise, xrun, window_len)
+        smaller_len = np.min([xrun.shape[0], yrise.shape[0]])
+        sloped = self.sloper(yrise[:smaller_len,], xrun[:smaller_len,], window_len)
         return {self.params["measure_rules"]["output_name"]:sloped}
 
 class DeriveChange(DeriveParam):
