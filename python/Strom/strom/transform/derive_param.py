@@ -1,9 +1,11 @@
 """Class for creating derived parameters from measures"""
-import numpy as np
 from abc import ABCMeta, abstractmethod
-from .transform import Transformer
-from .filter_data import window_data
+
+import numpy as np
 from strom.utils.logger.logger import logger
+
+from .filter_data import window_data
+from .transform import Transformer
 
 
 class DeriveParam(Transformer):
@@ -38,14 +40,10 @@ class DeriveSlope(DeriveParam):
 
     @staticmethod
     def sloper(rise_array, run_array, window_len):
-        logger.debug("calculating slope")
-        dx = np.diff(run_array)
-        dy = np.diff(rise_array)
-
+        sloped = rise_array / run_array
         if window_len > 1:
-            sloped = window_data(dy / dx, window_len)
-        else:
-            sloped = dy / dx
+            sloped = window_data(sloped, window_len)
+
         return sloped
 
     def transform_data(self):
