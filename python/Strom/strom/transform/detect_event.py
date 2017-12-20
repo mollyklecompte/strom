@@ -1,9 +1,12 @@
-import numpy as np
-from copy import deepcopy
 from abc import ABCMeta, abstractmethod
-from .transform import Transformer
-from .event import Event
+from copy import deepcopy
+
+import numpy as np
 from strom.utils.logger.logger import logger
+
+from .event import Event
+from .transform import Transformer
+
 
 class DetectEvent(Transformer):
     __metaclass__ = ABCMeta
@@ -23,6 +26,21 @@ class DetectEvent(Transformer):
     def add_timestamp(self, timestamp_list):
         logger.debug("adding timestamp[s]")
         self.data["timestamp"] = {"val":timestamp_list, "dtype":"decimal"}
+
+    def create_events(self, event_inds):
+        logger.debug("creating events")
+        event_list = []
+        for e_ind in event_inds:
+            cur_event = Event({"event_name":self.params["event_name"], "event_rules":self.params["event_rules"],"stream_token":self.params["stream_token"]})
+            cur_event["event_ind"] = int(e_ind)
+            cur_event["timestamp"] = self.data["timestamp"]["val"][e_ind]
+            for key, val in self.data.items():
+                logger.debug("added %s to event_context" % (key))
+                if key != "timestamp":
+                    cur_ind = min(e_ind, len(val["val"])-1)
+                    cur_event["event_context"][key] = val["val"][cur_ind]
+            event_list.append(deepcopy(cur_event))
+        return event_list
 
     @abstractmethod
     def transform_data(self):
@@ -46,21 +64,6 @@ class DetectThreshold(DetectEvent):
         cur_comp = comparisons[comparison_operator]
         match_inds = np.nonzero(cur_comp(np.nan_to_num(data_array), comparision_val))
         return match_inds[0]
-
-    def create_events(self, event_inds):
-        logger.debug("creating events")
-        event_list = []
-        for e_ind in event_inds:
-            cur_event = Event({"event_name":self.params["event_name"], "event_rules":self.params["event_rules"],"stream_token":self.params["stream_token"]})
-            cur_event["event_ind"] = int(e_ind)
-            cur_event["timestamp"] = self.data["timestamp"]["val"][e_ind]
-            for key, val in self.data.items():
-                logger.debug("added %s to event_context" % (key))
-                if key != "timestamp":
-                    cur_event["event_context"][key] = val["val"][e_ind]
-            event_list.append(deepcopy(cur_event))
-        return event_list
-
 
     def transform_data(self):
         logger.debug("transforming data")
