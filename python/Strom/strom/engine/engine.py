@@ -19,16 +19,16 @@ generate...
 
 import json
 from copy import deepcopy
-from time import time
-from threading import Thread
 from multiprocessing import Process, Queue
-from strom.kafka.topics.checker import TopicChecker
-from strom.kafka.consumer.consumer import Consumer
+from threading import Thread
+from time import time
+
 from strom.coordinator.coordinator import Coordinator
+from strom.kafka.consumer.consumer import Consumer
+from strom.kafka.topics.checker import TopicChecker
 from strom.utils.configer import configer as config
 from strom.utils.logger.logger import logger
 from strom.utils.stopwatch import stopwatch
-
 
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"
@@ -110,11 +110,13 @@ class Processor(Process):
 
     def run(self):
         self.is_running = True
-        logger.fatal("running json loader")
+        logger.debug("running json loader")
         while self.is_running:
-            json_data = self.q.get()
-            data = [json.loads(datum) for datum in json_data]
-            self.coordinator.process_data_async(data[0], data[0][0]["stream_token"])
+            queued = self.q.get()
+            data_list = [json.loads(datum) for datum in queued]
+            for data in data_list:
+                self.coordinator.process_data_async(data, data[0]["stream_token"])
+
 
 class EngineThread(Thread):
     def __init__(self, url, topic, consumer_timeout=-1):
@@ -154,22 +156,22 @@ class EngineThread(Thread):
     def run(self):
         self.consumer_thread.start()
         logger.info("Starting Consumer Thread")
-        timer = time()
 
         while self.consumer_thread.is_alive():
-            # logger.debug("Consumer thread running")
-            # logger.debug("Checking buffer")
-            while len(self.buffer) < int(self.buffer_record_limit) and time() - timer < int(self.buffer_time_limit_s):
-                pass
+            st = time()
             if len(self.buffer):
                 logger.debug("Buffer max reached, exiting inner loop")
                 buffer_data = deepcopy(self.buffer)
                 self._empty_buffer()
                 self.message_q.put(buffer_data)
+                logger.debug("Took {:.5f} seconds and queue size is {}".format(time() - st, str(self.message_q.qsize())))
+
             else:
                 logger.warning("No records in buffer to process")
-            result = self._check_consumer()
-            logger.debug("Consumer running: {}".format(result))
+
+
+
+
         logger.info("Terminating Engine Thread")
 
 # class ReceiverThread(Thread):
