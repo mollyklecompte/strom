@@ -13,7 +13,7 @@ class Producer():
         logger.debug(topic)
         self.topic = self.client.topics[topic]
         logger.debug(self.topic)
-        self.producer = self.topic.get_producer(delivery_reports=False, use_rdkafka=False)
+        self.producer = self.topic.get_producer(delivery_reports=False, use_rdkafka=False, min_queued_messages=1, linger_ms=1000)
         logger.debug("Producer init'ed")
         self.count = 0
 

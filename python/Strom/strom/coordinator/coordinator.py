@@ -2,16 +2,17 @@
 Coordinator class
 
 """
-import requests
 import time
 from copy import deepcopy
+
+import requests
 from bson.objectid import ObjectId
-from strom.dstream.bstream import BStream
-from strom.database.mongo_management import MongoManager
 from strom.database.maria_management import SQL_Connection
+from strom.database.mongo_management import MongoManager
+from strom.dstream.bstream import BStream
 from strom.storage_thread.storage_thread import *
-from strom.utils.logger.logger import logger
 from strom.utils.configer import configer as config
+from strom.utils.logger.logger import logger
 
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"
@@ -183,7 +184,7 @@ class Coordinator(object):
 
     def process_data_async(self, dstream_list, token):
 
-        logger.fatal("process_data_async")
+        logger.debug("process_data_async")
         st = time.time()
         # use StorageRules to validate
         # {"store_raw": True, "store_filtered": True, "store_derived": True}
