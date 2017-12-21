@@ -34,27 +34,27 @@ __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"
 
 
-class ProcessBStreamThread(Thread):
-    """
-    Creates thread to call coordinator's process_data on batch of data from kafka
-    """
-    def __init__(self, data):
-        """
-        Initializes the thread, decoding message
-        :param data: message passed from kafka consumer, in bytes
-        """
-        super().__init__()
-        self.data = data
-        self.coordinator = Coordinator()
-
-    def run(self):
-        stopwatch['processor timer {}'.format(self.name)].start()
-        logger.debug("Starting processor thread")
-        logger.debug(self.data[0])
-        # self.data = [json.loads(data) for data in self.data]
-        self.coordinator.process_data_async(self.data, self.data[0]["stream_token"])
-        stopwatch['processor_timer {}'.format(self.name)].stop()
-        logger.debug("Terminating processor thread")
+# class ProcessBStreamThread(Thread):
+#     """
+#     Creates thread to call coordinator's process_data on batch of data from kafka
+#     """
+#     def __init__(self, data):
+#         """
+#         Initializes the thread, decoding message
+#         :param data: message passed from kafka consumer, in bytes
+#         """
+#         super().__init__()
+#         self.data = data
+#         self.coordinator = Coordinator()
+#
+#     def run(self):
+#         stopwatch['processor timer {}'.format(self.name)].start()
+#         logger.debug("Starting processor thread")
+#         logger.debug(self.data[0])
+#         # self.data = [json.loads(data) for data in self.data]
+#         self.coordinator.process_data_async(self.data, self.data[0]["stream_token"])
+#         stopwatch['processor_timer {}'.format(self.name)].stop()
+#         logger.debug("Terminating processor thread")
 
 
 class EngineConsumer(Consumer):
@@ -172,17 +172,17 @@ class EngineThread(Thread):
             logger.debug("Consumer running: {}".format(result))
         logger.info("Terminating Engine Thread")
 
-class ReceiverThread(Thread):
-    def __init__(self, pipe):
-        super().__init__()
-        self.pipe = pipe
-
-    def run(self):
-        while True:
-            received = self.pipe.recv()
-            json.loads(received)
-            processor = ProcessBStreamThread(received)
-            processor.start()
+# class ReceiverThread(Thread):
+#     def __init__(self, pipe):
+#         super().__init__()
+#         self.pipe = pipe
+#
+#     def run(self):
+#         while True:
+#             received = self.pipe.recv()
+#             json.loads(received)
+#             processor = ProcessBStreamThread(received)
+#             processor.start()
 
 
 class Engine(object):
