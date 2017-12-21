@@ -1,7 +1,8 @@
-from .filter_data import *
+from strom.utils.logger.logger import logger
+
 from .derive_param import *
 from .detect_event import *
-from strom.utils.logger.logger import logger
+from .filter_data import *
 
 """Methods for building an applying Transforms to data"""
 
@@ -79,23 +80,6 @@ def apply_transformation(param_dict, bstream):
         transformer = select_transform(param_dict["func_type"], param_dict["func_name"])
     else:
         raise KeyError("func_type, func_name not specified")
-
-    if "measures" in param_dict.keys():
-        for measure_name in param_dict["measures"]:
-            logger.debug("adding %s" % (measure_name))
-            if measure_name == "timestamp":
-                transformer.add_measure(measure_name, {"val":bstream[measure_name], "dtype":"integer"})
-            else:
-                transformer.add_measure(measure_name, bstream["measures"][measure_name])
-    if "filter_measures" in param_dict.keys():
-        for measure_name in param_dict["filter_measures"]:
-            logger.debug("adding filtered measure %s" % (measure_name))
-            transformer.add_measure(measure_name, bstream["filter_measures"][measure_name])
-    if "derived_measures" in param_dict.keys():
-        for measure_name in param_dict["derived_measures"]:
-            logger.debug("adding derived measure %s" % (measure_name))
-            transformer.add_measure(measure_name, bstream["derived_measures"][measure_name])
-
     transformer.load_params(param_dict)
 
     if param_dict["func_type"] == "detect_event":
@@ -108,5 +92,20 @@ def apply_transformation(param_dict, bstream):
             transformer.load_measures(bstream["derived_measures"])
         return transformer.transform_data()
     else:
+        if "measures" in param_dict.keys():
+            for measure_name in param_dict["measures"]:
+                logger.debug("adding %s" % (measure_name))
+                if measure_name == "timestamp":
+                    transformer.add_measure(measure_name, {"val": bstream[measure_name], "dtype": "integer"})
+                else:
+                    transformer.add_measure(measure_name, bstream["measures"][measure_name])
+        if "filter_measures" in param_dict.keys():
+            for measure_name in param_dict["filter_measures"]:
+                logger.debug("adding filtered measure %s" % (measure_name))
+                transformer.add_measure(measure_name, bstream["filter_measures"][measure_name])
+        if "derived_measures" in param_dict.keys():
+            for measure_name in param_dict["derived_measures"]:
+                logger.debug("adding derived measure %s" % (measure_name))
+                transformer.add_measure(measure_name, bstream["derived_measures"][measure_name])
         return map_to_measure(transformer.transform_data())
 
