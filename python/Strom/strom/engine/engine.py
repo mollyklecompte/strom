@@ -51,6 +51,7 @@ class ProcessBStreamThread(Thread):
         super().__init__()
         self.data = data
         self.coordinator = Coordinator()
+        logger.fatal("init process thread")
 
     def run(self):
         stopwatch['processor timer {}'.format(self.name)].start()
@@ -69,6 +70,7 @@ class EngineConsumer(Consumer):
         self.topic = topic
         self.topic_name = topic.decode('utf-8')
         logger.info("Initializing EngineConsumer with timeout: {} ms".format(timeout))
+        logger.fatal("starting consumer")
 
     def consume(self):
         self.consumer.start()  # auto-start
@@ -78,7 +80,8 @@ class EngineConsumer(Consumer):
                 stopwatch['{}_consumer_timer'.format(self.topic_name)].start()
                 # logger.fatal(msg.value.decode("utf-8"))
                 message = json.loads(msg.value.decode("utf-8"))
-                logger.debug("Message consumed: offset {}".format(msg.offset))
+                # message["engine_rules"]["kafka"]
+                logger.fatal("Message consumed: offset {}".format(msg.offset))
                 logger.debug("Message type: {}".format(type(message)))
                 self.buffer.extend(message)
                 stopwatch['{}_consumer_timer'.format(self.topic_name)].stop()
@@ -142,16 +145,16 @@ class EngineThread(Thread):
             while len(self.buffer) < int(self.buffer_record_limit) and time() - timer < int(self.buffer_time_limit_s):
                 pass
             if len(self.buffer):
-                logger.debug("Buffer max reached, exiting inner loop")
+                logger.fatal("Buffer max reached, exiting inner loop")
                 buffer_data = deepcopy(self.buffer)
                 self._empty_buffer()
                 processor = ProcessBStreamThread(buffer_data)
                 processor.start()
             else:
                 logger.warning("No records in buffer to process")
-            timer = time()
-            result = self._check_consumer()
-            logger.debug("Consumer running: {}".format(result))
+            # timer = time()
+            # result = self._check_consumer()
+            # logger.debug("Consumer running: {}".format(result))
         logger.info("Terminating Engine Thread")
 
 
@@ -210,7 +213,7 @@ class Engine(object):
         #    self._listen_for_new_topics(keep_listening=keep_listening)
 
 def main():
-    topics = ['Parham', 'Molly', 'David', 'Justine', 'Adrian', 'Kody', 'Lucy', 'Lucky', 'Ricky', 'Allison']
+    topics = ['Parham']#, 'Molly', 'David', 'Justine', 'Adrian', 'Kody', 'Lucy', 'Lucky', 'Ricky', 'Allison']
     engine = Engine()
     engine.run_from_list(topics)
 

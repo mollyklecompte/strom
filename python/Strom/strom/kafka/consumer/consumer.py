@@ -1,6 +1,7 @@
 """ Kafka Consumer """
 from pykafka import KafkaClient
 from strom.utils.stopwatch import stopwatch as tk
+from strom.utils.logger.logger import logger
 
 __version__ = '0.0.1'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
@@ -11,20 +12,21 @@ class Consumer():
         """ Init requires kafka url:port, topic name, and timeout for listening. """
         self.client = KafkaClient(hosts=url, use_greenlets=False)
         self.topic = self.client.topics[topic]
-        self.consumer = self.topic.get_balanced_consumer(
-            consumer_group=b'strom',
-            num_consumer_fetchers=1,
-            reset_offset_on_start=False,
-            auto_commit_enable=True,
-            auto_commit_interval_ms=30000, #tweak
-            queued_max_messages=200, #tweak
-            consumer_timeout_ms=timeout,
-            auto_start=False,
-            use_rdkafka=False,
-            fetch_min_bytes=1, #tweak
-            fetch_message_max_bytes=1048576, #tweak
-            fetch_wait_max_ms=100) #tweak
-            # NOTE: may be quicker w/ alt. options
+        self.consumer = self.topic.get_simple_consumer()
+        # self.consumer = self.topic.get_balanced_consumer(
+        #     consumer_group=b'strom',
+        #     num_consumer_fetchers=1,
+        #     reset_offset_on_start=False,
+        #     auto_commit_enable=True,
+        #     auto_commit_interval_ms=30000, #tweak
+        #     queued_max_messages=600, #tweak
+        #     consumer_timeout_ms=timeout,
+        #     auto_start=False,
+        #     use_rdkafka=False,
+        #     fetch_min_bytes=1, #tweak
+        #     fetch_message_max_bytes=2097152, #tweak
+        #     fetch_wait_max_ms=100) #tweak
+        #     # NOTE: may be quicker w/ alt. options
 
     def consume(self):
         """  """
@@ -34,7 +36,7 @@ class Consumer():
         tk['Consumer.consume : self.consumer.start'].stop()
         for msg in self.consumer:
             if msg is not None:
-                print(str(msg.value) + ": {}".format(msg.offset))
+                logger.debug(str(msg.value) + ": {}".format(msg.offset))
 
     def engorge(self):
         """ Consume multiple messages in queue at once and exit. """

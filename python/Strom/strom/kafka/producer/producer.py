@@ -13,7 +13,7 @@ class Producer():
         logger.debug(topic)
         self.topic = self.client.topics[topic]
         logger.debug(self.topic)
-        self.producer = self.topic.get_producer(delivery_reports=True, use_rdkafka=False)
+        self.producer = self.topic.get_producer(delivery_reports=False, use_rdkafka=False)
         logger.debug("Producer init'ed")
         self.count = 0
 
@@ -27,14 +27,14 @@ class Producer():
         logger.debug("Just produced a message")
         self.count += 1
         tk['Producer.produce'].stop()
-        if self.count == 1000:
-            while True:
-                try:
-                    msg, exc = self.producer.get_delivery_report(block=False)
-                    if exc is not None:
-                        logger.warn("Kafka Producer Error: {} from {}".format(exc, msg.partition_key))
-                        print("Delivery Fail: {}: {}".format(msg.partition_key, repr(exc))) #replace w/ logger
-                    else:
-                        print("Success: {}".format(msg.partition_key))
-                except:
-                    pass #TEMP
+        # if self.count == 1000:
+        #     while True:
+        #         try:
+        #             msg, exc = self.producer.get_delivery_report(block=False)
+        #             if exc is not None:
+        #                 logger.warn("Kafka Producer Error: {} from {}".format(exc, msg.partition_key))
+        #                 print("Delivery Fail: {}: {}".format(msg.partition_key, repr(exc))) #replace w/ logger
+        #             else:
+        #                 print("Success: {}".format(msg.partition_key))
+        #         except:
+        #             pass #TEMP
