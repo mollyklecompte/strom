@@ -173,7 +173,7 @@ class EngineThread(Thread):
                 logger.debug("Took {:.5f} seconds and queue size is {}".format(time() - st, str(self.message_q.qsize())))
 
             else:
-                logger.warning("No records in buffer to process")
+                logger.debug("No records in buffer to process")
 
 
 
