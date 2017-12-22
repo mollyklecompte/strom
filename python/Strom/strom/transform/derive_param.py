@@ -1,9 +1,11 @@
 """Class for creating derived parameters from measures"""
-import numpy as np
 from abc import ABCMeta, abstractmethod
-from .transform import Transformer
-from .filter_data import window_data
+
+import numpy as np
 from strom.utils.logger.logger import logger
+
+from .filter_data import window_data
+from .transform import Transformer
 
 
 class DeriveParam(Transformer):
@@ -38,14 +40,10 @@ class DeriveSlope(DeriveParam):
 
     @staticmethod
     def sloper(rise_array, run_array, window_len):
-        logger.debug("calculating slope")
-        dx = np.diff(run_array)
-        dy = np.diff(rise_array)
-
+        sloped = rise_array / run_array
         if window_len > 1:
-            sloped = window_data(dy / dx, window_len)
-        else:
-            sloped = dy / dx
+            sloped = window_data(sloped, window_len)
+
         return sloped
 
     def transform_data(self):
@@ -53,7 +51,8 @@ class DeriveSlope(DeriveParam):
         window_len = self.params["func_params"]["window"]
         xrun = np.array(self.data[self.params["measure_rules"]["run_measure"]]["val"], dtype=float)
         yrise = np.array(self.data[self.params["measure_rules"]["rise_measure"]]["val"], dtype=float)
-        sloped = self.sloper(yrise, xrun, window_len)
+        smaller_len = np.min([xrun.shape[0], yrise.shape[0]])
+        sloped = self.sloper(yrise[:smaller_len,], xrun[:smaller_len,], window_len)
         return {self.params["measure_rules"]["output_name"]:sloped}
 
 class DeriveChange(DeriveParam):
@@ -84,20 +83,20 @@ class DeriveChange(DeriveParam):
 class DeriveCumsum(DeriveParam):
     def __init__(self):
         super().__init__()
-        self.params["func_params"] = {}
+        self.params["func_params"] = {"offset":0}
         self.params["measure_rules"] = {"target_measure":"measure_name", "output_name":"name of returned measure"}
         logger.debug("initialized DeriveCumsum. Use get_params() to see parameter values")
 
 
     @staticmethod
-    def cumsum(data_array):
+    def cumsum(data_array, offset=0):
         logger.debug("cumsum")
-        return np.cumsum(data_array)
+        return np.cumsum(data_array)+offset
 
     def transform_data(self):
         logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
         target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
-        cumsum_array = self.cumsum(target_array)
+        cumsum_array = self.cumsum(target_array, self.params["func_params"]["offset"])
         return {self.params["measure_rules"]["output_name"]:cumsum_array}
 
 
@@ -161,7 +160,6 @@ class DeriveHeading(DeriveParam):
         self.params["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
         logger.debug("initialized DeriveHeading. Use get_params() to see parameter values")
 
-
     @staticmethod
     def flat_angle(position_array, window_len, units="deg"):
         logger.debug("finding cartesian angle of vector")
@@ -210,7 +208,7 @@ class DeriveWindowSum(DeriveParam):
         super().__init__()
         self.params["func_params"] = {"window":2}
         self.params["measure_rules"] =  {"target_measure":"measure_name", "output_name":"name of returned measure"}
-        logger.debug("Initialized DerivedWindowSum. Use get_params() to see parameter values")
+        logger.debug("Initialized DeriveWindowSum. Use get_params() to see parameter values")
 
     @staticmethod
     def window_sum(in_array, window_len):
@@ -232,3 +230,40 @@ class DeriveWindowSum(DeriveParam):
         target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
         summed_data = self.window_sum(target_array, window_len)
         return  {self.params["measure_rules"]["output_name"]:summed_data}
+
+class DeriveScaled(DeriveParam):
+    def __init__(self):
+        super().__init__()
+        self.params["func_params"] = {"scalar":1}
+        self.params["measure_rules"] =  {"target_measure":"measure_name", "output_name":"name of returned measure"}
+        logger.debug("Initialized DeriveScaled. Use get_params() to see parameter values")
+
+    @staticmethod
+    def scale_data(in_array, scalar):
+        return scalar*in_array
+
+    def transform_data(self):
+        logger.debug("transforming data to %s" %(self.params["measure_rules"]["output_name"]))
+        target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
+        scaled_out =self.scale_data(target_array, self.params["func_params"]["scalar"])
+        return  {self.params["measure_rules"]["output_name"]:scaled_out}
+
+class DeriveInBox(DeriveParam):
+    def __init__(self):
+        super().__init__()
+        self.params["func_params"] = {"upper_left_corner":(0,1), "lower_right_corner":(1,0)}
+        self.params["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
+        logger.debug("initialized DeriveInBox. Use get_params() to see parameter values")
+
+    @staticmethod
+    def in_box(spatial_array, upper_left, lower_right):
+        return np.logical_and(np.logical_and(spatial_array[:,0]>= upper_left[0], spatial_array[:,0]<= lower_right[0]), np.logical_and(spatial_array[:,1]<= upper_left[1], spatial_array[:,1]>= lower_right[1]))
+
+    def transform_data(self):
+        logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
+        spatial_array = np.array(self.data[self.params["measure_rules"]["spatial_measure"]]["val"], dtype=float)
+        box_bool = self.in_box(spatial_array, self.params["func_params"]["upper_left_corner"], self.params["func_params"]["lower_right_corner"])
+        return {self.params["measure_rules"]["output_name"]:box_bool}
+
+
+

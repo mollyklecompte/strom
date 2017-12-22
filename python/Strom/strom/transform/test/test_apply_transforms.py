@@ -52,7 +52,7 @@ class TestApplyTransformer(unittest.TestCase):
         event_params["event_rules"] = {"measure":"bears", "threshold_value":90, "comparison_operator":">="}
         event_params["event_name"] = "turn90"
         event_params["stream_token"] = bstream["stream_token"]
-        event_params["measures"] = ["location"]
+        event_params["measures"] = ["location", "timestamp"]
         event_params["derived_measures"] = ["bears"]
         event_list = apply_transformation(event_params, bstream)
         self.assertIsInstance(event_list, list)
