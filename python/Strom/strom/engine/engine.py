@@ -113,9 +113,14 @@ class Processor(Process):
         logger.debug("running json loader")
         while self.is_running:
             queued = self.q.get()
-            data_list = [json.loads(datum) for datum in queued]
-            for data in data_list:
-                self.coordinator.process_data_async(data, data[0]["stream_token"])
+            if queued == "666_kIlL_thE_pROCess_666":
+                print("HAIL SATAN")
+                self.is_running = False
+                break
+            else:
+                data_list = [json.loads(datum) for datum in queued]
+                for data in data_list:
+                    self.coordinator.process_data_async(data, data[0]["stream_token"])
 
 
 class EngineThread(Thread):
@@ -141,6 +146,7 @@ class EngineThread(Thread):
         for n in range(self.number_of_processors):
             processor = Processor(self.message_q)
             processor.start()
+            self.processors.append(processor)
 
     def _empty_buffer(self):
         self.buffer = []

@@ -2,7 +2,7 @@ import unittest
 import json
 import time
 from copy import deepcopy
-from multiprocessing import Process, Queue, JoinableQueue
+from multiprocessing import Queue
 from strom.kafka.producer.producer import Producer
 from strom.kafka.topics.checker import TopicChecker
 from strom.engine.engine import Processor, EngineConsumer, ConsumerThread, EngineThread, Engine
@@ -19,23 +19,31 @@ dstreams = json.load(open(demo_data_dir + "demo_trip26.txt"))
 
 class TestProcessor(unittest.TestCase):
     def setUp(self):
-        self.dstreams = json.dumps(dstreams)
+
+        self.dstreams = dstreams_str.encode().decode("utf-8")
+        self.dlist = [self.dstreams]
         self.template = template
         self.mongo = MongoManager()
         self.q = Queue()
         self.processor = Processor(self.q)
         self.token = template["stream_token"]
 
+
     def test_run(self):
         self.processor.coordinator.process_template(self.template)
-        self.q.put(self.dstreams)
+        self.q.put(self.dlist)
         self.processor.start()
         self.processor.is_running = False
+
+        time.sleep(4)
+
         stored_events = self.mongo.get_all_coll("event", self.token)
 
         self.assertIn("events", stored_events[0].keys())
         self.assertIn("ninety_degree_turn", stored_events[0]["events"].keys())
-        self.assertTrue(len(stored_events[0]["events"]["ninety_degree_turn"]) > 2)
+
+        self.processor.q.put("666_kIlL_thE_pROCess_666")
+        self.processor.join()
 
 
 class TestEngineConsumer(unittest.TestCase):
@@ -52,9 +60,13 @@ class TestEngineConsumer(unittest.TestCase):
         #stringified = '"' + stringy + '"'
         self.producer.produce(self.dstreams.encode())
         self.consumer.consume()
-        # print(self.consumer.buffer)
+        x = len(json.loads(self.consumer.buffer[0]))
 
-        self.assertEqual(len(self.consumer.buffer), len(dstreams))
+        self.assertEqual(x, len(dstreams))
+        for processor in self.engine_thread.processors:
+            processor.q.put("666_kIlL_thE_pROCess_666")
+            processor.join()
+
 
     def test_update_buffer(self):
         new_buff = [1,2,3]
@@ -78,8 +90,10 @@ class TestConsumerThread(unittest.TestCase):
         self.consumer_thread.start()
         self.consumer_thread.join()
 
-        print(len(self.consumer_thread.consumer.buffer))
-        self.assertTrue(len(self.consumer_thread.consumer.buffer) % len(dstreams) == 0)
+        x = len(json.loads(self.consumer_thread.consumer.buffer[0]))
+
+        self.assertTrue(x % len(dstreams) == 0)
+        self.assertFalse(x == 0)
 
 
 class TestEngineThread(unittest.TestCase):
@@ -102,6 +116,9 @@ class TestEngineThread(unittest.TestCase):
 
         self.engine_thread.start()
         self.assertTrue(self.engine_thread.is_alive())
+        for processor in self.engine_thread.processors:
+            processor.q.put("666_kIlL_thE_pROCess_666")
+            processor.join()
 
 class TestEngine(unittest.TestCase):
     def setUp(self):
