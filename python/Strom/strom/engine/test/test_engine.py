@@ -2,9 +2,10 @@ import unittest
 import json
 import time
 from copy import deepcopy
+from multiprocessing import Process, Queue, JoinableQueue
 from strom.kafka.producer.producer import Producer
 from strom.kafka.topics.checker import TopicChecker
-from strom.engine.engine import ProcessBStreamThread, EngineConsumer, ConsumerThread, EngineThread, Engine
+from strom.engine.engine import Processor, EngineConsumer, ConsumerThread, EngineThread, Engine
 from strom.utils.stopwatch import Timer
 from strom.utils.configer import configer as config
 from strom.coordinator.coordinator import Coordinator
@@ -16,23 +17,20 @@ template = json.load(open(demo_data_dir + "demo_template.txt"))
 dstreams = json.load(open(demo_data_dir + "demo_trip26.txt"))
 
 
-class TestProcessBstreamThread(unittest.TestCase):
+class TestProcessor(unittest.TestCase):
     def setUp(self):
-        self.dstreams = dstreams
+        self.dstreams = json.dumps(dstreams)
         self.template = template
-        self.coordinator = Coordinator()
-        self.processor = ProcessBStreamThread(self.dstreams)
         self.mongo = MongoManager()
+        self.q = Queue()
+        self.processor = Processor(self.q)
         self.token = template["stream_token"]
 
-    def test_init(self):
-        self.assertIsInstance(self.processor, ProcessBStreamThread)
-        self.assertIsInstance(self.processor.coordinator, Coordinator)
-
     def test_run(self):
-        self.coordinator.process_template(self.template)
+        self.processor.coordinator.process_template(self.template)
+        self.q.put(self.dstreams)
         self.processor.start()
-        self.processor.join()
+        self.processor.is_running = False
         stored_events = self.mongo.get_all_coll("event", self.token)
 
         self.assertIn("events", stored_events[0].keys())
@@ -46,7 +44,7 @@ class TestEngineConsumer(unittest.TestCase):
         self.url = 'localhost:9092'
         self.buffer = []
         self.producer = Producer(self.url, self.topic)
-        self.consumer = EngineConsumer(self.url, self.topic, self.buffer, timeout=5000)
+        self.consumer = EngineConsumer(self.url, self.topic, self.buffer, timeout=100)
         self.dstreams = dstreams_str
 
     def test_consume(self):
@@ -61,7 +59,6 @@ class TestEngineConsumer(unittest.TestCase):
     def test_update_buffer(self):
         new_buff = [1,2,3]
         self.consumer.update_buffer(new_buff)
-
         self.assertEqual(self.consumer.buffer, new_buff)
 
 
@@ -72,7 +69,7 @@ class TestConsumerThread(unittest.TestCase):
         self.buffer = []
         self.dstreams = dstreams_str
         self.producer = Producer(self.url, self.topic)
-        self.consumer_thread = ConsumerThread(self.url, self.topic, self.buffer, timeout=5000)
+        self.consumer_thread = ConsumerThread(self.url, self.topic, self.buffer, timeout=100)
 
     def test_run(self):
         #stringy = str(self.dstreams).replace("'", r'\"')
@@ -95,7 +92,7 @@ class TestEngineThread(unittest.TestCase):
         self.token = "new"
         self.producer = Producer(self.url, self.topic)
         self.coordinator = Coordinator()
-        self.engine_thread = EngineThread(self.url, self.topic, consumer_timeout=10000)
+        self.engine_thread = EngineThread(self.url, self.topic, consumer_timeout=100)
 
     def test_run(self):
         self.coordinator.process_template(self.template)
@@ -105,7 +102,6 @@ class TestEngineThread(unittest.TestCase):
 
         self.engine_thread.start()
         self.assertTrue(self.engine_thread.is_alive())
-
 
 class TestEngine(unittest.TestCase):
     def setUp(self):

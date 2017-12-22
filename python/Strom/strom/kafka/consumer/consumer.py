@@ -12,7 +12,7 @@ class Consumer():
         """ Init requires kafka url:port, topic name, and timeout for listening. """
         self.client = KafkaClient(hosts=url, use_greenlets=False)
         self.topic = self.client.topics[topic]
-        self.consumer = self.topic.get_simple_consumer()
+        self.consumer = self.topic.get_simple_consumer(consumer_timeout_ms=timeout)
         # self.consumer = self.topic.get_balanced_consumer(
         #     consumer_group=b'strom',
         #     num_consumer_fetchers=1,

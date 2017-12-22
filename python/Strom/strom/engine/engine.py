@@ -119,14 +119,14 @@ class Processor(Process):
 
 
 class EngineThread(Thread):
-    def __init__(self, url, topic, consumer_timeout=-1):
+    def __init__(self, url, topic, processors=8, consumer_timeout=-1):
         super().__init__()
         self.buffer = []
         self.url = url
         self.topic = topic
         self.topic_name = topic.decode('utf-8')
         self.message_q = Queue()
-        self.number_of_processors = 8
+        self.number_of_processors = processors
         self.processors = []
         self.buffer_record_limit = config["buffer_record_limit"]
         self.buffer_time_limit_s = config["buffer_time_limit_s"]
