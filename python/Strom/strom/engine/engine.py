@@ -241,7 +241,7 @@ class Engine(object):
         #    self._listen_for_new_topics(keep_listening=keep_listening)
 
 def main():
-    topics = ['Parham']
+    topics = ['load']
     engine = Engine()
     engine.run_from_list(topics)
 
