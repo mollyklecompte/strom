@@ -22,7 +22,7 @@
   "loggers": {
     "stromLogger": {
       "level": "FATAL",
-      "handlers": ["console", "file"],
+      "handlers": ["console"],
       "propagate": "no"
     },
     "root": {

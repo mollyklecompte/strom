@@ -2,15 +2,17 @@
 Coordinator class
 
 """
-import requests
+import time
 from copy import deepcopy
+
+import requests
 from bson.objectid import ObjectId
-from strom.dstream.bstream import BStream
-from strom.database.mongo_management import MongoManager
 from strom.database.maria_management import SQL_Connection
+from strom.database.mongo_management import MongoManager
+from strom.dstream.bstream import BStream
 from strom.storage_thread.storage_thread import *
-from strom.utils.logger.logger import logger
 from strom.utils.configer import configer as config
+from strom.utils.logger.logger import logger
 
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"
@@ -114,12 +116,12 @@ class Coordinator(object):
             return self.maria._retrieve_by_timestamp_range(dstream, start, end)
 
     def _parse_events(self, bstream):
-        parsed_events = [{"event": "{}_{}".format(event_name.replace(" ", ""), bstream['engine_rules']['kafka']), "data": event_list} for event_name, event_list in bstream[config['event_coll_suf']].items()]
+        parsed_events = [{"event": "{}_{}".format(event_name.replace(" ", ""), bstream['engine_rules']['kafka']), "data": single_event} for event_name, event_list in bstream[config['event_coll_suf']].items() for single_event in event_list]
         return parsed_events
 
     def _post_events(self, event_data):
         endpoint = 'http://{}:{}/new_event'.format(config['server_host'], config['server_port'])
-        logger.fatal(event_data)
+        logger.debug(event_data)
         r = requests.post(endpoint, json=event_data)
 
         return 'request status: ' + str(r.status_code)
@@ -149,6 +151,9 @@ class Coordinator(object):
 
     def process_data_sync(self, dstream_list, token):
 
+
+        st = time.time()
+
         # retrieve most recent versioned dstream template
         template = self._retrieve_current_template(token)
 
@@ -175,9 +180,12 @@ class Coordinator(object):
 
         # store events
         self._store_json(bstream, 'event')
-        print("whoop WHOOOOP")
+        print("whoop WHOOOOP", time.time() - st, len(bstream["timestamp"]))
 
     def process_data_async(self, dstream_list, token):
+
+        logger.debug("process_data_async")
+        st = time.time()
         # use StorageRules to validate
         # {"store_raw": True, "store_filtered": True, "store_derived": True}
         # retrieve most recent versioned dstream template
@@ -186,7 +194,6 @@ class Coordinator(object):
 
         # create bstream for dstream list
         bstream = self._list_to_bstream(template, dstream_list)
-
         # thread store raw measures from bstream
         # logging for else case?
         if storage_rules['store_raw'] :
@@ -197,7 +204,6 @@ class Coordinator(object):
 
         # filter bstream data
         bstream.apply_filters()
-
         # thread store filtered dstream data
         if storage_rules['store_filtered'] :
             self.threads.append('filtered_thread')
@@ -207,7 +213,6 @@ class Coordinator(object):
 
         # apply derived param transforms
         bstream.apply_dparam_rules()
-
         # thread store derived params
         if storage_rules['store_derived'] :
             self.threads.append('derived_thread')
@@ -217,14 +222,13 @@ class Coordinator(object):
 
         # apply event transforms
         bstream.find_events()
-
         # post events to server
         self._post_parsed_events(bstream)
 
         # thread store events
         event_thread = StorageJsonThread(bstream,'event')
         event_thread.start()
-        print("whoop WHOOOOP")
+        print("whoop WHOOOOP", time.time() - st, len(bstream["timestamp"]))
 
 
     def get_events(self, token):
