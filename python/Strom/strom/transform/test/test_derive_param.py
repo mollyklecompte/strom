@@ -39,7 +39,7 @@ class TestDeriveCumsum(unittest.TestCase):
     def setUp(self):
         self.dc = DeriveCumsum()
         params = {}
-        params["func_params"] = {}
+        params["func_params"] = {"offset":0}
         params["measure_rules"] = {"target_measure": "viscosity", "output_name": "viscous_cumsum"}
         self.dc.load_params(params)
         test_data_len = 200
@@ -154,15 +154,43 @@ class TestDeriveWindowSum(unittest.TestCase):
         win_sum = self.dws.transform_data()
         self.assertIn("viscous_winsum", win_sum)
         print(win_sum["viscous_winsum"])
-        # self.assertEqual(win_sum["viscous_winsum"][0], 2)
-        # self.assertEqual(win_sum["viscous_winsum"][1], 3)
-        # self.assertEqual(win_sum["viscous_winsum"][2], 3)
-        # self.assertEqual(win_sum["viscous_winsum"][-1], 2)
         self.dws.params["func_params"]["window"] = 5
         print(self.dws.transform_data()["viscous_winsum"])
-        # self.assertEqual(win_sum["viscous_winsum"][-1], 2)
         self.dws.params["func_params"]["window"] = 4
         print(self.dws.transform_data()["viscous_winsum"])
+
+class TestDeriveScaled(unittest.TestCase):
+    def setUp(self):
+        self.ds = DeriveScaled()
+        params = {}
+        params["func_params"] = {"scalar":0}
+        params["measure_rules"] = {"target_measure": "viscosity", "output_name": "viscous_scale"}
+        self.ds.load_params(params)
+        measures = {"viscosity":{"val":np.ones(10),"dtype":"decimil"}}
+        self.ds.load_measures(measures)
+        self.measures = measures
+
+    def test_scale_data(self):
+        scaled_data = self.ds.transform_data()
+        self.assertIn("viscous_scale", scaled_data)
+        self.assertTrue(np.all(scaled_data["viscous_scale"] == np.zeros(10)))
+
+class TestInBox(unittest.TestCase):
+    def setUp(self):
+        self.dib = DeriveInBox()
+        params = {}
+        params["func_params"] = {"upper_left_corner": (2,3), "lower_right_corner":(3,2)}
+        params["measure_rules"] = {"spatial_measure":"line_data", "output_name":"box_check"}
+        self.dib.load_params(params)
+        measures = {"line_data":{"val":list(zip(range(5),range(5))), "dtype":"decimil"}}
+        self.dib.load_measures(measures)
+        self.measures = measures
+
+    def test_in_box(self):
+        boxy_data = self.dib.transform_data()
+        self.assertIn("box_check", boxy_data)
+        self.assertEqual(boxy_data["box_check"][0], 0)
+        self.assertEqual(boxy_data["box_check"][3], 1)
 
 
 if __name__ == "__main__":

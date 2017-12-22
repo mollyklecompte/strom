@@ -44,6 +44,10 @@ def select_dparam(func_name):
         func = DeriveHeading()
     elif func_name == "DeriveWindowSum":
         func = DeriveWindowSum()
+    elif func_name == "DeriveScaled":
+        func = DeriveScaled()
+    elif func_name == "DeriveInBox":
+        func = DeriveInBox()
     else:
         raise ValueError("%s not supported" % func_name)
     return func
@@ -79,7 +83,10 @@ def apply_transformation(param_dict, bstream):
     if "measures" in param_dict.keys():
         for measure_name in param_dict["measures"]:
             logger.debug("adding %s" % (measure_name))
-            transformer.add_measure(measure_name, bstream["measures"][measure_name])
+            if measure_name == "timestamp":
+                transformer.add_measure(measure_name, {"val":bstream[measure_name], "dtype":"integer"})
+            else:
+                transformer.add_measure(measure_name, bstream["measures"][measure_name])
     if "filter_measures" in param_dict.keys():
         for measure_name in param_dict["filter_measures"]:
             logger.debug("adding filtered measure %s" % (measure_name))
