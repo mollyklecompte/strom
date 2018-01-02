@@ -1,12 +1,21 @@
 """Class for applying filters to single measures"""
-import numpy as np
 from abc import ABCMeta, abstractmethod
+
+import numpy as np
 from scipy.signal import butter, filtfilt
-from .transform import Transformer
 from strom.utils.logger.logger import logger
+
+from .transform import Transformer
 
 
 def window_data(in_array, window_len):
+    """
+    :param in_array: input array
+    :type in_array: numpy array
+    :param window_len: length of window for averaging
+    :type window_len: int
+    :return: numpy array of windowed average of the data
+    """
     logger.debug("Windowing data with window length %d" % (window_len))
     w_data = np.convolve(in_array, np.ones(window_len), "valid") / window_len
     # Dealing with the special case for endpoints of in_array
@@ -24,13 +33,18 @@ class Filter(Transformer):
         super().__init__()
 
     def load_params(self, params):
-        """Load func_params dict into filter.params"""
+        """Load func_params dict into filter.params
+        :param params: all the parameters needed for the filter
+        "type params: dict containing keys "func_params" and "filter_name"
+        """
         logger.debug("loading func_params and filter_name")
         self.params["func_params"] = params["func_params"]
         self.params["filter_name"] = params["filter_name"]
 
     def get_params(self):
-        """Method to return function default parameters"""
+        """Method to return function default parameters
+        :return: dict of parameters
+        """
         return self.params["func_params"]
 
     @abstractmethod
@@ -48,11 +62,25 @@ class ButterLowpass(Filter):
 
     @staticmethod
     def butter_data(data_array, order, nyquist):
+        """
+        fuction for applying a butter lowpass filtuer to data
+        :param data_array: array of data to be filtered
+        :type data_array: numpy array
+        :param order: order of the filter
+        :type order: int
+        :param nyquist: Wn parameter from scipy.signal.butter
+        :type nyquist: float
+        :return:
+        """
         logger.debug("buttering data")
         b, a = butter(order, nyquist)
         return filtfilt(b, a, data_array)
 
     def transform_data(self):
+        """
+        apply butterworth lowpass filter and return the transformed data
+        :return: dict of {"filter_name: numpy array of filtered data}
+        """
         buttered_data = {}
         logger.debug("transforming_data")
         for key in self.data.keys():
@@ -79,6 +107,10 @@ class WindowAverage(Filter):
 
 
     def transform_data(self):
+        """
+        Apply windowed average to data and return the results
+        :return: dict of {"filter_name: numpy array of filtered data}
+        """
         logger.debug("transforming_data")
         windowed_data = {}
         for key in self.data.keys():
