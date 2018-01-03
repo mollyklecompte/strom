@@ -40,7 +40,7 @@ class SQL_Connection:
 
     # ***** Metadata Table and Methods *****
 
-    def _create_metadata_table(self):
+    def create_metadata_table(self):
         table = ("CREATE TABLE template_metadata ("
             "  `unique_id` int(50) NOT NULL AUTO_INCREMENT,"
             "  `stream_name` varchar(60) NOT NULL,"
@@ -57,7 +57,7 @@ class SQL_Connection:
                 logger.error("table already exists")
             raise err
 
-    def _insert_row_into_metadata_table(self, stream_name, stream_token, version, template_id):
+    def insert_row_into_metadata_table(self, stream_name, stream_token, version, template_id):
         add_row = ("INSERT INTO template_metadata "
         "(stream_name, stream_token, version, template_id) "
         "VALUES (%s, %s, %s, %s)")
@@ -114,7 +114,7 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
-    def _return_template_id_for_latest_version_of_stream(self, stream_token):
+    def return_template_id_for_latest_version_of_stream(self, stream_token):
         stringified_stream_token_uuid = _stringify_uuid(stream_token)
         query = ("SELECT `template_id` FROM template_metadata WHERE stream_token = %s AND version = ("
                 "SELECT MAX(version) FROM template_metadata WHERE stream_token = %s)")
@@ -142,7 +142,7 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
-    def _check_metadata_table_exists(self):
+    def check_metadata_table_exists(self):
         query = ("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'test' AND table_name = 'template_metadata'")
         try:
             logger.info("Checking if template_metadata table exists")
@@ -171,7 +171,7 @@ class SQL_Connection:
 
 # ***** Stream Token Table and Methods *****
 
-    def _create_stream_lookup_table(self, dstream):
+    def create_stream_lookup_table(self, dstream):
 
         measure_columns = ""
         # for each item in the measures dictionary
@@ -216,7 +216,7 @@ class SQL_Connection:
             # else:
             #     raise err
 
-    def _insert_row_into_stream_lookup_table(self, dstream):
+    def insert_row_into_stream_lookup_table(self, dstream):
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
 
         measure_columns = ""
@@ -271,7 +271,7 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
-    def _insert_rows_into_stream_lookup_table(self, bstream):
+    def insert_rows_into_stream_lookup_table(self, bstream):
         stringified_stream_token_uuid = _stringify_uuid(bstream["stream_token"])
 
         measure_columns = ""
@@ -324,7 +324,7 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
-    def _insert_filtered_measure_into_stream_lookup_table(self, stream_token, filtered_measure, value, unique_id):
+    def insert_filtered_measure_into_stream_lookup_table(self, stream_token, filtered_measure, value, unique_id):
         stringified_stream_token_uuid = _stringify_uuid(stream_token)
         query = ("UPDATE `%s` SET %s " % (stringified_stream_token_uuid, filtered_measure)) + "= %s WHERE unique_id = %s"
         parameters = (value, unique_id)
@@ -339,7 +339,7 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
-    def _retrieve_by_timestamp_range(self, dstream, start, end):
+    def retrieve_by_timestamp_range(self, dstream, start, end):
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
         dstream_particulars = (stringified_stream_token_uuid, start, end)
         query = ("SELECT * FROM `%s` " % (stringified_stream_token_uuid)) + "WHERE time_stamp BETWEEN %s AND %s"
@@ -367,7 +367,7 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
-    def _create_stream_filtered_table(self, dstream):
+    def create_stream_filtered_table(self, dstream):
         """Insert row into table for storing filtered measures
            Creates table by parsing the dstream template
         """
@@ -398,7 +398,7 @@ class SQL_Connection:
             # else:
             #     raise err
 
-    def _insert_rows_into_stream_filtered_table(self, dictionary):
+    def insert_rows_into_stream_filtered_table(self, dictionary):
         """Insert row into table for storing filtered measures
            Expects a dictionary with the stream_token, filtered measures, and timestamp
         """
