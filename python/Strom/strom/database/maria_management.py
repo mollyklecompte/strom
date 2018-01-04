@@ -1,4 +1,9 @@
-"""MySQL Database Connector Class"""
+"""MariaDB Connector Class
+
+The strom project takes advantage of SQL look up speeds to store the dstream templates in a
+Maria database. The methods for interacting with the Maria database are written using the
+PyMySQL pure python client library and are called by the coordinator.
+"""
 
 __version__  = "0.1"
 __author__ = "Justine <justine@tura.io>"
@@ -41,6 +46,10 @@ class SQL_Connection:
     # ***** Metadata Table and Methods *****
 
     def _create_metadata_table(self):
+        """
+        Called by the coordinator in the process_template function when processing a new dstream.
+        """
+
         table = ("CREATE TABLE template_metadata ("
             "  `unique_id` int(50) NOT NULL AUTO_INCREMENT,"
             "  `stream_name` varchar(60) NOT NULL,"
@@ -58,6 +67,10 @@ class SQL_Connection:
             raise err
 
     def _insert_row_into_metadata_table(self, stream_name, stream_token, version, template_id):
+        """
+        Called by the coordinator in the process_template function when processing a new dstream.
+        """
+
         add_row = ("INSERT INTO template_metadata "
         "(stream_name, stream_token, version, template_id) "
         "VALUES (%s, %s, %s, %s)")
@@ -76,6 +89,10 @@ class SQL_Connection:
             raise err
 
     def _retrieve_by_stream_name(self, stream_name):
+        """
+        Called by the coordinator in the process_template function when processing a new dstream.
+        """
+
         query = ('SELECT * FROM template_metadata WHERE stream_name = %s')
         try:
             logger.info("Querying by stream name")
@@ -88,6 +105,10 @@ class SQL_Connection:
             raise err
 
     def _retrieve_by_id(self, unique_id):
+        """
+        Function for selecting a row by SQL-generated id. No longer used.
+        """
+
         query = ("SELECT * FROM template_metadata WHERE unique_id = %s")
         try:
             logger.info("Querying by unique id")
@@ -102,6 +123,10 @@ class SQL_Connection:
             raise err
 
     def _retrieve_by_stream_token(self, stream_token):
+        """
+        Function for selecting a row by stream token. No longer used.
+        """
+
         stringified_stream_token_uuid = _stringify_uuid(stream_token)
         query = ("SELECT * FROM template_metadata WHERE stream_token = %s")
         try:
@@ -115,6 +140,12 @@ class SQL_Connection:
             raise err
 
     def _return_template_id_for_latest_version_of_stream(self, stream_token):
+        """
+        Called by the coordinator in the _retrieve_current_template function to obtain the SQL-generated unique id for
+        the latest version of a stream, and then use that unique id to retrieve the template document from the Mongo
+        database.
+        """
+
         stringified_stream_token_uuid = _stringify_uuid(stream_token)
         query = ("SELECT `template_id` FROM template_metadata WHERE stream_token = %s AND version = ("
                 "SELECT MAX(version) FROM template_metadata WHERE stream_token = %s)")
@@ -131,6 +162,10 @@ class SQL_Connection:
             raise err
 
     def _select_all_from_metadata_table(self):
+        """
+        Select all rows from the template_metadata table. No longer used.
+        """
+
         query = ("SELECT * FROM template_metadata")
         try:
             logger.info("Returning all data from template_metadata table")
@@ -143,6 +178,11 @@ class SQL_Connection:
             raise err
 
     def _check_metadata_table_exists(self):
+        """
+        Called by the coordinate in the process_template function to verify that the template_metadata
+        table exists before creating it. This function was created to prevent errors when process_template
+        was executed with a template_metadata table already in the database.
+        """
         query = ("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'test' AND table_name = 'template_metadata'")
         try:
             logger.info("Checking if template_metadata table exists")
@@ -156,6 +196,10 @@ class SQL_Connection:
             raise err
 
     def _check_table_exists(self, table_name):
+        """
+        Function for verifying successful creation of a table. Used for testing purposes.
+        """
+
         stringified_table_name = str(table_name).replace("-", "_")
         query = ("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'test' AND table_name = %s")
         try:
@@ -172,6 +216,9 @@ class SQL_Connection:
 # ***** Stream Token Table and Methods *****
 
     def _create_stream_lookup_table(self, dstream):
+        """
+        Called by the coordinator in process_template.
+        """
 
         measure_columns = ""
         # for each item in the measures dictionary
@@ -217,6 +264,11 @@ class SQL_Connection:
             #     raise err
 
     def _insert_row_into_stream_lookup_table(self, dstream):
+        """
+        Called by the coordinator in the _store_raw_old function to insert rows one by one.
+        No longer used.
+        """
+
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
 
         measure_columns = ""
@@ -272,6 +324,12 @@ class SQL_Connection:
             raise err
 
     def _insert_rows_into_stream_lookup_table(self, bstream):
+        """
+        Called by the coordinator in the store_raw function and the in run function for the
+        storage thread class to populate a stream look up table of a given stream token
+        with a bstream.
+        """
+
         stringified_stream_token_uuid = _stringify_uuid(bstream["stream_token"])
 
         measure_columns = ""
@@ -325,7 +383,16 @@ class SQL_Connection:
             raise err
 
     def _insert_filtered_measure_into_stream_lookup_table(self, stream_token, filtered_measure, value, unique_id):
+        """
+        Called by the coordinator in the _store_filtered_old_dumb function. No longer used because of its
+        inefficiency.
+        """
+
         stringified_stream_token_uuid = _stringify_uuid(stream_token)
+        # Using string interpolation for the table and column name in the construction of the SQL query before the
+        # self.execute() call.
+        # Note that the string interpolation for the values themselves will still be interpolated in the self.execute()
+        # call, but the interpolation for the table and column names occur beforehand.
         query = ("UPDATE `%s` SET %s " % (stringified_stream_token_uuid, filtered_measure)) + "= %s WHERE unique_id = %s"
         parameters = (value, unique_id)
         try:
@@ -340,6 +407,10 @@ class SQL_Connection:
             raise err
 
     def _retrieve_by_timestamp_range(self, dstream, start, end):
+        """
+        Called by the coordinator in the _retrieve_data_by_timestamp function.
+        """
+
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
         dstream_particulars = (stringified_stream_token_uuid, start, end)
         query = ("SELECT * FROM `%s` " % (stringified_stream_token_uuid)) + "WHERE time_stamp BETWEEN %s AND %s"
@@ -355,6 +426,10 @@ class SQL_Connection:
             raise err
 
     def _select_all_from_stream_lookup_table(self, dstream):
+        """
+        Select all rows from a stream look up table. Used for testing purposes.
+        """
+
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
         query = ("SELECT * FROM `%s`" % stringified_stream_token_uuid)
         try:
@@ -368,8 +443,10 @@ class SQL_Connection:
             raise err
 
     def _create_stream_filtered_table(self, dstream):
-        """Insert row into table for storing filtered measures
-           Creates table by parsing the dstream template
+        """
+        Called by the coordinator in process_template
+        Insert row into table for storing filtered measures
+        Creates table by parsing the dstream template
         """
         coll_tuples = [(f["filter_name"], mv["dtype"]) for f in dstream["filters"] for m, mv in dstream["measures"].items() if f["measures"][0] == m]
         measure_columns = ""
@@ -399,8 +476,11 @@ class SQL_Connection:
             #     raise err
 
     def _insert_rows_into_stream_filtered_table(self, dictionary):
-        """Insert row into table for storing filtered measures
-           Expects a dictionary with the stream_token, filtered measures, and timestamp
+        """
+        Called by the coordinator in the _store_filtered function
+        Called by the storage thread in the run function
+        Insert row into table for storing filtered measures
+        Expects a dictionary with the stream_token, filtered measures, and timestamp
         """
         filter_table_stream_token_uuid = _stringify_uuid(dictionary["stream_token"]) + "_filter"
 
@@ -440,7 +520,10 @@ class SQL_Connection:
             raise err
 
     def _select_data_by_column_where(self, dstream, data_column, filter_column, value):
-        # Method created for testing purposes. Not intended for use by the coordinator (for now).
+        """
+        Return all values in a table for a given column. Formerly used for testing purposes.
+        """
+
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
         query = ("SELECT `%s` FROM %s WHERE %s = %s" % (data_column, stringified_stream_token_uuid, filter_column, value))
         try:
