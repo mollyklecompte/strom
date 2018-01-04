@@ -6,6 +6,12 @@ from strom.utils.logger.logger import logger
 
 class Event(dict):
     def __init__(self,  *args, **kwargs):
+        """
+        Intializes an event dict. Can either be created empty or from an existing dict.
+        Empty creation creates all necessary keys in the dict with 0 values
+        Creating from an existing dict keeps all expected key value pair from the input dict and
+        discards the rest.
+        """
         self.update(*args, **kwargs)
         logger.debug("initializing event")
         expected_keys = ["event_name", "event_rules", "timestamp", "stream_token", "event_context"]
