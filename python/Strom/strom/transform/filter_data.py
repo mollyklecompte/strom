@@ -44,6 +44,7 @@ class Filter(Transformer):
     def get_params(self):
         """Method to return function default parameters
         :return: dict of parameters
+        :rtype: dict
         """
         return self.params["func_params"]
 
@@ -70,7 +71,8 @@ class ButterLowpass(Filter):
         :type order: int
         :param nyquist: Wn parameter from scipy.signal.butter
         :type nyquist: float
-        :return:
+        :return: filtered data
+        :rtype: numpy array
         """
         logger.debug("buttering data")
         b, a = butter(order, nyquist)
@@ -80,6 +82,7 @@ class ButterLowpass(Filter):
         """
         Apply butterworth lowpass filter and return the transformed data
         :return: dict of {"filter_name: numpy array of filtered data}
+        :rtype: dict
         """
         buttered_data = {}
         logger.debug("transforming_data")
@@ -110,6 +113,7 @@ class WindowAverage(Filter):
         """
         Apply windowed average to data and return the results
         :return: dict of {"filter_name: numpy array of filtered data}
+        :rtype: dict
         """
         logger.debug("transforming_data")
         windowed_data = {}
