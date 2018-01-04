@@ -3,6 +3,9 @@
 The strom project takes advantage of SQL look up speeds to store the dstream templates in a
 Maria database. The methods for interacting with the Maria database are written using the
 PyMySQL pure python client library and are called by the coordinator.
+
+Legacy functions that are no longer used can be found at the end of the file for historical
+purposes.
 """
 
 __version__  = "0.1"
@@ -104,41 +107,6 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
-    def _retrieve_by_id(self, unique_id):
-        """
-        Function for selecting a row by SQL-generated id. No longer used.
-        """
-
-        query = ("SELECT * FROM template_metadata WHERE unique_id = %s")
-        try:
-            logger.info("Querying by unique id")
-            self.cursor.execute(query, [unique_id])
-            result = self.cursor.fetchone()
-            logger.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(result["unique_id"], result["stream_name"], result["stream_token"], result["version"], result["template_id"]))
-            # convert version from decimal to float
-            float_version =  float(result['version'])
-            result['version'] = float_version
-            return result
-        except pymysql.err.ProgrammingError as err:
-            raise err
-
-    def _retrieve_by_stream_token(self, stream_token):
-        """
-        Function for selecting a row by stream token. No longer used.
-        """
-
-        stringified_stream_token_uuid = _stringify_uuid(stream_token)
-        query = ("SELECT * FROM template_metadata WHERE stream_token = %s")
-        try:
-            logger.info("Querying by stream token")
-            self.cursor.execute(query, [stringified_stream_token_uuid])
-            results = self.cursor.fetchall()
-            for dictionary in results:
-                logger.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(dictionary["unique_id"], dictionary["stream_name"], dictionary["stream_token"], dictionary["version"], dictionary["template_id"]))
-            return self.cursor.rowcount
-        except pymysql.err.ProgrammingError as err:
-            raise err
-
     def _return_template_id_for_latest_version_of_stream(self, stream_token):
         """
         Called by the coordinator in the _retrieve_current_template function to obtain the SQL-generated unique id for
@@ -158,22 +126,6 @@ class SQL_Connection:
                 return result[0]["template_id"]
             else:
                 raise pymysql.err.ProgrammingError
-        except pymysql.err.ProgrammingError as err:
-            raise err
-
-    def _select_all_from_metadata_table(self):
-        """
-        Select all rows from the template_metadata table. No longer used.
-        """
-
-        query = ("SELECT * FROM template_metadata")
-        try:
-            logger.info("Returning all data from template_metadata table")
-            self.cursor.execute(query)
-            results = self.cursor.fetchall()
-            for row in results:
-                logger.info(row)
-            return self.cursor.rowcount
         except pymysql.err.ProgrammingError as err:
             raise err
 
@@ -258,70 +210,6 @@ class SQL_Connection:
             self.cursor.execute(table)
         except pymysql.err.ProgrammingError as err:
             raise err
-            # if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-            #     logger.error("table already exists")
-            # else:
-            #     raise err
-
-    def _insert_row_into_stream_lookup_table(self, dstream):
-        """
-        Called by the coordinator in the _store_raw_old function to insert rows one by one.
-        No longer used.
-        """
-
-        stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
-
-        measure_columns = ""
-        # for each item in the measures dictionary
-            # create a column for that measure
-        for measure in dstream['measures']:
-            measure_columns += "  `" + measure + "`,"
-
-        uid_columns = ""
-        # for each item in the uids dictionary
-            # create a column for that uid
-        for uid in dstream['user_ids']:
-            uid_columns += "  `" + uid + "`,"
-
-        columns = (
-            "(`version`,"
-            " `time_stamp`,"
-            "%s"
-            "%s"
-            " `tags`,"
-            " `fields`)"
-        % (measure_columns, uid_columns))
-
-        measure_values = ""
-        for key, value in dstream["measures"].items():
-            # measure_values += ' "' + str(value["val"]) + '",'
-            measure_values += _stringify_by_adding_quotes(value["val"]) + ','
-
-        uid_values = ""
-        for key, value in dstream["user_ids"].items():
-            # uid_values += ' "' + str(value) + '",'
-            uid_values += _stringify_by_adding_quotes(value) + ','
-
-        values = (
-            "(%s, "
-            "%s,"
-            "%s"
-            "%s"
-            "%s,"
-            "%s)"
-        % (dstream["version"], dstream["timestamp"], measure_values, uid_values, _stringify_by_adding_quotes(dstream["tags"]), _stringify_by_adding_quotes(dstream["fields"])))
-
-        query = ("INSERT INTO `%s` %s VALUES %s" % (stringified_stream_token_uuid, columns, values))
-
-        try:
-            logger.info("Inserting row into table " + stringified_stream_token_uuid)
-            self.cursor.execute(query)
-            self.mariadb_connection.commit()
-            logger.info("Inserted row")
-            logger.info(self.cursor.lastrowid)
-            return self.cursor.lastrowid
-        except pymysql.err.ProgrammingError as err:
-            raise err
 
     def _insert_rows_into_stream_lookup_table(self, bstream):
         """
@@ -378,30 +266,6 @@ class SQL_Connection:
             self.mariadb_connection.commit()
             logger.info("Inserted rows")
             logger.info(self.cursor.rowcount)
-            return self.cursor.rowcount
-        except pymysql.err.ProgrammingError as err:
-            raise err
-
-    def _insert_filtered_measure_into_stream_lookup_table(self, stream_token, filtered_measure, value, unique_id):
-        """
-        Called by the coordinator in the _store_filtered_old_dumb function. No longer used because of its
-        inefficiency.
-        """
-
-        stringified_stream_token_uuid = _stringify_uuid(stream_token)
-        # Using string interpolation for the table and column name in the construction of the SQL query before the
-        # self.execute() call.
-        # Note that the string interpolation for the values themselves will still be interpolated in the self.execute()
-        # call, but the interpolation for the table and column names occur beforehand.
-        query = ("UPDATE `%s` SET %s " % (stringified_stream_token_uuid, filtered_measure)) + "= %s WHERE unique_id = %s"
-        parameters = (value, unique_id)
-        try:
-            logger.info("Updating", filtered_measure, "at", unique_id)
-            self.cursor.execute(query, parameters)
-            self.mariadb_connection.commit()
-            logger.info("Updated", filtered_measure, "at", unique_id)
-            if (self.cursor.rowcount != 1):
-                raise KeyError
             return self.cursor.rowcount
         except pymysql.err.ProgrammingError as err:
             raise err
@@ -470,10 +334,6 @@ class SQL_Connection:
             self.cursor.execute(table)
         except pymysql.err.ProgrammingError as err:
             raise err
-            # if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-            #     logger.error("table already exists")
-            # else:
-            #     raise err
 
     def _insert_rows_into_stream_filtered_table(self, dictionary):
         """
@@ -519,9 +379,146 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
+    #  Legacy methods no longer in use:
+
+    def _retrieve_by_id(self, unique_id):
+        """
+        Function for selecting a row from the template_metadata table by SQL-generated id. No longer used.
+        """
+
+        query = ("SELECT * FROM template_metadata WHERE unique_id = %s")
+        try:
+            logger.info("Querying by unique id")
+            self.cursor.execute(query, [unique_id])
+            result = self.cursor.fetchone()
+            logger.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(result["unique_id"], result["stream_name"], result["stream_token"], result["version"], result["template_id"]))
+            # convert version from decimal to float
+            float_version =  float(result['version'])
+            result['version'] = float_version
+            return result
+        except pymysql.err.ProgrammingError as err:
+            raise err
+
+    def _retrieve_by_stream_token(self, stream_token):
+        """
+        Function for selecting a row from the template_metadata table by stream token. No longer used.
+        """
+
+        stringified_stream_token_uuid = _stringify_uuid(stream_token)
+        query = ("SELECT * FROM template_metadata WHERE stream_token = %s")
+        try:
+            logger.info("Querying by stream token")
+            self.cursor.execute(query, [stringified_stream_token_uuid])
+            results = self.cursor.fetchall()
+            for dictionary in results:
+                logger.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(dictionary["unique_id"], dictionary["stream_name"], dictionary["stream_token"], dictionary["version"], dictionary["template_id"]))
+            return self.cursor.rowcount
+        except pymysql.err.ProgrammingError as err:
+            raise err
+
+    def _select_all_from_metadata_table(self):
+        """
+        Select all rows from the template_metadata table. No longer used.
+        """
+
+        query = ("SELECT * FROM template_metadata")
+        try:
+            logger.info("Returning all data from template_metadata table")
+            self.cursor.execute(query)
+            results = self.cursor.fetchall()
+            for row in results:
+                logger.info(row)
+            return self.cursor.rowcount
+        except pymysql.err.ProgrammingError as err:
+            raise err
+
+    def _insert_row_into_stream_lookup_table(self, dstream):
+        """
+        Called by the coordinator in the _store_raw_old function to insert rows one by one.
+        No longer used.
+        """
+
+        stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
+
+        measure_columns = ""
+        # for each item in the measures dictionary
+            # create a column for that measure
+        for measure in dstream['measures']:
+            measure_columns += "  `" + measure + "`,"
+
+        uid_columns = ""
+        # for each item in the uids dictionary
+            # create a column for that uid
+        for uid in dstream['user_ids']:
+            uid_columns += "  `" + uid + "`,"
+
+        columns = (
+            "(`version`,"
+            " `time_stamp`,"
+            "%s"
+            "%s"
+            " `tags`,"
+            " `fields`)"
+        % (measure_columns, uid_columns))
+
+        measure_values = ""
+        for key, value in dstream["measures"].items():
+            # measure_values += ' "' + str(value["val"]) + '",'
+            measure_values += _stringify_by_adding_quotes(value["val"]) + ','
+
+        uid_values = ""
+        for key, value in dstream["user_ids"].items():
+            # uid_values += ' "' + str(value) + '",'
+            uid_values += _stringify_by_adding_quotes(value) + ','
+
+        values = (
+            "(%s, "
+            "%s,"
+            "%s"
+            "%s"
+            "%s,"
+            "%s)"
+        % (dstream["version"], dstream["timestamp"], measure_values, uid_values, _stringify_by_adding_quotes(dstream["tags"]), _stringify_by_adding_quotes(dstream["fields"])))
+
+        query = ("INSERT INTO `%s` %s VALUES %s" % (stringified_stream_token_uuid, columns, values))
+
+        try:
+            logger.info("Inserting row into table " + stringified_stream_token_uuid)
+            self.cursor.execute(query)
+            self.mariadb_connection.commit()
+            logger.info("Inserted row")
+            logger.info(self.cursor.lastrowid)
+            return self.cursor.lastrowid
+        except pymysql.err.ProgrammingError as err:
+            raise err
+
+    def _insert_filtered_measure_into_stream_lookup_table(self, stream_token, filtered_measure, value, unique_id):
+        """
+        Called by the coordinator in the _store_filtered_old_dumb function. No longer used because of its
+        inefficiency.
+        """
+
+        stringified_stream_token_uuid = _stringify_uuid(stream_token)
+        # Using string interpolation for the table and column name in the construction of the SQL query before the
+        # self.execute() call.
+        # Note that the string interpolation for the values themselves will still be interpolated in the self.execute()
+        # call, but the interpolation for the table and column names occur beforehand.
+        query = ("UPDATE `%s` SET %s " % (stringified_stream_token_uuid, filtered_measure)) + "= %s WHERE unique_id = %s"
+        parameters = (value, unique_id)
+        try:
+            logger.info("Updating", filtered_measure, "at", unique_id)
+            self.cursor.execute(query, parameters)
+            self.mariadb_connection.commit()
+            logger.info("Updated", filtered_measure, "at", unique_id)
+            if (self.cursor.rowcount != 1):
+                raise KeyError
+            return self.cursor.rowcount
+        except pymysql.err.ProgrammingError as err:
+            raise err
+
     def _select_data_by_column_where(self, dstream, data_column, filter_column, value):
         """
-        Return all values in a table for a given column. Formerly used for testing purposes.
+        Return all values in a stream lookup table for a given column. Formerly used for testing purposes.
         """
 
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
