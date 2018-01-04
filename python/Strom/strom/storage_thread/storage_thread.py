@@ -13,6 +13,19 @@ __author__ = "Jessica <jessica@tura.io>"
 
 
 class StorageRawThread(threading.Thread):
+    """
+
+        StorageRawThread created with bstream dict called from Coordinator.process_data_async
+        to store raw measures from bstream.
+        Attributes:
+          bstream:    the bstream from Coordinator
+          maria:      SQL connection created.
+          rows_inserted:  returned from Maria insert(for testing).
+
+        run() method is executed when thread is started: ie. raw_thread.start()
+        Storage threads are created in the Coordinator.process_data_async().
+
+    """
     def __init__(self, bstream):
         super().__init__()
         self._bstream = bstream
@@ -26,6 +39,18 @@ class StorageRawThread(threading.Thread):
         stopwatch['raw_thread'].lap()
 
 class StorageFilteredThread(threading.Thread):
+    """
+        StorageFilteredThread is created with bstream dict called from Coordinator.process_data_async
+        to store token, timestamp list, filtered measures to maria manager.
+        Attributes:
+          bstream:    the bstream from Coordinator
+          maria:      SQL connection created.
+          rows_inserted:  returned from Maria insert(for testing).
+
+        run() method is executed when thread is started: ie. filtered_thread.start()
+        Storage threads are created in the Coordinator.process_data_async().
+
+    """
     def __init__(self, bstream):
         super().__init__()
         self._bstream = bstream
@@ -41,6 +66,22 @@ class StorageFilteredThread(threading.Thread):
         stopwatch['filtered_thread'].lap()
 
 class StorageJsonThread(threading.Thread):
+    """
+
+        StorageJsonThread is created with bstream dict and data_type string called from Coordinator.process_data_async
+        to store either derived params or events in Mongo.
+
+        Attributes:
+            data_type:  string 'derived' or 'event'
+            data:       bstream dict
+            mongo:      MongoManager instance
+            insert_id:  returned from mongo insert
+
+        run() method is executed when thread is started: ie. event_thread.start()
+        Storage threads are created in the Coordinator.process_data_async().
+
+    """
+
     def __init__(self, data, data_type):
         super().__init__()
         self._data = data
