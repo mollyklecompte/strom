@@ -1,5 +1,9 @@
 """
-StorageThread class
+
+StorageThread module includes 3 thread classes, StorageRawThread, StorageFilteredThread,
+and StorageJsonThread. The storage threads are called from the Coordinator.process_data_async to
+kickoff bstream storage calls concurrently. The respective thread run() method is executed when
+the thread is started in the Coordinator, ie. raw_thread.start()
 
 """
 from strom.database.mongo_management import MongoManager
@@ -15,15 +19,11 @@ __author__ = "Jessica <jessica@tura.io>"
 class StorageRawThread(threading.Thread):
     """
 
-        StorageRawThread created with bstream dict called from Coordinator.process_data_async
-        to store raw measures from bstream.
+        StorageRawThread created with bstream dict to store raw measures from bstream.
         Attributes:
           bstream:    the bstream from Coordinator
           maria:      SQL connection created.
           rows_inserted:  returned from Maria insert(for testing).
-
-        run() method is executed when thread is started: ie. raw_thread.start()
-        Storage threads are created in the Coordinator.process_data_async().
 
     """
     def __init__(self, bstream):
@@ -40,15 +40,13 @@ class StorageRawThread(threading.Thread):
 
 class StorageFilteredThread(threading.Thread):
     """
-        StorageFilteredThread is created with bstream dict called from Coordinator.process_data_async
-        to store token, timestamp list, filtered measures to maria manager.
+
+        StorageFilteredThread is created with bstream dict to store token, timestamp list,
+        filtered measures to maria manager.
         Attributes:
           bstream:    the bstream from Coordinator
           maria:      SQL connection created.
           rows_inserted:  returned from Maria insert(for testing).
-
-        run() method is executed when thread is started: ie. filtered_thread.start()
-        Storage threads are created in the Coordinator.process_data_async().
 
     """
     def __init__(self, bstream):
@@ -60,15 +58,18 @@ class StorageFilteredThread(threading.Thread):
         stopwatch['filtered_thread'].start()
 
     def run(self):
-        filtered_dict = {"stream_token": self._bstream["stream_token"], "timestamp": self._bstream["timestamp"],
-                         "filter_measures": self._bstream["filter_measures"]}
+        filtered_dict = {
+                        "stream_token": self._bstream["stream_token"],
+                        "timestamp": self._bstream["timestamp"],
+                        "filter_measures": self._bstream["filter_measures"]
+                        }
         self.rows_inserted = self.maria._insert_rows_into_stream_filtered_table(filtered_dict)
         stopwatch['filtered_thread'].lap()
 
 class StorageJsonThread(threading.Thread):
     """
 
-        StorageJsonThread is created with bstream dict and data_type string called from Coordinator.process_data_async
+        StorageJsonThread is created with bstream dict and data_type string
         to store either derived params or events in Mongo.
 
         Attributes:
@@ -76,9 +77,6 @@ class StorageJsonThread(threading.Thread):
             data:       bstream dict
             mongo:      MongoManager instance
             insert_id:  returned from mongo insert
-
-        run() method is executed when thread is started: ie. event_thread.start()
-        Storage threads are created in the Coordinator.process_data_async().
 
     """
 
