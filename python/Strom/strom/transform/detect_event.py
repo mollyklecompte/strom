@@ -111,6 +111,7 @@ class DetectThreshold(DetectEvent):
         Finds and returns all events where the threshold comparision is True
         :return: All the found events
         :rtype: list of event dicts
+
         """
         logger.debug("transforming data")
         measure_array = np.array(self.data[self.params["event_rules"]["measure"]]["val"], dtype=float)
