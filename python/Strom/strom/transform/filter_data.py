@@ -35,7 +35,7 @@ class Filter(Transformer):
     def load_params(self, params):
         """Load func_params dict into filter.params
         :param params: all the parameters needed for the filter
-        "type params: dict containing keys "func_params" and "filter_name"
+        :type params: dict containing keys "func_params" and "filter_name"
         """
         logger.debug("loading func_params and filter_name")
         self.params["func_params"] = params["func_params"]
@@ -78,7 +78,7 @@ class ButterLowpass(Filter):
 
     def transform_data(self):
         """
-        apply butterworth lowpass filter and return the transformed data
+        Apply butterworth lowpass filter and return the transformed data
         :return: dict of {"filter_name: numpy array of filtered data}
         """
         buttered_data = {}
