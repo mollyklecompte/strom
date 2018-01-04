@@ -43,7 +43,7 @@ class EngineConsumer(Consumer):
 
     def __init__(self, url, topic, buffer, timeout=-1):
         """
-        Initializes
+        Initializes EngineConsumer with kafka connection info & buffer passed from EngineThread.
         :param url: kafka url
         :type url: string
         :param topic: kafka topic
@@ -91,7 +91,7 @@ class ConsumerThread(Thread):
 
     def __init__(self, url, topic, buffer, timeout=-1):
         """
-        Initializes with EngineConsumer as attribute, passing kafka connection info.
+        Initializes ConsumerThread with EngineConsumer, passing kafka connection info.
         :param url: kafka url
         :type url: string
         :param topic: kafka topic
@@ -108,8 +108,7 @@ class ConsumerThread(Thread):
 
     def run(self):
         """
-        Overrides `threading.Thread` `run` method.
-        Called by `Thread` `start` method.
+        Runs thread with kafka consumer.
         """
         self.consumer_running = True
         logger.debug("Starting consumer")
@@ -130,7 +129,7 @@ class Processor(Process):
 
     def __init__(self, queue):
         """
-        Initializes with queue attribute.
+        Initializes Processor with queue from EngineThread.
         :param queue: Queue instance where data will come from.
         :type queue: Queue object
         """
@@ -140,10 +139,7 @@ class Processor(Process):
 
     def run(self):
         """
-        Overrides `Process` `run` method.
-        Called by `Process` `start` method.
-        Retrieves list of dstreams with queue,
-        calls Coordinator `process_data_async` to aggregate + transform dstreams
+        Retrieves list of dstreams with queue, runs process to aggregate + transform dstreams.
         """
         coordinator = Coordinator()
         self.is_running = True
@@ -214,7 +210,7 @@ class EngineThread(Thread):
         logger.debug("Emptying buffer")
 
     def _check_consumer(self):
-        """Checks to see if ConsumerThread instance attribute is running"""
+        """Checks to see if ConsumerThread is running"""
         if self.consumer_thread.consumer_running:
             return True
         else:
@@ -222,9 +218,6 @@ class EngineThread(Thread):
 
     def run(self):
         """
-        Overrides `threading.Thread` `run` method.
-        Called by `Thread` `start` method.
-
         Starts running ConsumerThread instance attribute.
         When buffer reaches set size or time limit is reached,
         buffer contents are put in queue to be processed &
