@@ -274,7 +274,7 @@ class Coordinator(object):
         # thread store derived params
         if storage_rules['store_derived']:
             self.threads.append('derived_thread')
-            derived_thread = StorageJsonThread(bstream,'derived')
+            derived_thread = StorageJsonThread(bstream, 'derived')
             derived_thread.start()
             logger.debug('store_json thread started')
 
@@ -284,7 +284,7 @@ class Coordinator(object):
         self._post_parsed_events(bstream)
 
         # thread store events
-        event_thread = StorageJsonThread(bstream,'event')
+        event_thread = StorageJsonThread(bstream, 'event')
         event_thread.start()
         print("whoop WHOOOOP", time.time() - st, len(bstream["timestamp"]))
 

@@ -22,7 +22,7 @@ class StorageRawThread(threading.Thread):
         stopwatch['raw_thread'].start()
 
     def run(self):
-        self.rows_inserted = self.maria._insert_rows_into_stream_lookup_table(self._bstream)
+        self.rows_inserted = self.maria.insert_rows_into_stream_lookup_table(self._bstream)
         stopwatch['raw_thread'].lap()
 
 class StorageFilteredThread(threading.Thread):
@@ -37,7 +37,7 @@ class StorageFilteredThread(threading.Thread):
     def run(self):
         filtered_dict = {"stream_token": self._bstream["stream_token"], "timestamp": self._bstream["timestamp"],
                          "filter_measures": self._bstream["filter_measures"]}
-        self.rows_inserted = self.maria._insert_rows_into_stream_filtered_table(filtered_dict)
+        self.rows_inserted = self.maria.insert_rows_into_stream_filtered_table(filtered_dict)
         stopwatch['filtered_thread'].lap()
 
 class StorageJsonThread(threading.Thread):

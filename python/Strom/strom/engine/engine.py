@@ -130,13 +130,12 @@ class Processor(Process):
 
     def __init__(self, queue):
         """
-        Initializes with queue for data + Coordinator instance attributes.
+        Initializes with queue attribute.
         :param queue: Queue instance where data will come from.
         :type queue: Queue object
         """
         super().__init__()
         self.q = queue
-        self.coordinator = Coordinator()
         self.is_running = None
 
     def run(self):
@@ -146,6 +145,7 @@ class Processor(Process):
         Retrieves list of dstreams with queue,
         calls Coordinator `process_data_async` to aggregate + transform dstreams
         """
+        coordinator = Coordinator()
         self.is_running = True
         logger.debug("running json loader")
         while self.is_running:
@@ -157,7 +157,7 @@ class Processor(Process):
             else:
                 data_list = [json.loads(datum) for datum in queued]
                 for data in data_list:
-                    self.coordinator.process_data_async(data, data[0]["stream_token"])
+                    coordinator.process_data_async(data, data[0]["stream_token"])
 
 
 class EngineThread(Thread):
@@ -260,7 +260,7 @@ class Engine(object):
         """
         self.topics = []
         self.kafka_url = config["kafka_url"]
-        self.processors = config["processors"]
+        self.processors = int(config["processors"])
         self.topic_buddy = TopicChecker(self.kafka_url)
         self.engine_threads = []
         logger.info("Engine initializing")
