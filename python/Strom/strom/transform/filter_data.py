@@ -1,6 +1,8 @@
 """Class for applying filters to measures
 This is a subclass of the Transformer class that creates filtered measures from input measures.
-All filters  return data of the same dimensions as their input
+All filters  return data of the same dimensions as their input.
+These filters are called by apply_transformer on BStream data and the results are stored
+as BStream["filtered_measures"]
 
 window_data is used as a filter but also has uses in other Transformer subclasses so it is a top
 level function for easier importing by those subclasses"""
