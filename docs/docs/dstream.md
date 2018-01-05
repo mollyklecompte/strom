@@ -72,4 +72,4 @@ In the Engine, data-Dstreams are aggregated into a BStream. The BStream follows 
  a DStream but the *timestamp, measures, user_ids, fields,* and *tags* are aggregated so instead of
  single values, they are now lists of values. Once this aggregation takes place, the BStream applies
  the *filter_rules, dparam_rules,* and *event_rules* to the aggregated measures creating new keys:
- filter_measures, derived_measures,* and *events*.
+ *filter_measures, derived_measures,* and *events*.
