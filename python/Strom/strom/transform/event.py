@@ -1,4 +1,8 @@
-"""Base event class"""
+"""Base event class
+Events are dicts that are instantiated with a set of expected keys.
+These keys provide the identifying information about the event as well as context in the form of
+measure values at the time of the event
+They are created by the DetectEvent class."""
 __version__  = "0.1"
 __author__ = "David <david@tura.io>"
 
