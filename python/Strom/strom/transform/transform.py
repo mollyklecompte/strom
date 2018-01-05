@@ -1,4 +1,5 @@
-"""Abstract class for our transform functions"""
+"""Abstract class for our transform functions
+Called by apply_transforms """
 
 from abc import ABCMeta, abstractmethod
 
@@ -6,6 +7,7 @@ from strom.utils.logger.logger import logger
 
 
 class Transformer(object):
+    """How this fits in and is used by apply transforms """
     __metaclass__ = ABCMeta
     def __init__(self):
         logger.debug("initializing transformer")
@@ -13,7 +15,7 @@ class Transformer(object):
         self.params = {}
 
     def add_measure(self, measure_name, measure_data):
-        """Method to select the parameter[s] for transformation
+        """Method to select the parameter for transformation
         :param measure_name: name of measure
         :type measure_name: str
         :param measure_data: the data for measure_name

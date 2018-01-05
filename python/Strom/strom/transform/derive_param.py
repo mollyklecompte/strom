@@ -1,4 +1,8 @@
-"""Class for creating derived parameters from measures"""
+"""Class for creating derived parameters from measures
+I need an actual description
+Somthing about this created derived parameters from measures?
+WWWHYHYYYYYYYYY!!!!
+TODO give context, what this is trying to do and what calls it"""
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
@@ -17,8 +21,8 @@ class DeriveParam(Transformer):
     def load_params(self, params):
         """
         load all the parameters needed by DeriveParam
-        :param params: all the parameters needed for the filter
-        :type params: dict containing keys "func_params" and "filter_name"
+        :param params: all the parameters needed for the parameter derivation
+        :type params: dict containing keys "func_params" and "measure_rules"
         """
         logger.debug("loading func_params and measure_rules")
         self.params["func_params"] = params["func_params"]
@@ -73,7 +77,7 @@ class DeriveSlope(DeriveParam):
 
     def transform_data(self):
         """
-        Finds the slope of the data and returns it.
+        Finds the slope of the measures using sloper and returns it.
         :return: dict of {"output_name": numpy array of slope data}
         :rtype: dict
         """
@@ -103,12 +107,12 @@ class DeriveChange(DeriveParam):
     @staticmethod
     def diff_data(data_array, window_len, angle_diff):
         """
-        Function to calculate the difference between samples in array
+        Function to calculate the difference between samples in an array
         :param data_array: input data
         :type data_array: numpy array
         :param window_len: window length for smoothing
         :type window_len: int
-        :param angle_diff: Specify if the angular difference betweens samples should be calculated instead of raw diff
+        :param angle_diff: Specify if the angular difference between samples should be calculated instead of raw diff
         :type angle_diff: Boolean
         :return: diff between samples in data_array
         :rtype: numpy array
@@ -178,7 +182,8 @@ class DeriveDistance(DeriveParam):
     def __init__(self):
         """
         Creates an new DeriveDistance object with default parameters. Use get_params() for parameter description.
-        This function finds distance between consecutive points of the input data. Currently euclidean and great circle distance are supported
+        This function finds distance between consecutive points of the input data.
+        Currently euclidean and great circle distance are supported
         """
         super().__init__()
         self.params["func_params"] = {
@@ -203,7 +208,8 @@ class DeriveDistance(DeriveParam):
         :param window_len: length of window for averaging output
         :type window_len: int
         :return: distances between consecutive points
-        :rtype: (N-1) x 1 numpy array        """
+        :rtype: (N-1) x 1 numpy array
+        """
         logger.debug("calculating euclidean distance")
         euclid_array = np.sqrt(np.sum(np.diff(position_array, axis=0)**2, axis=1))
         if window_len > 1:
@@ -441,7 +447,7 @@ class DeriveInBox(DeriveParam):
     @staticmethod
     def in_box(spatial_array, upper_left, lower_right):
         """
-        Given a postional vector and the corners of a box, find which of the point are in the box
+        Given a positional vector and the corners of a box, find which of the point are in the box
         :param spatial_array: spatial input data
         :type spatial_array: N x 2 numpy array
         :param upper_left: coordinates of upper left corner of box

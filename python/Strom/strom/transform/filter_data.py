@@ -1,4 +1,5 @@
-"""Class for applying filters to single measures"""
+"""Class for applying filters to single measures
+WHy is window_data here and up top?"""
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
@@ -10,11 +11,13 @@ from .transform import Transformer
 
 def window_data(in_array, window_len):
     """
+    Function that calculates the windowed average of a vector
     :param in_array: input array
     :type in_array: numpy array
     :param window_len: length of window for averaging
     :type window_len: int
-    :return: numpy array of windowed average of the data
+    :return: windowed average of the data
+    :rtype: numpy array
     """
     logger.debug("Windowing data with window length %d" % (window_len))
     w_data = np.convolve(in_array, np.ones(window_len), "valid") / window_len
@@ -30,6 +33,9 @@ class Filter(Transformer):
     __metaclass__ = ABCMeta
 
     def __init__(self):
+        """
+        Meta class for all filters
+        """
         super().__init__()
 
     def load_params(self, params):
@@ -56,6 +62,7 @@ class Filter(Transformer):
 class ButterLowpass(Filter):
     """Class to apply a Butterworth lowpass filter to data"""
     def __init__(self):
+        """TODO follow DeriveParam example"""
         super().__init__()
         self.params["func_params"] ={"order":3, "nyquist":0.05}
         self.params["filter_name"] =  "buttered"
@@ -64,7 +71,7 @@ class ButterLowpass(Filter):
     @staticmethod
     def butter_data(data_array, order, nyquist):
         """
-        fuction for applying a butter lowpass filtuer to data
+        Fuction for applying a butter lowpass filter to data
         :param data_array: array of data to be filtered
         :type data_array: numpy array
         :param order: order of the filter
@@ -80,8 +87,8 @@ class ButterLowpass(Filter):
 
     def transform_data(self):
         """
-        Apply butterworth lowpass filter and return the transformed data
-        :return: dict of {"filter_name: numpy array of filtered data}
+        Apply butter_data and returns the transformed data
+        :return: dict of {"filter_name": numpy array of filtered data}
         :rtype: dict
         """
         buttered_data = {}
@@ -101,7 +108,7 @@ class ButterLowpass(Filter):
         return buttered_data
 
 class WindowAverage(Filter):
-    """Class for windowed average to smooth data"""
+    """Class for using a windowed average to smooth data"""
     def __init__(self):
         super().__init__()
         self.params["func_params"] = {"window_len": 2}
@@ -111,7 +118,7 @@ class WindowAverage(Filter):
 
     def transform_data(self):
         """
-        Apply windowed average to data and return the results
+        Apply window_data to smooth the data and return the results
         :return: dict of {"filter_name: numpy array of filtered data}
         :rtype: dict
         """
