@@ -99,24 +99,6 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
-    def _retrieve_by_stream_name(self, stream_name):
-        """
-        Called by the Coordinator in the process_template function when processing a new dstream.
-        :param stream_name: stream_name of a dstream
-        :type stream_name: str
-        """
-
-        query = ('SELECT * FROM template_metadata WHERE stream_name = %s')
-        try:
-            logger.info("Querying by stream name")
-            self.cursor.execute(query, [stream_name])
-            results = self.cursor.fetchall()
-            for dictionary in results:
-                logger.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(dictionary["unique_id"], dictionary["stream_name"], dictionary["stream_token"], dictionary["version"], dictionary["template_id"]))
-            return self.cursor.rowcount
-        except pymysql.err.ProgrammingError as err:
-            raise err
-
     def _return_template_id_for_latest_version_of_stream(self, stream_token):
         """
         Called by the Coordinator in the _retrieve_current_template function to obtain the Mongo-generated unique id for
@@ -409,6 +391,25 @@ class SQL_Connection:
             raise err
 
     #  Legacy methods no longer in use:
+
+
+    def _retrieve_by_stream_name(self, stream_name):
+        """
+        Retrieve dstream template by stream_name in the process data method(s). No longer used.
+        :param stream_name: stream_name of a dstream
+        :type stream_name: str
+        """
+
+        query = ('SELECT * FROM template_metadata WHERE stream_name = %s')
+        try:
+            logger.info("Querying by stream name")
+            self.cursor.execute(query, [stream_name])
+            results = self.cursor.fetchall()
+            for dictionary in results:
+                logger.info("uid: {}, name: {}, stream: {}, version: {}, template_id: {}".format(dictionary["unique_id"], dictionary["stream_name"], dictionary["stream_token"], dictionary["version"], dictionary["template_id"]))
+            return self.cursor.rowcount
+        except pymysql.err.ProgrammingError as err:
+            raise err
 
     def _retrieve_by_id(self, unique_id):
         """
