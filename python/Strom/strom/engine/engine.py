@@ -1,19 +1,27 @@
 """
 Engine Module
+
+It is an engine, it runs. Spins up Kafka & consumes messages;
+spawns processes for the aggregation, transformation and storage of data.
+
 Contains...
-- class ProcessBstreamThread:
-based off Thread from python standard threading lib,
-takes a bstream dict and a coordinator insatance,
-run method overrides parent method to call
-coordinator's process_data method on bstream
+
+- class ConsumerThread:
+inits + runs kafka consumer in thread.
 - class EngineConsumer:
-based of Consumer class from kafka package,
-consume method method overrides parent method to
-initialize + start a ProcessBstreamThread
+consumes & buffers messages from kafka
 whenever message is consumed
+- class EngineThread:
+inits + runs ConsumerThread, manages buffer, moves data from buffer to processing queue
 - class Engine:
-takes list of kafka topic strings,
-generate...
+engine entrypoint, inits + starts EngineThread(s)
+- class Processor:
+loads json from data messages to python, runs data transformation + storage process
+
+UNUSED/OLD CLASSES
+- class ProcessBstreamThread:
+runs coordinator's process_data method on data chunk in thread
+-
 """
 
 import json
@@ -140,6 +148,8 @@ class Processor(Process):
     def run(self):
         """
         Retrieves list of dstreams with queue, runs process to aggregate + transform dstreams.
+        Poison Pill: if item pulled from queue is string, "666_kIlL_thE_pROCess_666",
+        while loop will break. Do this intentionally.
         """
         coordinator = Coordinator()
         self.is_running = True
@@ -353,7 +363,6 @@ class ProcessBStreamThread(Thread):
 
     NOT USED
     """
-
     def __init__(self, data):
         """
         Initializes the thread, decoding message
@@ -371,25 +380,6 @@ class ProcessBStreamThread(Thread):
         self.coordinator.process_data_async(self.data, self.data[0]["stream_token"])
         stopwatch['processor_timer {}'.format(self.name)].stop()
         logger.debug("Terminating processor thread")
-
-
-class ReceiverThread(Thread):
-    """
-    Class written to be used with `ProcessBStreamThread`
-
-    NOT USED
-    """
-
-    def __init__(self, pipe):
-        super().__init__()
-        self.pipe = pipe
-
-    def run(self):
-        while True:
-            received = self.pipe.recv()
-            json.loads(received)
-            processor = ProcessBStreamThread(received)
-            processor.start()
 
 
 def main():

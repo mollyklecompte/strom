@@ -1,11 +1,17 @@
 """
-Coordinator class
+Coordinator Module
 
+Stores Dstream templates and template metadata via MongoDB & MariaDB interface classes.
+Handles the main data transformation & (asynchronous) storage process in
+`process_data_async` method.
+Creates Bstream objects from Dstream lists by calling Bstream class aggregate method.
+Applies transformations to Bstreams by calling relevant Bstream class methods.
+Handles Bstream data storage via StorageThread classes at appropriate steps.
 """
-import time
-from copy import deepcopy
 
+import time
 import requests
+from copy import deepcopy
 from bson.objectid import ObjectId
 from strom.database.maria_management import SQL_Connection
 from strom.database.mongo_management import MongoManager
