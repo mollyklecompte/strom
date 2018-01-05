@@ -1,5 +1,9 @@
-"""Class for applying filters to single measures
-WHy is window_data here and up top?"""
+"""Class for applying filters to measures
+This is a subclass of the Transformer class that creates filtered measures from input measures.
+All filters  return data of the same dimensions as their input
+
+window_data is used as a filter but also has uses in other Transformer subclasses so it is a top
+level function for easier importing by those subclasses"""
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
