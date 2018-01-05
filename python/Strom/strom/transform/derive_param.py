@@ -1,8 +1,11 @@
 """Class for creating derived parameters from measures
-I need an actual description
-Somthing about this created derived parameters from measures?
-WWWHYHYYYYYYYYY!!!!
-TODO give context, what this is trying to do and what calls it"""
+This is a subclass of the Transformer class that creates derived measures from input measures.
+The process of deriving measures takes input measures and uses them to calculate a new measure
+such as finding distance from a positional measure or the slope of an input measure. Derived
+measures may be of difference dimension than their inputs.
+These DeriveParam functions are called by apply_transformer on BStream data and the results are
+stored as BStream["derived_measures"]
+"""
 from abc import ABCMeta, abstractmethod
 
 import numpy as np

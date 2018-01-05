@@ -1,6 +1,7 @@
 """Class for applying filters to measures
 This is a subclass of the Transformer class that creates filtered measures from input measures.
-All filters  return data of the same dimensions as their input.
+Filters seek to smooth, clean and remove artifacts from the data and all filters  return data of
+the same dimensions as their input.
 These filters are called by apply_transformer on BStream data and the results are stored
 as BStream["filtered_measures"]
 
