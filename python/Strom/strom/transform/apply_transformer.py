@@ -1,3 +1,10 @@
+"""
+Class to for applying transformations to BStream measures to create filtered measures,
+derived measures and detect events. The transform rules are stored in the BStream objects which
+then uses this module to apply those rules to its measures. This process in usually done in one
+of the Coordinator module process methods.
+"""
+
 from strom.utils.logger.logger import logger
 
 from .derive_param import *
