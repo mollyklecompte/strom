@@ -65,3 +65,11 @@ Structurally DStreams are a dict subclass with the following keys:
 - foreign_keys
   - Internal storage for linking other data stuctures.
   - Currently unused
+
+## BStreams
+
+In the Engine, data-Dstreams are aggregated into a BStream. The BStream follows the same template as
+ a DStream but the *timestamp, measures, user_ids, fields,* and *tags* are aggregated so instead of
+ single values, they are now lists of values. Once this aggregation takes place, the BStream applies
+ the *filter_rules, dparam_rules,* and *event_rules* to the aggregated measures creating new keys:
+ filter_measures, derived_measures,* and *events*.
