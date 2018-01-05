@@ -19,4 +19,4 @@ Internally, they are a dict subclass with the following keys:
 - dparam_rules
 - event_rules
 
-<a name="version">: The version number of the DStream
+<a name="version">version: The version number of the DStream</a>
