@@ -15,10 +15,10 @@ Structurally DStreams are a dict subclass with the following keys:
   - Set when a new DStream is created and incremented when the dstream is updated
   - type: int
 - stream_token
-  - internally generated UUID to identify this DStream. Created when a new DStream is initialized
+  - Internally generated UUID to identify this DStream. Created when a new DStream is initialized
   - type: python UUID
 - sources
-  - list of data sources. Currently unused.
+  - List of data sources. Currently unused.
 - storage_rules:
   - Rules for when the DStream data is stored.
   - See stream_rules.py for expected format
@@ -45,7 +45,7 @@ Structurally DStreams are a dict subclass with the following keys:
   - See stream_rules.py for expected format
   - type: list of dict
 - timestamp
-  - the time of a given sample. Not used for template creation but each data-Dstream must have a timestamp
+  - The time of a given sample. Not used for template creation but each data-Dstream must have a timestamp
   - type: int
 - measures
   - The measured data supplied by the DStream. The measures are set durning DStream template creation.
