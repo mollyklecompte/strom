@@ -1,4 +1,4 @@
-"""Base class for dstream
+"""Base class for DStream
 This dictionary defines our basic data structure.
 A user registers a new data source with our server module which then uses this class to create a
 template for that data source and the template is stored by our Coordinator class. All data sent
