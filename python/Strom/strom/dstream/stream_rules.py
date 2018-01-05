@@ -1,5 +1,5 @@
 """
-These dictionary define the format for the rules dicts used in our modules. They are stored in
+These dictionaries define the format for the rules dicts used in our modules. They are stored in
 DStream objects. Not currently in use but they have provided a template for our demo data and
 will be used for data validation and integrity.
 """
