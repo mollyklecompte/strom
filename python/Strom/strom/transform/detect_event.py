@@ -1,3 +1,11 @@
+"""
+Class for detecting events in measurs.
+This is a subclass of the Transformer class that creates Event objects for each event detected in
+the input measures.
+
+apply_transformers calls the DetectEvent class on BStreams and stores output list of Events as
+BStream["events"]
+"""
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
