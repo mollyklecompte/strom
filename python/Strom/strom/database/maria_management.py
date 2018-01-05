@@ -2,7 +2,7 @@
 
 The strom project takes advantage of SQL look up speeds to store the dstream templates in a
 Maria database. The methods for interacting with the Maria database are written using the
-PyMySQL pure python client library and are called by the coordinator.
+PyMySQL pure python client library and are called by the Coordinator.
 
 Legacy functions that are no longer used can be found at the end of the file for historical
 purposes.
@@ -50,7 +50,7 @@ class SQL_Connection:
 
     def _create_metadata_table(self):
         """
-        Called by the coordinator in the process_template function when processing a new dstream.
+        Called by the Coordinator in the process_template function when processing a new dstream.
         """
 
         table = ("CREATE TABLE template_metadata ("
@@ -71,12 +71,12 @@ class SQL_Connection:
 
     def _insert_row_into_metadata_table(self, stream_name, stream_token, version, template_id):
         """
-        Called by the coordinator in the process_template function when processing a new dstream.
+        Called by the Coordinator in the process_template function when processing a new dstream.
         :param stream_name: stream_name from a dstream
         :type stream_name: str
         :param stream_token: stream_token from a dstream
         :type stream_token: Python UUID (converted to a string in function)
-        :param version: version of a dstream
+        :param version: version number of a dstream (incremented whenever a dstream is updated)
         :type version: decimal
         :param template_id: the Mongo-generated unique id
         :type template_id: str
@@ -101,7 +101,7 @@ class SQL_Connection:
 
     def _retrieve_by_stream_name(self, stream_name):
         """
-        Called by the coordinator in the process_template function when processing a new dstream.
+        Called by the Coordinator in the process_template function when processing a new dstream.
         :param stream_name: stream_name of a dstream
         :type stream_name: str
         """
@@ -119,9 +119,9 @@ class SQL_Connection:
 
     def _return_template_id_for_latest_version_of_stream(self, stream_token):
         """
-        Called by the coordinator in the _retrieve_current_template function to obtain the SQL-generated unique id for
-        the latest version of a stream, and then use that unique id to retrieve the template document from the Mongo
-        database.
+        Called by the Coordinator in the _retrieve_current_template function to obtain the Mongo-generated unique id for
+        the latest version of a stream. The _retrieve_current_template function on the Coordinator class then uses
+        that unique Mongo id to retrieve the template document from the Mongo database.
         :param stream_token: stream_token from a dstream
         :type stream_token: Python UUID (converted to a string in function)
         """
@@ -143,7 +143,7 @@ class SQL_Connection:
 
     def _check_metadata_table_exists(self):
         """
-        Called by the coordinate in the process_template function to verify that the template_metadata
+        Called by the Coordinator in the process_template function to verify that the template_metadata
         table exists before creating it. This function was created to prevent errors when process_template
         was executed with a template_metadata table already in the database.
         """
@@ -183,7 +183,7 @@ class SQL_Connection:
 
     def _create_stream_lookup_table(self, dstream):
         """
-        Called by the coordinator in process_template.
+        Called by the Coordinator in process_template.
         :param dstream: an instance of the DStream class (see the dstream module)
         :type dstream: DStream class object
         """
@@ -229,7 +229,7 @@ class SQL_Connection:
 
     def _insert_rows_into_stream_lookup_table(self, bstream):
         """
-        Called by the coordinator in the _store_raw function and the in run function for the
+        Called by the Coordinator in the _store_raw function and the in run function for the
         storage thread class to populate a stream look up table of a given stream token
         with a bstream.
         :param bstream: an instance of the BStream class
@@ -290,7 +290,7 @@ class SQL_Connection:
 
     def _retrieve_by_timestamp_range(self, dstream, start, end):
         """
-        Called by the coordinator in the _retrieve_data_by_timestamp function.
+        Called by the Coordinator in the _retrieve_data_by_timestamp function.
         :param dstream: an instance of the DStream class (see the dstream module)
         :type dstream: obj
         :param start: the minimum timestamp for a query range
@@ -334,7 +334,7 @@ class SQL_Connection:
 
     def _create_stream_filtered_table(self, dstream):
         """
-        Called by the coordinator in the process_template function
+        Called by the Coordinator in the process_template function
         Insert row into table for storing filtered measures
         Creates table by parsing the dstream template
         :param dstream: an instance of the DStream class (see the dstream module)
@@ -365,7 +365,7 @@ class SQL_Connection:
 
     def _insert_rows_into_stream_filtered_table(self, dictionary):
         """
-        Called by the coordinator in the _store_filtered function
+        Called by the Coordinator in the _store_filtered function
         Called by the storage thread in the run function
         Insert row into table for storing filtered measures
         :param dictionary: Python diction with stream_token, filtered measures, and timestamp for a bstream
@@ -467,7 +467,7 @@ class SQL_Connection:
 
     def _insert_row_into_stream_lookup_table(self, dstream):
         """
-        Called by the coordinator in the _store_raw_old function to insert rows one by one.
+        Called by the Coordinator in the _store_raw_old function to insert rows one by one.
         No longer used.
         :param dstream: an instance of the DStream class (see the dstream module)
         :type dstream: DStream class object
@@ -529,7 +529,7 @@ class SQL_Connection:
 
     def _insert_filtered_measure_into_stream_lookup_table(self, stream_token, filtered_measure, value, unique_id):
         """
-        Called by the coordinator in the _store_filtered_old_dumb function. No longer used because of its
+        Called by the Coordinator in the _store_filtered_old_dumb function. No longer used because of its
         inefficiency.
         :param stream_token: stream_token from a dstream
         :type stream_token: Python UUID (converted to a string in function)
