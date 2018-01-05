@@ -78,7 +78,7 @@ class SQL_Connection:
         :type stream_token: Python UUID (converted to a string in function)
         :param version: version of a dstream
         :type version: decimal
-        :param template_id: template id
+        :param template_id: the Mongo-generated unique id
         :type template_id: str
         """
 
@@ -569,7 +569,7 @@ class SQL_Connection:
         :param filter_column: name of a filtered measure
         :type filter_column: str
         :param value: value for the filtered_measure
-        :type value: str        
+        :type value: str
         """
 
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
