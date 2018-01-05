@@ -1,8 +1,10 @@
 # DStream
 DStreams are the basic unit of data used by Strom.
+
 They take on two roles. When a new data source is registered, a DStream template is created. This
 template defines the expected data format as well as establishing rules for the data storege, etc,
 but does not include any actual data measurements.
+
 This template is then used as the format for the second role, sending data. The actual data
 measurements are inserted into the template and sent to the Strom server.
 
