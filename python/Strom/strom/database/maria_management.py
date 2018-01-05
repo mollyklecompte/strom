@@ -392,7 +392,6 @@ class SQL_Connection:
 
     #  Legacy methods no longer in use:
 
-
     def _retrieve_by_stream_name(self, stream_name):
         """
         Retrieve dstream template by stream_name in the process data method(s). No longer used.
