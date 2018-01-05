@@ -3,7 +3,7 @@ DStreams are the basic unit of data used by Strom.
 
 Internally, they are a dict subclass with the following keys:
 
-- version
+- [version][1]
 - stream_token
 - sources
 - storage_rules
@@ -18,3 +18,5 @@ Internally, they are a dict subclass with the following keys:
 - filters
 - dparam_rules
 - event_rules
+
+[1]: The version number of the DStream
