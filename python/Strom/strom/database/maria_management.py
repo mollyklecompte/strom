@@ -184,8 +184,8 @@ class SQL_Connection:
     def _create_stream_lookup_table(self, dstream):
         """
         Called by the coordinator in process_template.
-        :param dstream: an instance of the dstream object (see the dstream module)
-        :type dstream: obj
+        :param dstream: an instance of the DStream class (see the dstream module)
+        :type dstream: DStream class object
         """
 
         measure_columns = ""
@@ -232,8 +232,8 @@ class SQL_Connection:
         Called by the coordinator in the store_raw function and the in run function for the
         storage thread class to populate a stream look up table of a given stream token
         with a bstream.
-        :param bstream: an instance of the bstream object
-        :type bstream: obj
+        :param bstream: an instance of the BStream class
+        :type bstream: BStream class object
         """
 
         stringified_stream_token_uuid = _stringify_uuid(bstream["stream_token"])
@@ -291,7 +291,7 @@ class SQL_Connection:
     def _retrieve_by_timestamp_range(self, dstream, start, end):
         """
         Called by the coordinator in the _retrieve_data_by_timestamp function.
-        :param dstream: an instance of the dstream object (see the dstream module)
+        :param dstream: an instance of the DStream class (see the dstream module)
         :type dstream: obj
         :param start: the minimum timestamp for a query range
         :type start: decimal
@@ -316,8 +316,8 @@ class SQL_Connection:
     def _select_all_from_stream_lookup_table(self, dstream):
         """
         Select all rows from a stream look up table. Used for testing purposes.
-        :param dstream: an instance of the dstream object (see the dstream module)
-        :type dstream: obj
+        :param dstream: an instance of the DStream class (see the dstream module)
+        :type dstream: DStream class object
         """
 
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
@@ -337,8 +337,8 @@ class SQL_Connection:
         Called by the coordinator in process_template
         Insert row into table for storing filtered measures
         Creates table by parsing the dstream template
-        :param dstream: an instance of the dstream object (see the dstream module)
-        :type dstream: obj
+        :param dstream: an instance of the DStream class (see the dstream module)
+        :type dstream: DStream class object
         """
         coll_tuples = [(f["filter_name"], mv["dtype"]) for f in dstream["filters"] for m, mv in dstream["measures"].items() if f["measures"][0] == m]
         measure_columns = ""
@@ -469,8 +469,8 @@ class SQL_Connection:
         """
         Called by the coordinator in the _store_raw_old function to insert rows one by one.
         No longer used.
-        :param dstream: an instance of the dstream object (see the dstream module)
-        :type dstream: obj
+        :param dstream: an instance of the DStream class (see the dstream module)
+        :type dstream: DStream class object
         """
 
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
@@ -562,8 +562,8 @@ class SQL_Connection:
     def _select_data_by_column_where(self, dstream, data_column, filter_column, value):
         """
         Return all values in a stream lookup table for a given column. Formerly used for testing purposes.
-        :param dstream: an instance of the dstream object (see the dstream module)
-        :type dstream: obj
+        :param dstream: an instance of the DStream class (see the dstream module)
+        :type dstream: DStream class object
         :param data_column: the data of a table column that we want to retrieve by a specific filter_column value
         :type data_column: str/int/decimal
         :param filter_column: name of a filtered measure
