@@ -1,12 +1,31 @@
-"""Class for applying filters to single measures"""
-import numpy as np
+"""Class for applying filters to measures
+This is a subclass of the Transformer class that creates filtered measures from input measures.
+Filters seek to smooth, clean and remove artifacts from the data and all filters  return data of
+the same dimensions as their input.
+These filters are called by apply_transformer on BStream data and the results are stored
+as BStream["filtered_measures"]
+
+window_data is used as a filter but also has uses in other Transformer subclasses so it is a top
+level function for easier importing by those subclasses"""
 from abc import ABCMeta, abstractmethod
+
+import numpy as np
 from scipy.signal import butter, filtfilt
-from .transform import Transformer
 from strom.utils.logger.logger import logger
+
+from .transform import Transformer
 
 
 def window_data(in_array, window_len):
+    """
+    Function that calculates the windowed average of a vector
+    :param in_array: input array
+    :type in_array: numpy array
+    :param window_len: length of window for averaging
+    :type window_len: int
+    :return: windowed average of the data
+    :rtype: numpy array
+    """
     logger.debug("Windowing data with window length %d" % (window_len))
     w_data = np.convolve(in_array, np.ones(window_len), "valid") / window_len
     # Dealing with the special case for endpoints of in_array
@@ -21,16 +40,25 @@ class Filter(Transformer):
     __metaclass__ = ABCMeta
 
     def __init__(self):
+        """
+        Meta class for all filters
+        """
         super().__init__()
 
     def load_params(self, params):
-        """Load func_params dict into filter.params"""
+        """Load func_params dict into filter.params
+        :param params: all the parameters needed for the filter
+        :type params: dict containing keys "func_params" and "filter_name"
+        """
         logger.debug("loading func_params and filter_name")
         self.params["func_params"] = params["func_params"]
         self.params["filter_name"] = params["filter_name"]
 
     def get_params(self):
-        """Method to return function default parameters"""
+        """Method to return function default parameters
+        :return: dict of parameters
+        :rtype: dict
+        """
         return self.params["func_params"]
 
     @abstractmethod
@@ -41,6 +69,7 @@ class Filter(Transformer):
 class ButterLowpass(Filter):
     """Class to apply a Butterworth lowpass filter to data"""
     def __init__(self):
+        """TODO follow DeriveParam example"""
         super().__init__()
         self.params["func_params"] ={"order":3, "nyquist":0.05}
         self.params["filter_name"] =  "buttered"
@@ -48,11 +77,27 @@ class ButterLowpass(Filter):
 
     @staticmethod
     def butter_data(data_array, order, nyquist):
+        """
+        Fuction for applying a butter lowpass filter to data
+        :param data_array: array of data to be filtered
+        :type data_array: numpy array
+        :param order: order of the filter
+        :type order: int
+        :param nyquist: Wn parameter from scipy.signal.butter
+        :type nyquist: float
+        :return: filtered data
+        :rtype: numpy array
+        """
         logger.debug("buttering data")
         b, a = butter(order, nyquist)
         return filtfilt(b, a, data_array)
 
     def transform_data(self):
+        """
+        Apply butter_data and returns the transformed data
+        :return: dict of {"filter_name": numpy array of filtered data}
+        :rtype: dict
+        """
         buttered_data = {}
         logger.debug("transforming_data")
         for key in self.data.keys():
@@ -70,7 +115,7 @@ class ButterLowpass(Filter):
         return buttered_data
 
 class WindowAverage(Filter):
-    """Class for windowed average to smooth data"""
+    """Class for using a windowed average to smooth data"""
     def __init__(self):
         super().__init__()
         self.params["func_params"] = {"window_len": 2}
@@ -79,6 +124,11 @@ class WindowAverage(Filter):
 
 
     def transform_data(self):
+        """
+        Apply window_data to smooth the data and return the results
+        :return: dict of {"filter_name: numpy array of filtered data}
+        :rtype: dict
+        """
         logger.debug("transforming_data")
         windowed_data = {}
         for key in self.data.keys():

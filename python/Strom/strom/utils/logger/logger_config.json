@@ -21,7 +21,7 @@
   },
   "loggers": {
     "stromLogger": {
-      "level": "FATAL",
+      "level": "INFO",
       "handlers": ["console"],
       "propagate": "no"
     },
