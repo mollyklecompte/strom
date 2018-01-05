@@ -6,7 +6,7 @@ but does not include any actual data measurements.
 This template is then used as the format for the second role, sending data. The actual data
 measurements are inserted into the template and sent to the Strom server.
 
-Structurally DStreams are a dict subclass with a set of expected keys. S
+Structurally DStreams are a dict subclass with the following keys:
 
 - verison
   - The version number for the dstream.
@@ -42,10 +42,24 @@ Structurally DStreams are a dict subclass with a set of expected keys. S
   - Rules defining the events to be detected
   - See stream_rules.py for expected format
   - type: list of dict
-
 - timestamp
+  - the time of a given sample. Not used for template creation but each data-Dstream must have a timestamp
+  - type: int
 - measures
+  - The measured data supplied by the DStream. The measures are set durning DStream template creation.
+  - type: dict with format: {
+  "measure_name":{"val": measure value at timestamp, "dtype":MYSQL data
+  type}, ...
+  }
 - fields
+  - Storage for non-measure meta data
+  - type: dict of "file_name":"field_value" pairs
 - user_ids
+  - Storage for user supplied IDs
+  - type: dict of "id_name":"id" pairs
 - tags
+  - User generated tags for a timestamp
+  - type: dict of "tag_name":"tag"
 - foreign_keys
+  - Internal storage for linking other data stuctures.
+  - Currently unused
