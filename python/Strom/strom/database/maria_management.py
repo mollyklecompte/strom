@@ -229,7 +229,7 @@ class SQL_Connection:
 
     def _insert_rows_into_stream_lookup_table(self, bstream):
         """
-        Called by the coordinator in the store_raw function and the in run function for the
+        Called by the coordinator in the _store_raw function and the in run function for the
         storage thread class to populate a stream look up table of a given stream token
         with a bstream.
         :param bstream: an instance of the BStream class
@@ -334,7 +334,7 @@ class SQL_Connection:
 
     def _create_stream_filtered_table(self, dstream):
         """
-        Called by the coordinator in process_template
+        Called by the coordinator in the process_template function
         Insert row into table for storing filtered measures
         Creates table by parsing the dstream template
         :param dstream: an instance of the DStream class (see the dstream module)
