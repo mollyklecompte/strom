@@ -1,5 +1,9 @@
 """Base class for dstream
 This dictionary defines our basic data structure.
+A user registers a new data source with our server module which then uses this class to create a
+template for that data source and the template is stored by our Coordinator class. All data sent
+to our server for that data source will be in the format defined by this DStream object. The
+BStream subclass then aggregates the individual DStream objects.
 """
 import uuid
 
