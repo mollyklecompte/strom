@@ -1,6 +1,9 @@
-"""Abstract class for our transform functions
-Called by apply_transforms """
-
+"""Abstract class for our transform functions.
+ These transforms are called by apply_transforms module in order to create filtered measures,
+ derived measures and detect events. Data is loaded into the transform object
+ from a BStream as well a dict with the parameters for the given transformation.
+ The Transformer then uses the parameters to apply the transformation to the data
+ """
 from abc import ABCMeta, abstractmethod
 
 from strom.utils.logger.logger import logger
