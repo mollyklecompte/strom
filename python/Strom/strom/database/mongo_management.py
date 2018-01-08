@@ -1,6 +1,6 @@
-"""Mongodb Manager Class
+"""Mongo Manager Module
 
-This class contains methods for inserting and reading from Mongodb
+Interface for MongoDB using pymongo library.
 """
 from pymongo import MongoClient
 from strom.utils.logger.logger import logger
@@ -11,6 +11,9 @@ __author__ = "Molly <molly@tura.io>"
 
 
 class MongoManager(object):
+    """
+    This class contains methods for inserting and reading data from Mongodb.
+    """
     def __init__(self):
         self.client = MongoClient(config['mongo_host'], int(config['mongo_port']))
         self.db = self.client[config['mongo_db']]
@@ -20,6 +23,15 @@ class MongoManager(object):
         self.event_coll_suffix = config['event_coll_suf']
 
     def insert(self, doc, dtype):
+        """
+        Inserts template dstream, derived param bstream, event bstream into MongoDB.
+        :param doc: data to be inserted
+        :type doc: dict
+        :param dtype: kind of data to be inserted ("template", "derived", or "event")
+        :type dtype: string
+        :return:
+        :rtype:
+        """
         token = doc["stream_token"]
 
         if dtype == 'template':
@@ -41,6 +53,17 @@ class MongoManager(object):
             raise ValueError('Insert failed.')
 
     def get_by_id(self, doc_id, dtype, token=None):
+        """
+        Retrieves document from MongoDB by its unique "_id" field.
+        :param doc_id: document id
+        :type doc_id: string
+        :param dtype: kind of document to be retrieved ("template", "derived", or "event")
+        :type dtype: string
+        :param token: stream token
+        :type token: string
+        :return: the document queried
+        :rtype: dict
+        """
         if dtype == 'template':
             doc = self.temp_collection.find_one({"_id": doc_id})
         elif dtype == 'derived':
@@ -61,6 +84,15 @@ class MongoManager(object):
             raise ValueError('Document does not exist.')
 
     def get_all_coll(self, dtype, token):
+        """
+        Retrieves all documents in a collection.
+        :param dtype: kind of document to be retrieved ("template", "derived", or "event")
+        :type dtype: string
+        :param token: stream token
+        :type token: string
+        :return: documents
+        :rtype: list of dicts
+        """
         if dtype == 'derived':
             coll_name = '%s_%s' % (token, self.derived_coll_suffix)
             coll = self.db[coll_name]

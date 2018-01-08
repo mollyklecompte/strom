@@ -316,10 +316,11 @@ class Coordinator(object):
         :rtype: list of dicts
         """
         parsed_events = [
-            {"event": "{}_{}".format(event_name.replace(" ", ""),
-                                     bstream['engine_rules']['kafka']),
-             "data": single_event
-             }
+            {
+                "event": "{}_{}".format(event_name.replace(" ", ""),
+                                        bstream['engine_rules']['kafka']),
+                "data": single_event
+            }
             for event_name, event_list in bstream[config['event_coll_suf']].items()
             for single_event in event_list
         ]
