@@ -6,12 +6,13 @@ kickoff bstream storage calls concurrently. The respective thread run() method i
 the thread is started in the Coordinator, ie. raw_thread.start()
 
 """
-from strom.database.mongo_management import MongoManager
+import threading
+from logging import DEBUG
+
 from strom.database.maria_management import SQL_Connection
+from strom.database.mongo_management import MongoManager
 from strom.utils.stopwatch import *
 
-from logging import DEBUG
-import threading
 __version__ = "0.1"
 __author__ = "Jessica <jessica@tura.io>"
 
@@ -22,11 +23,14 @@ class StorageRawThread(threading.Thread):
         StorageRawThread created with bstream dict to store raw measures from bstream.
         Attributes:
           bstream:    the bstream from Coordinator
-          maria:      SQL connection created.
           rows_inserted:  returned from Maria insert(for testing).
 
     """
     def __init__(self, bstream):
+        """
+        :param bstream: bstream from Coordinator
+        :type bstream: BStream object
+        """
         super().__init__()
         self._bstream = bstream
         self.maria = SQL_Connection()
@@ -45,11 +49,14 @@ class StorageFilteredThread(threading.Thread):
         filtered measures to maria manager.
         Attributes:
           bstream:    the bstream from Coordinator
-          maria:      SQL connection created.
           rows_inserted:  returned from Maria insert(for testing).
 
     """
     def __init__(self, bstream):
+        """
+        :param bstream: bstream from Coordinator
+        :type bstream: BStream object
+        """
         super().__init__()
         self._bstream = bstream
         self.maria = SQL_Connection()
@@ -81,6 +88,13 @@ class StorageJsonThread(threading.Thread):
     """
 
     def __init__(self, data, data_type):
+        """
+        :param data: bstream data
+        :type data: BStream object
+        :param data_type: String specifying what Mongo collection to store the JSON in. Currently
+        supports 'derived' or 'event'
+        :type data_type: str
+        """
         super().__init__()
         self._data = data
         self._data_type = data_type
