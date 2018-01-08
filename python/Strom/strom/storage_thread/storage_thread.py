@@ -19,11 +19,10 @@ __author__ = "Jessica <jessica@tura.io>"
 
 class StorageRawThread(threading.Thread):
     """
-
-        StorageRawThread created with bstream dict to store raw measures from bstream.
-        Attributes:
-          bstream:    the bstream from Coordinator
-          rows_inserted:  returned from Maria insert(for testing).
+    StorageRawThread created with bstream dict to store raw measures from bstream.
+    Attributes:
+      bstream:    the bstream from Coordinator
+      rows_inserted:  returned from Maria insert(for testing).
 
     """
     def __init__(self, bstream):
@@ -39,8 +38,9 @@ class StorageRawThread(threading.Thread):
         stopwatch['raw_thread'].start()
 
     def run(self):
-        self.rows_inserted = self.maria._insert_rows_into_stream_lookup_table(self._bstream)
+        self.rows_inserted = self.maria.insert_rows_into_stream_lookup_table(self._bstream)
         stopwatch['raw_thread'].lap()
+
 
 class StorageFilteredThread(threading.Thread):
     """
@@ -70,29 +70,28 @@ class StorageFilteredThread(threading.Thread):
                         "timestamp": self._bstream["timestamp"],
                         "filter_measures": self._bstream["filter_measures"]
                         }
-        self.rows_inserted = self.maria._insert_rows_into_stream_filtered_table(filtered_dict)
+        self.rows_inserted = self.maria.insert_rows_into_stream_filtered_table(filtered_dict)
         stopwatch['filtered_thread'].lap()
+
 
 class StorageJsonThread(threading.Thread):
     """
+    StorageJsonThread is created with bstream dict and data_type string
+    to store either derived params or events in Mongo.
 
-        StorageJsonThread is created with bstream dict and data_type string
-        to store either derived params or events in Mongo.
-
-        Attributes:
-            data_type:  string 'derived' or 'event'
-            data:       bstream dict
-            mongo:      MongoManager instance
-            insert_id:  returned from mongo insert
+    Attributes:
+        data_type:  string 'derived' or 'event'
+        data:       bstream dict
+        mongo:      MongoManager instance
+        insert_id:  returned from mongo insert
 
     """
-
     def __init__(self, data, data_type):
         """
         :param data: bstream data
         :type data: BStream object
-        :param data_type: String specifying what Mongo collection to store the JSON in. Currently
-        supports 'derived' or 'event'
+        :param data_type: String specifying what Mongo collection to store the JSON in.
+        Currently supports 'derived' or 'event'
         :type data_type: str
         """
         super().__init__()

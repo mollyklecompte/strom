@@ -22,37 +22,28 @@ class BStream(DStream):
         self._load_from_dict(template)
         self["stream_token"] = str(template["stream_token"])
 
-    # def _set_from_temp(self):
-        # self["stream_name"] = self.template["stream_name"]
-        # self["version"] = self.template["version"]
-        # self["stream_token"] = self.template["stream_token"]
-        # self["sources"] = self.template["sources"]
-        # self["storage_rules"] = self.template["storage_rules"]
-        # self["ingest_rules"] = self.template["ingest_rules"]
-        # self["engine_rules"] = self.template["engine_rules"]
-        # self["fields"] = self.template["fields"]
-        # self["user_ids"] = self.template["user_ids"]
-        # self["tags"] = self.template["tags"]
-        # self["foreign_keys"] = self.template["foreign_keys"]
-        # self["filters"] = self.template["filters"]
-        # self["dparam_rules"] = self.template["dparam_rules"]
-        # self["event_rules"] = self.template["event_rules"]
-
-    def _load_from_dict(self, dict):
-        for key in dict.keys():
+    def _load_from_dict(self, dictionary):
+        for key in dictionary.keys():
             if key != "_id":
-                self[key] = dict[key]
-                logger.debug("added key %s" % (key))
+                self[key] = dictionary[key]
+                logger.debug("added key %s" % key)
 
     def _aggregate_measures(self):
         logger.debug("aggregating measures")
         all_measures = [s["measures"] for s in self.dstreams]
-        self["measures"] = {m: {'val': [i[m]['val'] for i in all_measures], 'dtype': v['dtype']} for m, v in self["measures"].items()}
+        self["measures"] = {
+            m: {
+                'val': [i[m]['val'] for i in all_measures],
+                'dtype': v['dtype']
+            } for m, v in self["measures"].items()
+        }
 
     def _aggregate_uids(self):
         logger.debug("aggregating uids")
         uids = [s["user_ids"] for s in self.dstreams]
-        self["user_ids"] = {uidkey: [i[uidkey] for i in uids] for uidkey, v in self["user_ids"].items()}
+        self["user_ids"] = {
+            uidkey: [i[uidkey] for i in uids] for uidkey, v in self["user_ids"].items()
+        }
 
     def _aggregate_ts(self):
         logger.debug("aggregating timestamps")
@@ -61,13 +52,16 @@ class BStream(DStream):
     def _aggregate_fields(self):
         logger.debug("aggregating fields")
         fields = [s["fields"] for s in self.dstreams]
-        self["fields"] = {fieldkey: [i[fieldkey] for i in fields] for fieldkey, v in self["fields"].items()}
+        self["fields"] = {
+            fieldkey: [i[fieldkey] for i in fields] for fieldkey, v in self["fields"].items()
+        }
 
     def _aggregate_tags(self):
         logger.debug("aggregating tags")
         tags = [s["tags"] for s in self.dstreams]
-        self["tags"] = {tagkey: [i[tagkey] for i in tags] for tagkey, v in self["tags"].items()}
-
+        self["tags"] = {
+            tagkey: [i[tagkey] for i in tags] for tagkey, v in self["tags"].items()
+        }
 
     @property
     def aggregate(self):

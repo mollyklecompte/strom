@@ -24,9 +24,9 @@ class TestStorageThread(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cnx = SQL_Connection()
-        cnx._create_metadata_table()
-        cnx._create_stream_lookup_table(dstream)
-        cnx._create_stream_filtered_table(dstream)
+        cnx.create_metadata_table()
+        cnx.create_stream_lookup_table(dstream)
+        cnx.create_stream_filtered_table(dstream)
 
     def test_store_raw_thread(self):
         test_thread = StorageRawThread(self.bstream)

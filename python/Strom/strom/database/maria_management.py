@@ -48,11 +48,10 @@ class SQL_Connection:
 
     # ***** Metadata Table and Methods *****
 
-    def _create_metadata_table(self):
+    def create_metadata_table(self):
         """
         Called by the Coordinator in the process_template function when processing a new dstream.
         """
-
         table = ("CREATE TABLE template_metadata ("
             "  `unique_id` int(50) NOT NULL AUTO_INCREMENT,"
             "  `stream_name` varchar(60) NOT NULL,"
@@ -69,7 +68,7 @@ class SQL_Connection:
                 logger.error("table already exists")
             raise err
 
-    def _insert_row_into_metadata_table(self, stream_name, stream_token, version, template_id):
+    def insert_row_into_metadata_table(self, stream_name, stream_token, version, template_id):
         """
         Called by the Coordinator in the process_template function when processing a new dstream.
         :param stream_name: stream_name from a dstream
@@ -81,7 +80,6 @@ class SQL_Connection:
         :param template_id: the Mongo-generated unique id
         :type template_id: str
         """
-
         add_row = ("INSERT INTO template_metadata "
         "(stream_name, stream_token, version, template_id) "
         "VALUES (%s, %s, %s, %s)")
@@ -99,7 +97,7 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
-    def _return_template_id_for_latest_version_of_stream(self, stream_token):
+    def return_template_id_for_latest_version_of_stream(self, stream_token):
         """
         Called by the Coordinator in the _retrieve_current_template function to obtain the Mongo-generated unique id for
         the latest version of a stream. The _retrieve_current_template function on the Coordinator class then uses
@@ -107,7 +105,6 @@ class SQL_Connection:
         :param stream_token: stream_token from a dstream
         :type stream_token: Python UUID (converted to a string in function)
         """
-
         stringified_stream_token_uuid = _stringify_uuid(stream_token)
         query = ("SELECT `template_id` FROM template_metadata WHERE stream_token = %s AND version = ("
                 "SELECT MAX(version) FROM template_metadata WHERE stream_token = %s)")
@@ -123,7 +120,7 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
-    def _check_metadata_table_exists(self):
+    def check_metadata_table_exists(self):
         """
         Called by the Coordinator in the process_template function to verify that the template_metadata
         table exists before creating it. This function was created to prevent errors when process_template
@@ -162,14 +159,12 @@ class SQL_Connection:
             raise err
 
 # ***** Stream Token Table and Methods *****
-
-    def _create_stream_lookup_table(self, dstream):
+    def create_stream_lookup_table(self, dstream):
         """
         Called by the Coordinator in process_template.
         :param dstream: an instance of the DStream class (see the dstream module)
         :type dstream: DStream class object
         """
-
         measure_columns = ""
         # for each item in the measures dictionary
             # create a column for that measure
@@ -209,7 +204,7 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
-    def _insert_rows_into_stream_lookup_table(self, bstream):
+    def insert_rows_into_stream_lookup_table(self, bstream):
         """
         Called by the Coordinator in the _store_raw function and the in run function for the
         storage thread class to populate a stream look up table of a given stream token
@@ -217,7 +212,6 @@ class SQL_Connection:
         :param bstream: an instance of the BStream class
         :type bstream: BStream class object
         """
-
         stringified_stream_token_uuid = _stringify_uuid(bstream["stream_token"])
 
         measure_columns = ""
@@ -270,7 +264,7 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
-    def _retrieve_by_timestamp_range(self, dstream, start, end):
+    def retrieve_by_timestamp_range(self, dstream, start, end):
         """
         Called by the Coordinator in the _retrieve_data_by_timestamp function.
         :param dstream: an instance of the DStream class (see the dstream module)
@@ -280,7 +274,6 @@ class SQL_Connection:
         :param end: the maximum timestamp for a query range
         :param end: decimal
         """
-
         stringified_stream_token_uuid = _stringify_uuid(dstream["stream_token"])
         dstream_particulars = (stringified_stream_token_uuid, start, end)
         query = ("SELECT * FROM `%s` " % (stringified_stream_token_uuid)) + "WHERE time_stamp BETWEEN %s AND %s"
@@ -314,7 +307,7 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
-    def _create_stream_filtered_table(self, dstream):
+    def create_stream_filtered_table(self, dstream):
         """
         Called by the Coordinator in the process_template function
         Insert row into table for storing filtered measures
@@ -345,7 +338,7 @@ class SQL_Connection:
         except pymysql.err.ProgrammingError as err:
             raise err
 
-    def _insert_rows_into_stream_filtered_table(self, dictionary):
+    def insert_rows_into_stream_filtered_table(self, dictionary):
         """
         Called by the Coordinator in the _store_filtered function
         Called by the storage thread in the run function
@@ -391,7 +384,6 @@ class SQL_Connection:
             raise err
 
     #  Legacy methods no longer in use:
-
     def _retrieve_by_stream_name(self, stream_name):
         """
         Retrieve dstream template by stream_name in the process data method(s). No longer used.
