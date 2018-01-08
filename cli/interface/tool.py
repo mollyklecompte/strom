@@ -1,4 +1,8 @@
-""" CLI tool for communications b/w client and API."""
+""" Command-line tool for use with Strom services.
+User is able to upload and register a local template file, and retrieve a unique stream token back for that template.
+Allows uploading of local data files for event recognition.
+Can return event object containing all found events in given data file.
+"""
 import click
 import requests
 import json
@@ -9,22 +13,28 @@ try:
 except:
     pass
 
-__version__ = '0.0.1'
+__version__ = '0.1.0'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
 
 
 def _print_ver(ctx, param, value):
+    """ (private method) Print current CLI version. """
     if not value or ctx.resilient_parsing:
         return
     click.secho(__version__, fg='yellow')
     ctx.exit()
 
 def _abort_if_false(ctx, param, value):
+    """ (private method) Abort command if not confirmed. """
     if not value:
         ctx.abort()
 
 def _convert_to_utc(date_string):
-    """ Expected input: YYYY-MM-DD-HH:MM:SS """
+    """ (private method) Expected input: YYYY-MM-DD-HH:MM:SS.
+    Conversion of standard date format to UTC.
+    :param date_string: string of date in format: YYYY-MM-DD-HH:MM:SS
+    :type date_string: string
+    """
     big_time_tmp = date_string.split("-")
     year = int(big_time_tmp[0])
     month = int(big_time_tmp[1])
@@ -37,7 +47,12 @@ def _convert_to_utc(date_string):
     return dt.timestamp()
 
 def _api_POST(config, function, data_dict):
-    """ Takes name of endpoint and dict of data to post. """
+    """ (private method) Takes name of endpoint and dict of data to post.
+    :param function: endpoint of where to post data (eg. define or load)
+    :type function: string
+    :param data_dict: dictionary containing data description and data (eg. '{'template': data file }')
+    :type data_dict: dictionary
+    """
     if config.verbose:
         click.secho("\nPOSTing to /{}".format(function), fg='white')
     try:
@@ -52,7 +67,16 @@ def _api_POST(config, function, data_dict):
         return [ret.status_code, ret.text]
 
 def _api_GET(config, function, param, value, token):
-    """ Takes name of endpoint, time/range and its value, as well as token. """
+    """ Takes name of endpoint, time/range and its value, as well as token.
+    :param function: endpoint of where to get data (eg. raw or all)
+    :type function: string
+    :param param: indicate whether to collect from singular time or range of time.
+    :type param: string
+    :param value: UTC formatted timestamp
+    :type value: integer
+    :param token: unique token from template registration.
+    :type token: string
+    """
     if config.verbose:
         click.secho("\nGETing {}={} from {} with {}".format(param, value, function, token), fg='white')
     try:
@@ -67,7 +91,10 @@ def _api_GET(config, function, param, value, token):
         return [ret.status_code, ret.text]
 
 def _collect_token(config, cert):
-    """ Load json-formatted input and return stream_token, if found. """
+    """ Load json-formatted input and return stream_token, if found.
+    :param cert: registered template file with stream token field.
+    :type cert: JSON-formatted string
+    """
     try:
         json_cert = json.loads(cert)
     except:
@@ -91,7 +118,18 @@ def _collect_token(config, cert):
             return token
 
 def _check_options(config, function, time, utc, a, token):
-    """ Check options given for GET methods before send. """
+    """ Check options given for GET methods before send.
+    :param function: endpoint of where to get data (eg. raw or all)
+    :type function: string
+    :param time: date-formatted string
+    :type time: string
+    :param utc: UTC-formatted string
+    :type utc: string
+    :param a: flag designating retrievel of all events found.
+    :type a: boolean
+    :param token: unique token from registered template file
+    :type token: string
+    """
     if a:
         result = _api_GET(config, "{}".format(function), "range", "ALL", token)
     elif utc:
@@ -117,6 +155,7 @@ def _check_options(config, function, time, utc, a, token):
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 class CLIConfig(object):
+    """ Configuration class for storing options given to CLI, such as verbosity and temporary single-token storage. """
     def __init__(self, verbose, store):
         self.verbose = verbose
         self.token = None
@@ -124,6 +163,7 @@ class CLIConfig(object):
         self.store = store
 
     def _set_token(self):
+        """ If -store option is given, CLI locally saves token in hidden file for future easy retrieval. """
         f = open(".cli_token")
         data = f.read()
         if data is not None:
