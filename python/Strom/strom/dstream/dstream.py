@@ -1,7 +1,13 @@
-"""Base class for dstream"""
+"""Base class for DStream
+This dictionary defines our basic data structure.
+A user registers a new data source with our server module which then uses this class to create a
+template for that data source and the template is stored by our Coordinator class. All data sent
+to our server for that data source will be in the format defined by this DStream object. The
+BStream subclass then aggregates the individual DStream objects.
+"""
 import uuid
-from strom.utils.logger.logger import logger
 
+from strom.utils.logger.logger import logger
 
 __version__  = "0.1"
 __author__ = "David <david@tura.io>"
@@ -9,6 +15,10 @@ __author__ = "David <david@tura.io>"
 
 class DStream(dict):
     def __init__(self):
+        """
+        Initializes and empty DStream with a unique stream token. All the other expected keys are
+        initialized as empty data structures of the desired type.
+        """
         self["stream_name"] = None
         self["version"] = 0
         self["stream_token"] = uuid.uuid1()
@@ -81,6 +91,11 @@ class DStream(dict):
         logger.debug("version now %s" % (str(self['version'])))
 
     def load_from_json(self, json_file):
+        """
+        The standard method for loading data from an existing json dict.
+        :param json_file: the json dict containing data to be loaded into our DStream
+        :type json_file: dict
+        """
         for key in json_file.keys():
             if key != 'stream_token':
                 self[key] = json_file[key]
@@ -88,16 +103,27 @@ class DStream(dict):
 
     def define_dstream(self, storage_rules, ingestion_rules, source_dict, measure_list, field_names, user_id_names,
                       tag_list, filter_list, dparam_rule_list, event_list):
-        """Inputs:
-        storage_rules: dict containing storage rules
-        ingestion_rules: dict containing ingestion rules
-        measure_list: list of tuples: (measure_name, dtype) for each measure supplied to the stream
-        field_names: list of field names
-        user_id_names: list of user_id names
-        tag_list: list of tags
-        filter_list: list of filter rules which are dicts
-        dparam_rule_list: list of dparam_rules, which are dicts
-        event_list: list of tuples: (event_name, event_rules)
+        """
+        Old method for filling DStream from input data if not already in dict form.
+        :param storage_rules: dict containing storage rules
+        :type storage_rules: dict
+        :param ingestion_rules: dict containing ingestion rules
+        :type ingestion_rules: dict
+        :param measure_list: list of tuples: (measure_name, dtype) for each measure supplied to the
+        stream
+        :type measure_list: list
+        :param field_names: list of field names
+        :type field_names: list
+        :param user_id_names: list of user_id names
+        :type user_id_names: list
+        :param tag_list: list of tags
+        :type tag_list: list
+        :param filter_list: list of filter rules which are dicts
+        :type filter_list: list of dict
+        :param dparam_rule_list: list of dparam_rules, which are dicts
+        :type dparam_rule_list: list of dict
+        :param event_list: list of tuples: (event_name, event_rules)
+        :type event_list: list of tuples
         """
         logger.warning("Don't use this method, it is cumbersome")
         self["storage_rules"] = storage_rules

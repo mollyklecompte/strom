@@ -1,4 +1,8 @@
-"""Filter class to augment filter dictionary with a func_param_name and dtype to create the stream lookup table"""
+"""
+These dictionaries define the format for the rules dicts used in our modules. They are stored in
+DStream objects. Not currently in use but they have provided a template for our demo data and
+will be used for data validation and integrity.
+"""
 from strom.utils.logger.logger import logger
 
 __version__  = "0.1"

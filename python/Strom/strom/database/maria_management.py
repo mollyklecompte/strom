@@ -1,3 +1,4 @@
+
 """MySQL Database Connector Class"""
 
 __version__  = "0.1"
