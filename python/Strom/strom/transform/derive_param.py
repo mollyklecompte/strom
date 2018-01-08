@@ -305,7 +305,7 @@ class DeriveHeading(DeriveParam):
         if units == "deg":
             diff_angle = (np.rad2deg(diff_angle) + 360 ) % 360
         elif units == "rad":
-            diff_angle = diff_angle + 2*np.pi) % np.pi
+            diff_angle = (diff_angle + 2*np.pi) % np.pi
         if window_len > 1:
             diff_angle = window_data(diff_angle, window_len)
         return diff_angle
