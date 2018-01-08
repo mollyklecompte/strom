@@ -173,11 +173,16 @@ class CLIConfig(object):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.group()
 @click.option('-verbose', '-v', 'verbose', is_flag=True, help="Enables verbose mode")
-@click.option('-store', '-S', 'store', is_flag=True, help="(SHORTCUT) Don't use if defining multiple templates. Allows omission of '-token'") # TODO change to callback
+@click.option('-store', '-S', 'store', is_flag=True, help="(SHORTCUT) Don't use if defining multiple templates. Allows omission of '-token'")
 @click.option('--version', is_flag=True, callback=_print_ver, is_eager=True, expose_value=False, help="Current version")
 @click.pass_context
 def dstream(ctx, verbose, store):
-    """ Entry-point. Parent command for all DStream methods. """
+    """ Entry-point. Parent command for all DStream methods.
+    :param verbose: verbosity flag
+    :type verbose: boolean
+    :param store: token storage flag
+    :type store: boolean
+    """
     ctx.obj = CLIConfig(verbose, store)
 
 @click.command()
@@ -204,7 +209,10 @@ def welcome():
 @click.option('--y', is_flag=True, callback=_abort_if_false, expose_value=False, prompt="\nInitialize new DStream with this template?", help="Bypass confirmation prompt")
 @click.pass_obj
 def define(config, template):
-    """ Upload template file for DStream. """
+    """ Upload template file for DStream.
+    :param template: template file to register
+    :type template: JSON-formatted string
+    """
     template_data = template.read()
     #Try send template to server, if success...collect stream_token
     result = _api_POST(config, "define", {'template':template_data})
@@ -219,7 +227,7 @@ def define(config, template):
     try:
         json_template = json.loads(template_data)
         json_template['stream_token'] = token
-        template_filename = os.path.basename(template.name) # NOTE: TEMP, REFACTOR OUT OF TRY
+        template_filename = os.path.basename(template.name)
         path_list = template_filename.split('.')
         template_name = path_list[0]
         template_ext = path_list[1]
@@ -247,7 +255,14 @@ def define(config, template):
 @click.option('-token', '-tk', 'token', default=None, type=click.File('r'), help="Tokenized template file for verification")
 @click.pass_obj
 def add_source(config, source, kafka_topic, token):
-    """ Declare source of data: file upload or kafka stream. """
+    """ Declare source of data: file upload or kafka stream.
+    :param source: designate the source of this data, be it kafka stream of a local file
+    :type source: string
+    :param kafka_topic: string of the kafka topic to listen to
+    :type kafka_topic: string
+    :param token: unique token from registered template file
+    :type token: string
+    """
     #Check if topic was supplied when source is kafka
     if source == 'kafka' and kafka_topic == None:
         click.secho("No topic specified, please re-run command.", fg='red', reverse=True)
@@ -274,7 +289,12 @@ def add_source(config, source, kafka_topic, token):
 @click.option('-token', '-tk', 'token', default=None, type=click.File('r'), help="Tokenized template file for verification")
 @click.pass_obj
 def load(config, filepath, token):
-    """ Provide file-path of data to upload, along with tokenized_template for this DStream. """
+    """ Provide file-path of data to upload, along with tokenized_template for this DStream.
+    :param filepath: filepath of local data file to upload
+    :type filepath: string
+    :param token: unique token from registered template file
+    :type token: string
+    """
     if config.verbose:
         click.secho("\nTokenizing data fields of {}".format(click.format_filename(filepath)), fg='white')
     if not config.store:
@@ -324,6 +344,14 @@ def raw(config, time, utc, a, tk):
     \b
      Collect all raw data for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
+     :param time: date-time formatted string
+     :type time: string
+     :param utc: UTC-formatted string
+     :type utc: string
+     :param a: flag for collecting all events found
+     :type a: boolean
+     :param tk: unique token from registered template file
+     :type tk: string
     """
     if not config.store:
         try:
@@ -352,6 +380,14 @@ def filtered(config, time, utc, a, tk):
     \b
      Collect all filtered data for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
+     :param time: date-time formatted string
+     :type time: string
+     :param utc: UTC-formatted string
+     :type utc: string
+     :param a: flag for collecting all events found
+     :type a: boolean
+     :param tk: unique token from registered template file
+     :type tk: string
     """
     if not config.store:
         try:
@@ -380,6 +416,14 @@ def derived_params(config, time, utc, a, tk):
     \b
      Collect all derived parameters for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
+     :param time: date-time formatted string
+     :type time: string
+     :param utc: UTC-formatted string
+     :type utc: string
+     :param a: flag for collecting all events found
+     :type a: boolean
+     :param tk: unique token from registered template file
+     :type tk: string
     """
     if not config.store:
         try:
@@ -408,6 +452,14 @@ def events(config, time, utc, a, tk):
     \b
      Collect all event data for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
+      :param time: date-time formatted string
+      :type time: string
+      :param utc: UTC-formatted string
+      :type utc: string
+      :param a: flag for collecting all events found
+      :type a: boolean
+      :param tk: unique token from registered template file
+      :type tk: string
     """
     if not config.store:
         try:
@@ -432,7 +484,7 @@ dstream.add_command(define)
 dstream.add_command(add_source)
 dstream.add_command(load)
 #
-# dstream.add_command(raw) #NOTE: TEMP
+# dstream.add_command(raw)
 # dstream.add_command(filtered)
 # dstream.add_command(derived_params)
 dstream.add_command(events)
