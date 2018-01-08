@@ -206,8 +206,7 @@ class Coordinator(object):
         # create bstream for dstream list
         bstream = self._list_to_bstream(template, dstream_list)
         # thread store raw measures from bstream
-        # logging for else case?
-        if storage_rules['store_raw']:
+        if storage_rules['store_raw'] :
             self.threads.append('raw_thread')
             raw_thread = StorageRawThread(bstream)
             raw_thread.start()
