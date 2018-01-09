@@ -1,15 +1,22 @@
-""" Kafka Consumer """
+""" Kafka Consumer, used throughout project for ingestion of data stored in specific kafka topics. """
 from pykafka import KafkaClient
 from strom.utils.stopwatch import stopwatch as tk
 from strom.utils.logger.logger import logger
 
-__version__ = '0.0.1'
+__version__ = '0.1.0'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
 
 class Consumer():
     """ Simple balanced kafka consumer. Accepts kafka url string and topic name byte-string. (Optional) Time in ms to stay active. """
     def __init__(self, url, topic, timeout=-1):
-        """ Init requires kafka url:port, topic name, and timeout for listening. """
+        """ Init requires kafka url:port, topic name, and timeout for listening.
+        :param url: Kafka connection url
+        :type url: string
+        :param topic: Topic name of which to consume from
+        :type topic: byte string
+        :param timeout: Amount of time to stay listening, -1 = infinite
+        :type timeout: integer
+        """
         self.client = KafkaClient(hosts=url, use_greenlets=False)
         self.topic = self.client.topics[topic]
         self.consumer = self.topic.get_simple_consumer(consumer_timeout_ms=timeout)
@@ -26,11 +33,9 @@ class Consumer():
         #     fetch_min_bytes=1, #tweak
         #     fetch_message_max_bytes=2097152, #tweak
         #     fetch_wait_max_ms=100) #tweak
-        #     # NOTE: may be quicker w/ alt. options
 
     def consume(self):
         """  """
-        # NOTE: TODO Check diffs b/w for-loop and consumer.consume()
         tk['Consumer.consume : self.consumer.start'].start()
         self.consumer.start() #auto-start
         tk['Consumer.consume : self.consumer.start'].stop()
