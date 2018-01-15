@@ -1,4 +1,8 @@
-""" CLI tool for communications b/w client and API."""
+""" Command-line tool for use with Strom services.
+User is able to upload and register a local template file, and retrieve a unique stream token back for that template.
+Allows uploading of local data files for event recognition.
+Can return event object containing all found events in given data file.
+"""
 import click
 import requests
 import json
@@ -9,22 +13,28 @@ try:
 except:
     pass
 
-__version__ = '0.0.1'
+__version__ = '0.1.0'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
 
 
 def _print_ver(ctx, param, value):
+    """ (private method) Print current CLI version. """
     if not value or ctx.resilient_parsing:
         return
     click.secho(__version__, fg='yellow')
     ctx.exit()
 
 def _abort_if_false(ctx, param, value):
+    """ (private method) Abort command if not confirmed. """
     if not value:
         ctx.abort()
 
 def _convert_to_utc(date_string):
-    """ Expected input: YYYY-MM-DD-HH:MM:SS """
+    """ (private method) Expected input: YYYY-MM-DD-HH:MM:SS.
+    Conversion of standard date format to UTC.
+    :param date_string: string of date in format: YYYY-MM-DD-HH:MM:SS
+    :type date_string: string
+    """
     big_time_tmp = date_string.split("-")
     year = int(big_time_tmp[0])
     month = int(big_time_tmp[1])
@@ -37,7 +47,12 @@ def _convert_to_utc(date_string):
     return dt.timestamp()
 
 def _api_POST(config, function, data_dict):
-    """ Takes name of endpoint and dict of data to post. """
+    """ (private method) Takes name of endpoint and dict of data to post.
+    :param function: endpoint of where to post data (eg. define or load)
+    :type function: string
+    :param data_dict: dictionary containing data description and data (eg. '{'template': data file }')
+    :type data_dict: dictionary
+    """
     if config.verbose:
         click.secho("\nPOSTing to /{}".format(function), fg='white')
     try:
@@ -52,7 +67,16 @@ def _api_POST(config, function, data_dict):
         return [ret.status_code, ret.text]
 
 def _api_GET(config, function, param, value, token):
-    """ Takes name of endpoint, time/range and its value, as well as token. """
+    """ Takes name of endpoint, time/range and its value, as well as token.
+    :param function: endpoint of where to get data (eg. raw or all)
+    :type function: string
+    :param param: indicate whether to collect from singular time or range of time.
+    :type param: string
+    :param value: UTC formatted timestamp
+    :type value: integer
+    :param token: unique token from template registration.
+    :type token: string
+    """
     if config.verbose:
         click.secho("\nGETing {}={} from {} with {}".format(param, value, function, token), fg='white')
     try:
@@ -67,7 +91,10 @@ def _api_GET(config, function, param, value, token):
         return [ret.status_code, ret.text]
 
 def _collect_token(config, cert):
-    """ Load json-formatted input and return stream_token, if found. """
+    """ Load json-formatted input and return stream_token, if found.
+    :param cert: registered template file with stream token field.
+    :type cert: JSON-formatted string
+    """
     try:
         json_cert = json.loads(cert)
     except:
@@ -91,7 +118,18 @@ def _collect_token(config, cert):
             return token
 
 def _check_options(config, function, time, utc, a, token):
-    """ Check options given for GET methods before send. """
+    """ Check options given for GET methods before send.
+    :param function: endpoint of where to get data (eg. raw or all)
+    :type function: string
+    :param time: date-formatted string
+    :type time: string
+    :param utc: UTC-formatted string
+    :type utc: string
+    :param a: flag designating retrievel of all events found.
+    :type a: boolean
+    :param token: unique token from registered template file
+    :type token: string
+    """
     if a:
         result = _api_GET(config, "{}".format(function), "range", "ALL", token)
     elif utc:
@@ -117,6 +155,7 @@ def _check_options(config, function, time, utc, a, token):
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 class CLIConfig(object):
+    """ Configuration class for storing options given to CLI, such as verbosity and temporary single-token storage. """
     def __init__(self, verbose, store):
         self.verbose = verbose
         self.token = None
@@ -124,6 +163,7 @@ class CLIConfig(object):
         self.store = store
 
     def _set_token(self):
+        """ If -store option is given, CLI locally saves token in hidden file for future easy retrieval. """
         f = open(".cli_token")
         data = f.read()
         if data is not None:
@@ -133,11 +173,16 @@ class CLIConfig(object):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @click.group()
 @click.option('-verbose', '-v', 'verbose', is_flag=True, help="Enables verbose mode")
-@click.option('-store', '-S', 'store', is_flag=True, help="(SHORTCUT) Don't use if defining multiple templates. Allows omission of '-token'") # TODO change to callback
+@click.option('-store', '-S', 'store', is_flag=True, help="(SHORTCUT) Don't use if defining multiple templates. Allows omission of '-token'")
 @click.option('--version', is_flag=True, callback=_print_ver, is_eager=True, expose_value=False, help="Current version")
 @click.pass_context
 def dstream(ctx, verbose, store):
-    """ Entry-point. Parent command for all DStream methods. """
+    """ Entry-point. Parent command for all DStream methods.
+    :param verbose: verbosity flag
+    :type verbose: boolean
+    :param store: token storage flag
+    :type store: boolean
+    """
     ctx.obj = CLIConfig(verbose, store)
 
 @click.command()
@@ -164,7 +209,10 @@ def welcome():
 @click.option('--y', is_flag=True, callback=_abort_if_false, expose_value=False, prompt="\nInitialize new DStream with this template?", help="Bypass confirmation prompt")
 @click.pass_obj
 def define(config, template):
-    """ Upload template file for DStream. """
+    """ Upload template file for DStream.
+    :param template: template file to register
+    :type template: JSON-formatted string
+    """
     template_data = template.read()
     #Try send template to server, if success...collect stream_token
     result = _api_POST(config, "define", {'template':template_data})
@@ -179,7 +227,7 @@ def define(config, template):
     try:
         json_template = json.loads(template_data)
         json_template['stream_token'] = token
-        template_filename = os.path.basename(template.name) # NOTE: TEMP, REFACTOR OUT OF TRY
+        template_filename = os.path.basename(template.name)
         path_list = template_filename.split('.')
         template_name = path_list[0]
         template_ext = path_list[1]
@@ -207,7 +255,14 @@ def define(config, template):
 @click.option('-token', '-tk', 'token', default=None, type=click.File('r'), help="Tokenized template file for verification")
 @click.pass_obj
 def add_source(config, source, kafka_topic, token):
-    """ Declare source of data: file upload or kafka stream. """
+    """ Declare source of data: file upload or kafka stream.
+    :param source: designate the source of this data, be it kafka stream of a local file
+    :type source: string
+    :param kafka_topic: string of the kafka topic to listen to
+    :type kafka_topic: string
+    :param token: unique token from registered template file
+    :type token: string
+    """
     #Check if topic was supplied when source is kafka
     if source == 'kafka' and kafka_topic == None:
         click.secho("No topic specified, please re-run command.", fg='red', reverse=True)
@@ -234,7 +289,12 @@ def add_source(config, source, kafka_topic, token):
 @click.option('-token', '-tk', 'token', default=None, type=click.File('r'), help="Tokenized template file for verification")
 @click.pass_obj
 def load(config, filepath, token):
-    """ Provide file-path of data to upload, along with tokenized_template for this DStream. """
+    """ Provide file-path of data to upload, along with tokenized_template for this DStream.
+    :param filepath: filepath of local data file to upload
+    :type filepath: string
+    :param token: unique token from registered template file
+    :type token: string
+    """
     if config.verbose:
         click.secho("\nTokenizing data fields of {}".format(click.format_filename(filepath)), fg='white')
     if not config.store:
@@ -284,6 +344,14 @@ def raw(config, time, utc, a, tk):
     \b
      Collect all raw data for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
+     :param time: date-time formatted string
+     :type time: string
+     :param utc: UTC-formatted string
+     :type utc: string
+     :param a: flag for collecting all events found
+     :type a: boolean
+     :param tk: unique token from registered template file
+     :type tk: string
     """
     if not config.store:
         try:
@@ -312,6 +380,14 @@ def filtered(config, time, utc, a, tk):
     \b
      Collect all filtered data for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
+     :param time: date-time formatted string
+     :type time: string
+     :param utc: UTC-formatted string
+     :type utc: string
+     :param a: flag for collecting all events found
+     :type a: boolean
+     :param tk: unique token from registered template file
+     :type tk: string
     """
     if not config.store:
         try:
@@ -340,6 +416,14 @@ def derived_params(config, time, utc, a, tk):
     \b
      Collect all derived parameters for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
+     :param time: date-time formatted string
+     :type time: string
+     :param utc: UTC-formatted string
+     :type utc: string
+     :param a: flag for collecting all events found
+     :type a: boolean
+     :param tk: unique token from registered template file
+     :type tk: string
     """
     if not config.store:
         try:
@@ -368,6 +452,14 @@ def events(config, time, utc, a, tk):
     \b
      Collect all event data for specified datetime or time-range*.
      *Options can be supplied twice to indicate a range.
+      :param time: date-time formatted string
+      :type time: string
+      :param utc: UTC-formatted string
+      :type utc: string
+      :param a: flag for collecting all events found
+      :type a: boolean
+      :param tk: unique token from registered template file
+      :type tk: string
     """
     if not config.store:
         try:
@@ -392,7 +484,7 @@ dstream.add_command(define)
 dstream.add_command(add_source)
 dstream.add_command(load)
 #
-# dstream.add_command(raw) #NOTE: TEMP
+# dstream.add_command(raw)
 # dstream.add_command(filtered)
 # dstream.add_command(derived_params)
 dstream.add_command(events)
