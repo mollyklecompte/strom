@@ -10,7 +10,7 @@ measurements are inserted into the template and sent to the Strom server.
 
 Structurally DStreams are a dict subclass with the following keys:
 
-- verison
+- version
   - The version number for the dstream.
   - Set when a new DStream is created and incremented when the dstream is updated
   - type: int
