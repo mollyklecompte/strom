@@ -11,6 +11,7 @@ Werkzeug==0.12.2
 pykafka==2.6.0
 Flask==0.12.2
 flask_restful==0.3.6
+pandas==0.20.3
 #
 ###### Refer to other requirements files ######
 #
