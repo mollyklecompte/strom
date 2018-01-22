@@ -71,6 +71,10 @@ class BStream(DStream):
         self["new_measures"]["timestamp"] = self["timestamp"]
         self["new_measures"] = pd.DataFrame(self["new_measures"])
 
+    def prune_dstreams(self):
+        logger.debug("removing input dstreams to save space")
+        self.dstreams = None
+
     @property
     def aggregate(self):
         logger.debug("aggregating everything")
