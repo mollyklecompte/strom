@@ -26,10 +26,10 @@ runs coordinator's process_data method on data chunk in thread
 
 import json
 from copy import deepcopy
-from multiprocessing import Process, Queue
+from multiprocessing import Process, JoinableQueue
 from threading import Thread
 from time import time
-
+from .buffer import Buffer
 from strom.coordinator.coordinator import Coordinator
 from strom.kafka.consumer.consumer import Consumer
 from strom.kafka.topics.checker import TopicChecker
@@ -165,8 +165,77 @@ class Processor(Process):
                 for data in data_list:
                     coordinator.process_data_async(data, data[0]["stream_token"])
 
-
 class EngineThread(Thread):
+    """
+    Based off `threading.Thread`
+    Instantiated in server
+
+    Contains buffer, queue for processors, processors, ConsumerThread.
+    """
+
+    def __init__(self, processors=8, buffer_roll=None):
+        """
+        Initializes with empty buffer & queue,
+         set # of processors, ConsumerThread instance as attributes.
+        :param processors: number of processors to start
+        :type processors: int
+        """
+        super().__init__()
+        self.buffer = Buffer(buffer_roll)
+        self.message_q = JoinableQueue()
+        self.number_of_processors = processors
+        self.processors = []
+        self.buffer_record_limit = config["buffer_record_limit"]
+        self.buffer_time_limit_s = config["buffer_time_limit_s"]
+        logger.info("Initializing EngineThread")
+        self.run_engine = True
+        self._init_processors()
+
+    def _init_processors(self):
+        """Initializes + starts set number of processors"""
+        for n in range(self.number_of_processors):
+            processor = Processor(self.message_q)
+            processor.start()
+            self.processors.append(processor)
+
+    def _poison_pill(self):
+        self.message_q.join()
+        for p in self.processors:
+            self.message_q.put("666_kIlL_thE_pROCess_666")
+
+    def stop_engine(self):
+        self.run_engine = False
+        self._poison_pill()
+
+    def _reset_buffer(self):
+        """Empties buffer, sets ConsumerThread instance attribute's buffer reference to same"""
+        self.buffer.reset()
+
+    def run(self):
+        """
+        Starts running ConsumerThread instance attribute.
+        When buffer reaches set size or time limit is reached,
+        buffer contents are put in queue to be processed &
+        buffer is emptied.
+        """
+        while self.run_engine:
+            st = time()
+            while len(self.buffer) < self.buffer_record_limit and \
+                                    time() - st < self.buffer_time_limit_s:
+                logger.debug("Buffer max reached, exiting inner loop")
+                buffer_data = deepcopy(self.buffer)
+                self._reset_buffer()
+                self.message_q.put(buffer_data)
+                logger.debug("Took {} s, queue size is {}".format(
+                    time() - st, str(self.message_q.qsize())))
+
+            else:
+                logger.debug("No records in buffer to process")
+
+        logger.info("Terminating Engine Thread")
+
+
+class EngineThreadKafka(Thread):
     """
     Based off `threading.Thread`
     Instantiated by `Engine`
@@ -192,7 +261,7 @@ class EngineThread(Thread):
         self.url = url
         self.topic = topic
         self.topic_name = topic.decode('utf-8')
-        self.message_q = Queue()
+        self.message_q = JoinableQueue()
         self.number_of_processors = processors
         self.processors = []
         self.buffer_record_limit = config["buffer_record_limit"]
@@ -308,7 +377,7 @@ class Engine(object):
 
     def _new_engine_thread(self, topic, consumer_timeout=-1):
         """Inits + starts new EngineThread instance"""
-        engine_thread = EngineThread(self.kafka_url,
+        engine_thread = EngineThreadKafka(self.kafka_url,
                                      topic.encode(),
                                      processors=self.processors,
                                      consumer_timeout=consumer_timeout
@@ -325,7 +394,7 @@ class Engine(object):
         :type consumer_timeout: int
         """
         for topic in self.topics:
-            engine_thread = EngineThread(self.kafka_url,
+            engine_thread = EngineThreadKafka(self.kafka_url,
                                          topic.encode(),
                                          processors=self.processors,
                                          consumer_timeout=consumer_timeout
