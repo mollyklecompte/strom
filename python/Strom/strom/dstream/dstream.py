@@ -156,4 +156,6 @@ class DStream(dict):
 
 
 class DataDStream(DStream):
-    pass
+    def __init__(self):
+        logger.debug("initializing DataDStream")
+        super().__init__()
