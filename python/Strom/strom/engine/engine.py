@@ -142,6 +142,7 @@ class Processor(Process):
         :type queue: Queue object
         """
         super().__init__()
+        self.daemon = True
         self.q = queue
         self.is_running = None
 
@@ -158,12 +159,13 @@ class Processor(Process):
             queued = self.q.get()
             if queued == "666_kIlL_thE_pROCess_666":
                 print("HAIL SATAN")
-                self.is_running = False
+                # self.is_running = False
                 break
             else:
                 data_list = [json.loads(datum) for datum in queued]
                 for data in data_list:
                     coordinator.process_data_async(data, data[0]["stream_token"])
+            self.q.task_done()
 
 class EngineThread(Thread):
     """
@@ -185,10 +187,10 @@ class EngineThread(Thread):
         self.message_q = JoinableQueue()
         self.number_of_processors = processors
         self.processors = []
-        self.buffer_record_limit = config["buffer_record_limit"]
-        self.buffer_time_limit_s = config["buffer_time_limit_s"]
+        self.buffer_record_limit = int(config["buffer_record_limit"])
+        self.buffer_time_limit_s = float(config["buffer_time_limit_s"])
         logger.info("Initializing EngineThread")
-        self.run_engine = True
+        self.run_engine = False
         self._init_processors()
 
     def _init_processors(self):
@@ -198,18 +200,19 @@ class EngineThread(Thread):
             processor.start()
             self.processors.append(processor)
 
-    def _poison_pill(self):
-        self.message_q.join()
-        for p in self.processors:
-            self.message_q.put("666_kIlL_thE_pROCess_666")
-
     def stop_engine(self):
         self.run_engine = False
-        self._poison_pill()
-
-    def _reset_buffer(self):
-        """Empties buffer, sets ConsumerThread instance attribute's buffer reference to same"""
-        self.buffer.reset()
+        print("JOINING Q")
+        logger.info(self.message_q.qsize())
+        self.message_q.join()
+        logger.info("Queue joined")
+        for p in self.processors:
+            logger.info("Putting poison pills in Q")
+            self.message_q.put("666_kIlL_thE_pROCess_666")
+        logger.info("Poison pills done")
+        for p in self.processors:
+            p.join()
+        self.join()
 
     def run(self):
         """
@@ -218,19 +221,22 @@ class EngineThread(Thread):
         buffer contents are put in queue to be processed &
         buffer is emptied.
         """
+        self.run_engine = True
         while self.run_engine:
             st = time()
             while len(self.buffer) < self.buffer_record_limit and \
                                     time() - st < self.buffer_time_limit_s:
-                logger.debug("Buffer max reached, exiting inner loop")
+                pass
+            if len(self.buffer):
+                logger.debug("Buffer max reached")
                 buffer_data = deepcopy(self.buffer)
-                self._reset_buffer()
+                self.buffer.reset()
                 self.message_q.put(buffer_data)
                 logger.debug("Took {} s, queue size is {}".format(
                     time() - st, str(self.message_q.qsize())))
-
             else:
-                logger.debug("No records in buffer to process")
+                logger.info("no messages in buffer")
+
 
         logger.info("Terminating Engine Thread")
 
