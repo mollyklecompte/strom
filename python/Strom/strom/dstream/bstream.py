@@ -87,6 +87,9 @@ class BStream(DStream):
 
         return self
 
+    def partition_data(self, parition_key, partition_value):
+        pass
+
     def apply_filters(self):
         logger.debug("applying filters")
         self["filter_measures"] = {}
