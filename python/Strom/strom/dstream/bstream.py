@@ -6,7 +6,9 @@ Initializes a Bstream dict off Dstream, using a Dstream template to initialize a
 import pandas as pd
 
 from strom.transform.apply_transformer import apply_transformation
-from strom.utils.logger.logger import logger
+from strom.transform.derive_param import *
+from strom.transform.detect_event import *
+from strom.transform.filter_data import *
 from .dstream import DStream
 
 __version__ = "0.1"
@@ -87,8 +89,52 @@ class BStream(DStream):
 
         return self
 
-    def partition_data(self, parition_key, partition_value):
-        pass
+    def partition_rows(self, parition_key, partition_value, comparison_operator="=="):
+        comparisons= {"==":np.equal, "!=":np.not_equal, ">=":np.greater_equal, "<=":np.less_equal, ">":np.greater, "<":np.less}
+        cur_comp = comparisons[comparison_operator]
+        return cur_comp(self["new_measures"][parition_key], partition_value)
+
+    def partition_data(self, list_of_partitions, logical_comparison="AND"):
+        if logical_comparison == "AND":
+            start_bools = np.ones((self["new_measures"].shape[0],))
+        elif logical_comparison == "OR":
+            start_bools = np.zeros((self["new_measures"].shape[0],))
+        else:
+            raise ValueError("{} is not a supported logical comparision".format(logical_comparison))
+
+        for partition in list_of_partitions:
+            new_inds = self.partition_rows(partition[0], partition[1], partition[2])
+            if logical_comparison == "AND":
+                start_bools = np.logical_and(start_bools, new_inds)
+            elif logical_comparison == "OR":
+                start_bools = np.logical_or(start_bools, new_inds)
+            else:
+                raise ValueError("{} is not a supported logical comparision".format(logical_comparison))
+
+        return self["new_measures"][start_bools]
+
+    @staticmethod
+    def select_transform(transform_type, transform_name):
+        available_transforms = {}
+        available_transforms["filter_data"] = {
+                                               "ButterLowpass":ButterLowpass(),
+                                               "WindowAverage":WindowAverage(),
+                                               }
+        available_transforms["derive_param"] = {
+                                                "DeriveSlope":DeriveSlope(),
+                                                "DeriveChange":DeriveChange(),
+                                                "DeriveCumsum":DeriveCumsum(),
+                                                "DeriveDistance":DeriveDistance(),
+                                                "DeriveHeading":DeriveHeading(),
+                                                "DeriveWindowSum":DeriveWindowSum(),
+                                                "DeriveScaled":DeriveScaled(),
+                                                "DeriveInBox":DeriveInBox(),
+                                                }
+        available_transforms["detect_event"] = {"DetectThreshold":DetectThreshold()}
+        return available_transforms[transform_type][transform_name]
+    def apply_transform(self, partition_list, transform_type, transform_name, measure_list, param_dict):
+        selected_data = self.partition_data(partition_list)[measure_list]
+        tranformer = self.select_transform()
 
     def apply_filters(self):
         logger.debug("applying filters")
