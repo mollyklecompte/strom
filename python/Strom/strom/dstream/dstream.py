@@ -25,7 +25,6 @@ class DStream(dict):
         self["stream_token"] = uuid.uuid1()
         self["source_key"] = None
         self["template_id"] = uuid.uuid1()
-        self["source_key"] = {}
         self["storage_rules"] = {}
         self["ingest_rules"] = {}
         self["engine_rules"] = {}
