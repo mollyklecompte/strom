@@ -14,6 +14,13 @@ from .dstream import DStream
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"
 
+def dummy_function(input, dummy_param):
+    """I am making this to test things, it just returns the input with not_names"""
+    for column in input:
+        input = input.rename(index=str, columns={column:"not_"+column})
+
+    return input
+
 
 class BStream(DStream):
     def __init__(self, template, dstreams):
@@ -128,6 +135,7 @@ class BStream(DStream):
         available_transforms["filter_data"] = {
                                                "ButterLowpass":ButterLowpass(),
                                                "WindowAverage":WindowAverage(),
+                                               "dummy":dummy_function
                                                }
         available_transforms["derive_param"] = {
                                                 "DeriveSlope":DeriveSlope(),
@@ -141,13 +149,18 @@ class BStream(DStream):
                                                 }
         available_transforms["detect_event"] = {"DetectThreshold":DetectThreshold()}
         return available_transforms[transform_type][transform_name]
+
     def apply_transform(self, partition_list, transform_type, transform_name, measure_list, param_dict):
         """This function takes uses the inputs to partition the measures DataFrame, apply the specified
         transform to the specified columns with the supplied parameters and joins the results to the
         measures DataFrame"""
         logger.debug("Applying transform")
-        selected_data = self.partition_data(partition_list)[measure_list]
-        tranformer = self.select_transform()
+        selected_data = self.partition_data(partition_list)[measure_list] #partition rows then select columns
+        tranformer = self.select_transform(transform_type,transform_name) #grab your transformer
+        transformed_data = tranformer(selected_data, param_dict) #Return data, either as array or DataFrame
+        #Concatonate data with self["new_measures"]
+        return transformed_data
+
 
     def apply_filters(self):
         logger.debug("applying filters")
