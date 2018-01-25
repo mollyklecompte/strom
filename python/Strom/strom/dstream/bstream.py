@@ -159,6 +159,7 @@ class BStream(DStream):
         tranformer = self.select_transform(transform_type,transform_name) #grab your transformer
         transformed_data = tranformer(selected_data, param_dict) #Return data, either as array or DataFrame
         #Concatonate data with self["new_measures"]
+        print(pd.concat([self["new_measures"], transformed_data], axis=1))
         return transformed_data
 
 
