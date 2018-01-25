@@ -90,13 +90,18 @@ class BStream(DStream):
         return self
 
     def partition_rows(self, parition_key, partition_value, comparison_operator="=="):
+        """This function takes a column name (partition_key), the value to compare with (parition_value)
+        and the operator for comparision (comparison_operator)
+        It returns the boolean index for the rows that meet the patition condition"""
         logger.debug("Finding the row indices that meet the partition condition")
         comparisons= {"==":np.equal, "!=":np.not_equal, ">=":np.greater_equal, "<=":np.less_equal, ">":np.greater, "<":np.less}
         cur_comp = comparisons[comparison_operator]
         return cur_comp(self["new_measures"][parition_key], partition_value)
 
     def partition_data(self, list_of_partitions, logical_comparison="AND"):
-        logger.debug("")
+        """This function takes a list of tuples of partition parameters used by partition_rows() and
+        returns all rows from the measure DataFrame that meet the logical AND or logical OR of those conditions"""
+        logger.debug("building parition rows")
         if logical_comparison == "AND":
             start_bools = np.ones((self["new_measures"].shape[0],))
         elif logical_comparison == "OR":
@@ -117,6 +122,8 @@ class BStream(DStream):
 
     @staticmethod
     def select_transform(transform_type, transform_name):
+        """Method to grab the transform function from the correct module"""
+        logger.debug("Selecting transform function")
         available_transforms = {}
         available_transforms["filter_data"] = {
                                                "ButterLowpass":ButterLowpass(),
@@ -135,6 +142,10 @@ class BStream(DStream):
         available_transforms["detect_event"] = {"DetectThreshold":DetectThreshold()}
         return available_transforms[transform_type][transform_name]
     def apply_transform(self, partition_list, transform_type, transform_name, measure_list, param_dict):
+        """This function takes uses the inputs to partition the measures DataFrame, apply the specified
+        transform to the specified columns with the supplied parameters and joins the results to the
+        measures DataFrame"""
+        logger.debug("Applying transform")
         selected_data = self.partition_data(partition_list)[measure_list]
         tranformer = self.select_transform()
 
