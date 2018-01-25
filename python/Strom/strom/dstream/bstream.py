@@ -90,11 +90,13 @@ class BStream(DStream):
         return self
 
     def partition_rows(self, parition_key, partition_value, comparison_operator="=="):
+        logger.debug("Finding the row indices that meet the partition condition")
         comparisons= {"==":np.equal, "!=":np.not_equal, ">=":np.greater_equal, "<=":np.less_equal, ">":np.greater, "<":np.less}
         cur_comp = comparisons[comparison_operator]
         return cur_comp(self["new_measures"][parition_key], partition_value)
 
     def partition_data(self, list_of_partitions, logical_comparison="AND"):
+        logger.debug("")
         if logical_comparison == "AND":
             start_bools = np.ones((self["new_measures"].shape[0],))
         elif logical_comparison == "OR":
