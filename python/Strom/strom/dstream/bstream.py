@@ -17,7 +17,7 @@ __author__ = "Molly <molly@tura.io>"
 def dummy_function(input, dummy_param):
     """I am making this to test things, it just returns the input with not_names"""
     for column in input:
-        input = input.rename(index=str, columns={column:"not_"+column})
+        input = input.rename( columns={column:"not_"+column})
 
     return input
 
@@ -78,7 +78,7 @@ class BStream(DStream):
             m: [i[m]['val'] for i in all_measures] for m, v in self["measures"].items()
         }
         self["new_measures"]["timestamp"] = self["timestamp"]
-        self["new_measures"] = pd.DataFrame(self["new_measures"])
+        self["new_measures"] = pd.DataFrame.from_dict(self["new_measures"])
 
     def prune_dstreams(self):
         logger.debug("removing input dstreams to save space")
@@ -150,6 +150,9 @@ class BStream(DStream):
         available_transforms["detect_event"] = {"DetectThreshold":DetectThreshold()}
         return available_transforms[transform_type][transform_name]
 
+    def add_columns(self, new_data_frame):
+        self["new_measures"] = self["new_measures"].join(new_data_frame, rsuffix="_r", lsuffix="_l")
+
     def apply_transform(self, partition_list, transform_type, transform_name, measure_list, param_dict):
         """This function takes uses the inputs to partition the measures DataFrame, apply the specified
         transform to the specified columns with the supplied parameters and joins the results to the
@@ -159,7 +162,7 @@ class BStream(DStream):
         tranformer = self.select_transform(transform_type,transform_name) #grab your transformer
         transformed_data = tranformer(selected_data, param_dict) #Return data, either as array or DataFrame
         #Concatonate data with self["new_measures"]
-        print(pd.concat([self["new_measures"], transformed_data], axis=1))
+        self.add_columns(transformed_data)
         return transformed_data
 
 
