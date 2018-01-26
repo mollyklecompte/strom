@@ -153,12 +153,12 @@ class BStream(DStream):
     def add_columns(self, new_data_frame):
         self["new_measures"] = self["new_measures"].join(new_data_frame, rsuffix="_r", lsuffix="_l")
 
-    def apply_transform(self, partition_list, transform_type, transform_name, measure_list, param_dict):
+    def apply_transform(self, partition_list, transform_type, transform_name, measure_list, param_dict, logical_comparison="AND"):
         """This function takes uses the inputs to partition the measures DataFrame, apply the specified
         transform to the specified columns with the supplied parameters and joins the results to the
         measures DataFrame"""
         logger.debug("Applying transform")
-        selected_data = self.partition_data(partition_list)[measure_list] #partition rows then select columns
+        selected_data = self.partition_data(partition_list, logical_comparison)[measure_list] #partition rows then select columns
         tranformer = self.select_transform(transform_type,transform_name) #grab your transformer
         transformed_data = tranformer(selected_data, param_dict) #Return data, either as array or DataFrame
         #Concatonate data with self["new_measures"]
