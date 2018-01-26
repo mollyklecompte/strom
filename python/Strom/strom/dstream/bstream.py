@@ -171,15 +171,14 @@ class BStream(DStream):
         self["filter_measures"] = {}
         for filter_rule in self["filters"]:
             logger.debug("applying filter %s" % (filter_rule["filter_name"]))
-            self["filter_measures"][filter_rule["filter_name"]] = apply_transformation(filter_rule, self)[filter_rule["filter_name"]]
+            self.apply_transform(filter_rule["partition_list"], filter_rule["transform_type"], filter_rule["transform_name"], filter_rule["measure_list"], filter_rule["param_dict"], filter_rule["logical_comparision"])
 
     def apply_dparam_rules(self):
         logger.debug("deriving parameters")
         self["derived_measures"] = {}
         for dparam_rule in self["dparam_rules"]:
             logger.debug("deriving %s" % (dparam_rule["measure_rules"]["output_name"]))
-            self["derived_measures"][dparam_rule["measure_rules"]["output_name"]] = apply_transformation(dparam_rule, self)[dparam_rule["measure_rules"]["output_name"]]
-
+            self.apply_transform(dparam_rule["partition_list"], dparam_rule["transform_type"], dparam_rule["transform_name"], dparam_rule["measure_list"], dparam_rule["param_dict"], dparam_rule["logical_comparision"])
     def find_events(self):
         logger.debug("finding events")
         self["events"] = {}
