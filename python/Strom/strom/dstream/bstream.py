@@ -78,6 +78,13 @@ class BStream(DStream):
             m: [i[m]['val'] for i in all_measures] for m, v in self["measures"].items()
         }
         self["new_measures"]["timestamp"] = self["timestamp"]
+        for user_id, value in self["user_ids"].items():
+            self["new_measures"][user_id] = value
+        for field, value in self["fields"].items():
+            self["new_measures"][field] = value
+        for tag, value in self["tags"].items():
+            self["new_measures"][tag] = value
+
         self["new_measures"] = pd.DataFrame.from_dict(self["new_measures"])
 
     def prune_dstreams(self):
