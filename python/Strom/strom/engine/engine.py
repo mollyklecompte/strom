@@ -175,7 +175,7 @@ class EngineThread(Thread):
     Contains buffer, queue for processors, processors, ConsumerThread.
     """
 
-    def __init__(self, processors=8, buffer_roll=None):
+    def __init__(self, processors=8, buffer_roll=0):
         """
         Initializes with empty buffer & queue,
          set # of processors, ConsumerThread instance as attributes.
@@ -183,7 +183,8 @@ class EngineThread(Thread):
         :type processors: int
         """
         super().__init__()
-        self.buffer = Buffer(buffer_roll)
+        self.buffer_roll = buffer_roll
+        self.buffer = Buffer(self.buffer_roll)
         self.message_q = JoinableQueue()
         self.number_of_processors = processors
         self.processors = []
@@ -224,13 +225,17 @@ class EngineThread(Thread):
         self.run_engine = True
         while self.run_engine:
             st = time()
-            while len(self.buffer) < self.buffer_record_limit and \
+            old_records = 0
+            while (len(self.buffer) - old_records) < self.buffer_record_limit and \
                                     time() - st < self.buffer_time_limit_s:
                 pass
-            if len(self.buffer):
+            if len(self.buffer) > old_records:
                 logger.debug("Buffer max reached")
-                buffer_data = deepcopy(self.buffer)
-                self.buffer.reset()
+                #buffer_data = deepcopy(self.buffer)
+                buff_i = len(self.buffer) - old_records + self.buffer_roll
+                buffer_data = self.buffer[-buff_i:]
+                # self.buffer.reset()
+                old_records += len(buffer_data) - self.buffer_roll
                 self.message_q.put(buffer_data)
                 logger.debug("Took {} s, queue size is {}".format(
                     time() - st, str(self.message_q.qsize())))
