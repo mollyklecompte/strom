@@ -26,7 +26,7 @@ runs coordinator's process_data method on data chunk in thread
 
 import json
 from copy import deepcopy
-from multiprocessing import Process, JoinableQueue
+from multiprocessing import Process, Pipe, JoinableQueue
 from threading import Thread
 from time import time
 from .buffer import Buffer
@@ -162,12 +162,12 @@ class Processor(Process):
                 # self.is_running = False
                 break
             else:
-                data_list = [datum for datum in queued]
+                data_list = [json.loads(datum) for datum in queued]
                 for data in data_list:
                     coordinator.process_data_async(data, data[0]["stream_token"])
             self.q.task_done()
 
-class EngineThread(Thread):
+class EngineThread(Process):
     """
     Based off `threading.Thread`
     Instantiated in server
@@ -175,7 +175,7 @@ class EngineThread(Thread):
     Contains buffer, queue for processors, processors, ConsumerThread.
     """
 
-    def __init__(self, processors=8, buffer_roll=0):
+    def __init__(self, engine_conn, processors=8, buffer_roll=0):
         """
         Initializes with empty buffer & queue,
          set # of processors, ConsumerThread instance as attributes.
@@ -183,6 +183,7 @@ class EngineThread(Thread):
         :type processors: int
         """
         super().__init__()
+        self.pipe_conn = engine_conn
         self.buffer_roll = buffer_roll
         self.buffer = Buffer(self.buffer_roll)
         self.message_q = JoinableQueue()
@@ -192,7 +193,6 @@ class EngineThread(Thread):
         self.buffer_time_limit_s = float(config["buffer_time_limit_s"])
         logger.info("Initializing EngineThread")
         self.run_engine = False
-        self._init_processors()
 
     def _init_processors(self):
         """Initializes + starts set number of processors"""
@@ -201,8 +201,49 @@ class EngineThread(Thread):
             processor.start()
             self.processors.append(processor)
 
+    def run(self):
+        """
+        Starts running ConsumerThread instance attribute.
+        When buffer reaches set size or time limit is reached,
+        buffer contents are put in queue to be processed &
+        buffer is emptied.
+        """
+        self._init_processors()
+        self.run_engine = True
+        while self.run_engine:
+            st = time()
+            old_records = 0
+            while (len(self.buffer) - old_records) < self.buffer_record_limit \
+                    and time() - st < self.buffer_time_limit_s:
+                received = self.pipe_conn.recv()
+                if received == "stop_poison_pill":
+                    self.run_engine = False
+                    break
+                else:
+                    self.buffer.append(received)
+            if len(self.buffer) > old_records:
+                logger.debug("Buffer max reached")
+                buff_i = len(self.buffer) - old_records + self.buffer_roll
+                buffer_data = self.buffer[-buff_i:]
+                self.message_q.put(buffer_data)
+                if len(self.buffer) >= 150:
+                    self.buffer.reset()
+                    old_records -= old_records
+                else:
+                    old_records += len(buffer_data) - self.buffer_roll
+                logger.debug("Took {} s, queue size is {}".format(
+                    time() - st, str(self.message_q.qsize())))
+            else:
+                logger.info("no messages in buffer")
+
+
+        logger.info("Terminating Engine Thread")
+        self.stop_engine()
+
     def stop_engine(self):
-        self.run_engine = False
+        self.pipe_conn.close()
+        if self.run_engine is True:
+            self.run_engine = False
         print("JOINING Q")
         logger.info(self.message_q.qsize())
         self.message_q.join()
@@ -213,37 +254,8 @@ class EngineThread(Thread):
         logger.info("Poison pills done")
         for p in self.processors:
             p.join()
-        self.join()
-
-    def run(self):
-        """
-        Starts running ConsumerThread instance attribute.
-        When buffer reaches set size or time limit is reached,
-        buffer contents are put in queue to be processed &
-        buffer is emptied.
-        """
-        self.run_engine = True
-        while self.run_engine:
-            st = time()
-            old_records = 0
-            while (len(self.buffer) - old_records) < self.buffer_record_limit and \
-                                    time() - st < self.buffer_time_limit_s:
-                pass
-            if len(self.buffer) > old_records:
-                logger.debug("Buffer max reached")
-                #buffer_data = deepcopy(self.buffer)
-                buff_i = len(self.buffer) - old_records + self.buffer_roll
-                buffer_data = self.buffer[-buff_i:]
-                # self.buffer.reset()
-                old_records += len(buffer_data) - self.buffer_roll
-                self.message_q.put(buffer_data)
-                logger.debug("Took {} s, queue size is {}".format(
-                    time() - st, str(self.message_q.qsize())))
-            else:
-                logger.info("no messages in buffer")
-
-
-        logger.info("Terminating Engine Thread")
+            logger.info("Engine shutdown- processor joined")
+        #logger.info("Engine shutdown- EngineThread joined")
 
 
 class EngineThreadKafka(Thread):
