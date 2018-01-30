@@ -162,7 +162,7 @@ class Processor(Process):
                 # self.is_running = False
                 break
             else:
-                data_list = [json.loads(datum) for datum in queued]
+                data_list = [datum for datum in queued]
                 for data in data_list:
                     coordinator.process_data_async(data, data[0]["stream_token"])
             self.q.task_done()
