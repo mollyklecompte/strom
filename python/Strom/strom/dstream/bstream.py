@@ -3,6 +3,8 @@ B-stream class
 
 Initializes a Bstream dict off Dstream, using a Dstream template to initialize all keys, static values. The Bstream contains methods to aggregate measures, timestamps, user ids, fields and tags, as well as a wrapper aggregate method.
 """
+import json
+
 import pandas as pd
 
 from strom.transform.apply_transformer import apply_transformation
@@ -60,10 +62,8 @@ class BStream(DStream):
 
     def _aggregate_fields(self):
         logger.debug("aggregating fields")
-        fields = [s["fields"] for s in self.dstreams]
-        self["fields"] = {
-            fieldkey: [i[fieldkey] for i in fields] for fieldkey, v in self["fields"].items()
-        }
+        self["fields"] = [json.dumps(s["fields"]) for s in self.dstreams]
+
 
     def _aggregate_tags(self):
         logger.debug("aggregating tags")
@@ -80,10 +80,9 @@ class BStream(DStream):
         self["new_measures"]["timestamp"] = self["timestamp"]
         for user_id, value in self["user_ids"].items():
             self["new_measures"][user_id] = value
-        for field, value in self["fields"].items():
-            self["new_measures"][field] = value
         for tag, value in self["tags"].items():
             self["new_measures"][tag] = value
+        self["new_measures"]["fields"] = self["fields"]
 
         self["new_measures"] = pd.DataFrame.from_dict(self["new_measures"])
 
