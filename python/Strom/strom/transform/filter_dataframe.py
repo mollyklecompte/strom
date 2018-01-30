@@ -33,7 +33,7 @@ def window_data(in_array, window_len):
     stop = (np.cumsum(in_array[:-window_len:-1])[::2] / ends_divisor)[::-1]
     if in_array.shape[0] - w_data.shape[0] - start.shape[0] < stop.shape[0]:
         stop = stop[1:]
-    return np.concatenate((start, w_daderive_param.pyta, stop))
+    return np.concatenate((start, w_data, stop))
 
 
 def butter_data(data_array, order, nyquist):
