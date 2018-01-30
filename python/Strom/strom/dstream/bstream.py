@@ -5,12 +5,10 @@ Initializes a Bstream dict off Dstream, using a Dstream template to initialize a
 """
 import json
 
-import pandas as pd
-
 from strom.transform.apply_transformer import apply_transformation
 from strom.transform.derive_param import *
 from strom.transform.detect_event import *
-from strom.transform.filter_data import *
+from strom.transform.filter_dataframe import *
 from .dstream import DStream
 
 __version__ = "0.1"
@@ -67,10 +65,8 @@ class BStream(DStream):
 
     def _aggregate_tags(self):
         logger.debug("aggregating tags")
-        tags = [s["tags"] for s in self.dstreams]
-        self["tags"] = {
-            tagkey: [i[tagkey] for i in tags] for tagkey, v in self["tags"].items()
-        }
+        self["tags"] = [json.dumps(s["tags"]) for s in self.dstreams]
+
     def _measure_df(self):
         logger.debug("aggregating into DataFrame")
         all_measures = [s["measures"] for s in self.dstreams]
@@ -80,8 +76,8 @@ class BStream(DStream):
         self["new_measures"]["timestamp"] = self["timestamp"]
         for user_id, value in self["user_ids"].items():
             self["new_measures"][user_id] = value
-        for tag, value in self["tags"].items():
-            self["new_measures"][tag] = value
+
+        self["new_measures"]["tags"] = self["tags"]
         self["new_measures"]["fields"] = self["fields"]
 
         self["new_measures"] = pd.DataFrame.from_dict(self["new_measures"])
@@ -139,19 +135,19 @@ class BStream(DStream):
         logger.debug("Selecting transform function")
         available_transforms = {}
         available_transforms["filter_data"] = {
-                                               "ButterLowpass":ButterLowpass(),
-                                               "WindowAverage":WindowAverage(),
+                                               "ButterLowpass":ButterLowpass,
+                                               "WindowAverage":WindowAverage,
                                                "dummy":dummy_function
                                                }
         available_transforms["derive_param"] = {
-                                                "DeriveSlope":DeriveSlope(),
-                                                "DeriveChange":DeriveChange(),
-                                                "DeriveCumsum":DeriveCumsum(),
-                                                "DeriveDistance":DeriveDistance(),
-                                                "DeriveHeading":DeriveHeading(),
-                                                "DeriveWindowSum":DeriveWindowSum(),
-                                                "DeriveScaled":DeriveScaled(),
-                                                "DeriveInBox":DeriveInBox(),
+                                                "DeriveSlope":DeriveSlope,
+                                                "DeriveChange":DeriveChange,
+                                                "DeriveCumsum":DeriveCumsum,
+                                                "DeriveDistance":DeriveDistance,
+                                                "DeriveHeading":DeriveHeading,
+                                                "DeriveWindowSum":DeriveWindowSum,
+                                                "DeriveScaled":DeriveScaled,
+                                                "DeriveInBox":DeriveInBox,
                                                 }
         available_transforms["detect_event"] = {"DetectThreshold":DetectThreshold()}
         return available_transforms[transform_type][transform_name]
@@ -159,7 +155,7 @@ class BStream(DStream):
     def add_columns(self, new_data_frame):
         self["new_measures"] = self["new_measures"].join(new_data_frame, rsuffix="_r", lsuffix="_l")
 
-    def apply_transform(self, partition_list, transform_type, transform_name, measure_list, param_dict, logical_comparison="AND"):
+    def apply_transform(self, partition_list, measure_list, transform_type, transform_name, param_dict, logical_comparison="AND"):
         """This function takes uses the inputs to partition the measures DataFrame, apply the specified
         transform to the specified columns with the supplied parameters and joins the results to the
         measures DataFrame"""
@@ -176,8 +172,8 @@ class BStream(DStream):
         logger.debug("applying filters")
         self["filter_measures"] = {}
         for filter_rule in self["filters"]:
-            logger.debug("applying filter %s" % (filter_rule["filter_name"]))
-            self.apply_transform(filter_rule["partition_list"], filter_rule["transform_type"], filter_rule["transform_name"], filter_rule["measure_list"], filter_rule["param_dict"], filter_rule["logical_comparision"])
+            logger.debug("applying filter %s" % (filter_rule["param_dict"]["filter_name"]))
+            self.apply_transform(filter_rule["partition_list"], filter_rule["measure_list"], filter_rule["transform_type"], filter_rule["transform_name"], filter_rule["param_dict"], filter_rule["logical_comparision"])
 
     def apply_dparam_rules(self):
         logger.debug("deriving parameters")
