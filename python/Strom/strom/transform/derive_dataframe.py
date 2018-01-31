@@ -37,7 +37,7 @@ def DeriveSlope(data_frame, params=None):
 
     if params==None:
         params = {}
-        params["func_params"] = {"window":1}
+        params["func_params"] = {"window_len":1}
         params["measure_rules"] ={
                                     "rise_measure":"measure y values (or rise in rise/run calculation of slope)",
                                     "run_measure":"measure containing x values (or run in rise/run calculation of slope)",
@@ -45,13 +45,13 @@ def DeriveSlope(data_frame, params=None):
                                     }
         return params
 
-    logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
-    window_len = params["func_params"]["window"]
+    logger.debug("transforming data to %s" % (params["measure_rules"]["output_name"]))
+    window_len = params["func_params"]["window_len"]
     xrun = data_frame[params["measure_rules"]["run_measure"]].values
     yrise = data_frame[params["measure_rules"]["rise_measure"]].values
     smaller_len = np.min([xrun.shape[0], yrise.shape[0]])
     sloped = self.sloper(yrise[:smaller_len,], xrun[:smaller_len,], window_len)
-    return pd.DataFrame(data=sloped, columns=params["measure_rules"]["output_name"] )
+    return pd.DataFrame(data=sloped, columns=params["measure_rules"]["output_name"], index=data_frame.index[:smaller_len])
 
 
 def diff_data(data_array, window_len, angle_diff):
@@ -78,18 +78,18 @@ def DeriveChange(data_frame, params=None):
     logger.debug("initialized DeriveChange. Use get_params() to see parameter values")
     if params==None:
         params = {}
-        params["func_params"] = {"window":1, "angle_change":False}
+        params["func_params"] = {"window_len":1, "angle_change":False}
         params["measure_rules"] ={
                                     "target_measure":"measure_name",
                                     "output_name":"name of returned measure"
                                     }
         return params
 
-    logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
-    window_len = self.params["func_params"]["window"]
-    target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
-    diffed_data = self.diff_data(target_array, window_len, self.params["func_params"]["angle_change"])
-    return {self.params["measure_rules"]["output_name"]:diffed_data}
+    logger.debug("transforming data to %s" % (params["measure_rules"]["output_name"]))
+    window_len = params["func_params"]["window_len"]
+    target_array = data_frame[params["measure_rules"]["target_measure"]].values
+    diffed_data = diff_data(target_array, window_len, params["func_params"]["angle_change"])
+    return pd.DataFrame(data=diffed_data, columns=params["measure_rules"]["output_name"], index=data_frame.index[:-1])
 
 
 def cumsum(data_array, offset=0):
@@ -117,10 +117,10 @@ def DeriveCumsum(data_frame, params=None):
                                     }
         return params
 
-    logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
-    target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
-    cumsum_array = self.cumsum(target_array, self.params["func_params"]["offset"])
-    return {self.params["measure_rules"]["output_name"]:cumsum_array}
+    logger.debug("transforming data to %s" % (params["measure_rules"]["output_name"]))
+    target_array = data_frame[params["measure_rules"]["target_measure"]].values
+    cumsum_array = cumsum(target_array, params["func_params"]["offset"])
+    return pd.DataFrame(data=cumsum_array, columns=params["measure_rules"]["output_name"], index=data_frame.index)
 
 
 def euclidean_dist(position_array, window_len):
@@ -178,7 +178,7 @@ def DeriveDistance(data_frame, params=None):
     if params == None:
         params = {}
         params["func_params"] = {
-                                    "window":1,
+                                    "window_len":1,
                                     "distance_func": "euclidean",
                                     "swap_lon_lat":False
                                  }
@@ -188,8 +188,8 @@ def DeriveDistance(data_frame, params=None):
                                     "output_name":"name of returned measure"
                                     }
 
-    logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
-    window_len = self.params["func_params"]["window"]
+    logger.debug("transforming data to %s" % (params["measure_rules"]["output_name"]))
+    window_len = self.params["func_params"]["window_len"]
     position_array = np.array(self.data[self.params["measure_rules"]["spatial_measure"]]["val"], dtype=float)
     if self.params["func_params"]["swap_lon_lat"]:
         position_array = position_array[:,[1, 0]]
@@ -257,14 +257,14 @@ def DeriveHeading(data_frame, params=None):
     logger.debug("initialized DeriveHeading. Use get_params() to see parameter values")
     if params == None:
         params = {}
-        params["func_params"] = {"window":1, "units":"deg", "heading_type":"bearing", "swap_lon_lat":False}
+        params["func_params"] = {"window_len":1, "units":"deg", "heading_type":"bearing", "swap_lon_lat":False}
         params["measure_rules"] = {
                                     "spatial_measure":"name of geo-spatial measure",
                                     "output_name":"name of returned measure"
                                     }
 
-    logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
-    window_len = self.params["func_params"]["window"]
+    logger.debug("transforming data to %s" % (params["measure_rules"]["output_name"]))
+    window_len = self.params["func_params"]["window_len"]
     position_array = np.array(self.data[self.params["measure_rules"]["spatial_measure"]]["val"], dtype=float)
     if self.params["func_params"]["swap_lon_lat"]:
         position_array = position_array[:,[1, 0]]
@@ -304,13 +304,13 @@ def DeriveWindowSum(data_frame, params=None):
 
     if params == None:
         params = {}
-        params["func_params"] = {"window":2}
+        params["func_params"] = {"window_len":2}
         params["measure_rules"] =  {"target_measure":"measure_name", "output_name":"name of returned measure"}
 
-    logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
-    window_len = self.params["func_params"]["window"]
-    target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
-    summed_data = self.window_sum(target_array, window_len)
+    logger.debug("transforming data to %s" % (params["measure_rules"]["output_name"]))
+    window_len = params["func_params"]["window_len"]
+    target_array = data_frame[params["measure_rules"]["target_measure"]].values
+    summed_data = window_sum(target_array, window_len)
     return  {self.params["measure_rules"]["output_name"]:summed_data}
 
 
@@ -331,9 +331,9 @@ def DeriveScaled(data_frame, params=None):
         params["func_params"] = {"scalar":1}
         params["measure_rules"] =  {"target_measure":"measure_name", "output_name":"name of returned measure"}
 
-    logger.debug("transforming data to %s" %(self.params["measure_rules"]["output_name"]))
-    target_array = np.array(self.data[self.params["measure_rules"]["target_measure"]]["val"], dtype=float)
-    scaled_out =self.scale_data(target_array, self.params["func_params"]["scalar"])
+    logger.debug("transforming data to %s" %(params["measure_rules"]["output_name"]))
+    target_array = data_frame[params["measure_rules"]["target_measure"]].values
+    scaled_out = scale_data(target_array, params["func_params"]["scalar"])
     return  {self.params["measure_rules"]["output_name"]:scaled_out}
 
 def in_box(spatial_array, upper_left, lower_right):
@@ -361,7 +361,8 @@ def DeriveInBox(data_frame, params=None):
         params = {}
         params["func_params"] = {"upper_left_corner":(0,1), "lower_right_corner":(1,0)}
         params["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
-    logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
+
+    logger.debug("transforming data to %s" % (params["measure_rules"]["output_name"]))
     spatial_array = np.array(self.data[self.params["measure_rules"]["spatial_measure"]]["val"], dtype=float)
     box_bool = self.in_box(spatial_array, self.params["func_params"]["upper_left_corner"], self.params["func_params"]["lower_right_corner"])
     return {self.params["measure_rules"]["output_name"]:box_bool}
