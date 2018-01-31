@@ -47,11 +47,11 @@ def DeriveSlope(data_frame, params=None):
 
     logger.debug("transforming data to %s" % (self.params["measure_rules"]["output_name"]))
     window_len = params["func_params"]["window"]
-    xrun = params["measure_rules"]["run_measure"]
-    yrise = params["measure_rules"]["rise_measure"]
+    xrun = data_frame[params["measure_rules"]["run_measure"]].values
+    yrise = data_frame[params["measure_rules"]["rise_measure"]].values
     smaller_len = np.min([xrun.shape[0], yrise.shape[0]])
     sloped = self.sloper(yrise[:smaller_len,], xrun[:smaller_len,], window_len)
-    return {self.params["measure_rules"]["output_name"]:sloped}
+    return pd.DataFrame(data=sloped, columns=params["measure_rules"]["output_name"] )
 
 
 def diff_data(data_array, window_len, angle_diff):
