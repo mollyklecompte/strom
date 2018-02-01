@@ -8,6 +8,7 @@ stored as BStream["derived_measures"]
 """
 
 import numpy as np
+import pandas as pd
 
 from strom.utils.logger.logger import logger
 from .filter_dataframe import window_data
@@ -50,8 +51,8 @@ def DeriveSlope(data_frame, params=None):
     xrun = data_frame[params["measure_rules"]["run_measure"]].values
     yrise = data_frame[params["measure_rules"]["rise_measure"]].values
     smaller_len = np.min([xrun.shape[0], yrise.shape[0]])
-    sloped = self.sloper(yrise[:smaller_len,], xrun[:smaller_len,], window_len)
-    return pd.DataFrame(data=sloped, columns=params["measure_rules"]["output_name"], index=data_frame.index[:smaller_len])
+    sloped = sloper(yrise[:smaller_len,], xrun[:smaller_len,], window_len)
+    return pd.DataFrame(data=sloped, columns=[params["measure_rules"]["output_name"]], index=data_frame.index)
 
 
 def diff_data(data_array, window_len, angle_diff):
@@ -89,7 +90,7 @@ def DeriveChange(data_frame, params=None):
     window_len = params["func_params"]["window_len"]
     target_array = data_frame[params["measure_rules"]["target_measure"]].values
     diffed_data = diff_data(target_array, window_len, params["func_params"]["angle_change"])
-    return pd.DataFrame(data=diffed_data, columns=params["measure_rules"]["output_name"], index=data_frame.index[:-1])
+    return pd.DataFrame(data=diffed_data, columns=[params["measure_rules"]["output_name"]], index=data_frame.index[:-1])
 
 
 def cumsum(data_array, offset=0):
@@ -120,7 +121,7 @@ def DeriveCumsum(data_frame, params=None):
     logger.debug("transforming data to %s" % (params["measure_rules"]["output_name"]))
     target_array = data_frame[params["measure_rules"]["target_measure"]].values
     cumsum_array = cumsum(target_array, params["func_params"]["offset"])
-    return pd.DataFrame(data=cumsum_array, columns=params["measure_rules"]["output_name"], index=data_frame.index)
+    return pd.DataFrame(data=cumsum_array, columns=[params["measure_rules"]["output_name"]], index=data_frame.index)
 
 
 def euclidean_dist(position_array, window_len):
@@ -189,16 +190,19 @@ def DeriveDistance(data_frame, params=None):
                                     }
 
     logger.debug("transforming data to %s" % (params["measure_rules"]["output_name"]))
-    window_len = self.params["func_params"]["window_len"]
-    position_array = np.array(self.data[self.params["measure_rules"]["spatial_measure"]]["val"], dtype=float)
-    if self.params["func_params"]["swap_lon_lat"]:
-        position_array = position_array[:,[1, 0]]
-    if self.params["func_params"]["distance_func"] == "euclidean":
-        dist_array = self.euclidean_dist(position_array, window_len)
-    elif self.params["func_params"]["distance_func"] == "great_circle":
-        dist_array = self.great_circle(position_array, window_len)
+    window_len = params["func_params"]["window_len"]
+    position_array = pd.DataFrame(data_frame[params["measure_rules"]["spatial_measure"]].tolist()).values
 
-    return {self.params["measure_rules"]["output_name"]:dist_array}
+    if params["func_params"]["swap_lon_lat"]:
+        position_array = position_array[:,[1, 0]]
+    if params["func_params"]["distance_func"] == "euclidean":
+        dist_array = euclidean_dist(position_array, window_len)
+    elif params["func_params"]["distance_func"] == "great_circle":
+        dist_array = great_circle(position_array, window_len)
+    else:
+        raise ValueError("Not suported distance function")
+
+    return pd.DataFrame(data=dist_array, columns=[params["measure_rules"]["output_name"]], index=data_frame.index[:-1])
 
 
 def flat_angle(position_array, window_len, units="deg"):
@@ -264,16 +268,17 @@ def DeriveHeading(data_frame, params=None):
                                     }
 
     logger.debug("transforming data to %s" % (params["measure_rules"]["output_name"]))
-    window_len = self.params["func_params"]["window_len"]
-    position_array = np.array(self.data[self.params["measure_rules"]["spatial_measure"]]["val"], dtype=float)
-    if self.params["func_params"]["swap_lon_lat"]:
-        position_array = position_array[:,[1, 0]]
-    if self.params["func_params"]["heading_type"] == "bearing":
-        angle_array = self.bearing(position_array, window_len, self.params["func_params"]["units"])
-    elif self.params["func_params"]["heading_type"] == "flat_angle":
-        angle_array = self.flat_angle(position_array, window_len, self.params["func_params"]["units"])
+    window_len = params["func_params"]["window_len"]
+    position_array = pd.DataFrame(data_frame[params["measure_rules"]["spatial_measure"]].tolist()).values
 
-    return {self.params["measure_rules"]["output_name"]:angle_array}
+    if params["func_params"]["swap_lon_lat"]:
+        position_array = position_array[:,[1, 0]]
+    if params["func_params"]["heading_type"] == "bearing":
+        angle_array = bearing(position_array, window_len, params["func_params"]["units"])
+    elif params["func_params"]["heading_type"] == "flat_angle":
+        angle_array = flat_angle(position_array, window_len, params["func_params"]["units"])
+
+    return pd.DataFrame(data=angle_array, columns=[params["measure_rules"]["output_name"]], index=data_frame.index[:-1])
 
 
 def window_sum(in_array, window_len):
@@ -311,7 +316,7 @@ def DeriveWindowSum(data_frame, params=None):
     window_len = params["func_params"]["window_len"]
     target_array = data_frame[params["measure_rules"]["target_measure"]].values
     summed_data = window_sum(target_array, window_len)
-    return  {self.params["measure_rules"]["output_name"]:summed_data}
+    return pd.DataFrame(data=summed_data, columns=[params["measure_rules"]["output_name"]], index=data_frame.index)
 
 
 def scale_data(in_array, scalar):
@@ -334,7 +339,7 @@ def DeriveScaled(data_frame, params=None):
     logger.debug("transforming data to %s" %(params["measure_rules"]["output_name"]))
     target_array = data_frame[params["measure_rules"]["target_measure"]].values
     scaled_out = scale_data(target_array, params["func_params"]["scalar"])
-    return  {self.params["measure_rules"]["output_name"]:scaled_out}
+    return pd.DataFrame(data=scaled_out, columns=[params["measure_rules"]["output_name"]], index=data_frame.index)
 
 def in_box(spatial_array, upper_left, lower_right):
     """
@@ -363,9 +368,9 @@ def DeriveInBox(data_frame, params=None):
         params["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
 
     logger.debug("transforming data to %s" % (params["measure_rules"]["output_name"]))
-    spatial_array = np.array(self.data[self.params["measure_rules"]["spatial_measure"]]["val"], dtype=float)
-    box_bool = self.in_box(spatial_array, self.params["func_params"]["upper_left_corner"], self.params["func_params"]["lower_right_corner"])
-    return {self.params["measure_rules"]["output_name"]:box_bool}
+    position_array = pd.DataFrame(data_frame[params["measure_rules"]["spatial_measure"]].tolist()).values
+    box_bool = in_box(position_array, params["func_params"]["upper_left_corner"], params["func_params"]["lower_right_corner"])
+    return pd.DataFrame(data=box_bool, columns=[params["measure_rules"]["output_name"]], index=data_frame.index)
 
 
 
