@@ -30,6 +30,14 @@ class Sql:
         res = pandas.read_sql(statement, self.conn)
         return res
 
+    def _dframe(self, data, column_names):
+        """ create dataframe from given params
+        :param data: 2-dimensional array of column data
+        :param column_names: string array, declare the name of each column
+        """
+        res = pandas.DataFrame(data, column_names)
+        return res
+
 
     def connect(self):
         """ init db connection """
