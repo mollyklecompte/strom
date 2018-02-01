@@ -47,3 +47,12 @@ class Sql:
     def close(self):
         """ stop db connection """
         self.conn.close()
+
+    def insert(self):
+        pass
+    def select(self):
+        pass
+    def update(self):
+        pass
+    def delete(self):
+        pass
