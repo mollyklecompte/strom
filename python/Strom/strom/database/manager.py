@@ -35,7 +35,7 @@ class Sql:
         :param data: 2-dimensional array of column data
         :param column_names: string array, declare the name of each column
         """
-        res = pandas.DataFrame(data, column_names)
+        res = pandas.DataFrame(data, columns=column_names)
         return res
 
 
