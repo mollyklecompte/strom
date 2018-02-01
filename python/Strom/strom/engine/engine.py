@@ -24,7 +24,7 @@ runs coordinator's process_data method on data chunk in thread
 -
 """
 
-import json
+import numpy as np
 from copy import deepcopy
 from multiprocessing import Process, Pipe, JoinableQueue
 from threading import Thread
@@ -178,21 +178,29 @@ class EngineThread(Process):
     def __init__(self, engine_conn, processors=8, buffer_roll=0):
         """
         Initializes with empty buffer & queue,
-         set # of processors, ConsumerThread instance as attributes.
+         set # of processors...
         :param processors: number of processors to start
         :type processors: int
         """
         super().__init__()
         self.pipe_conn = engine_conn
-        self.buffer_roll = buffer_roll
-        self.buffer = Buffer(self.buffer_roll)
+        # self.buffer = Buffer(self.buffer_roll)
         self.message_q = JoinableQueue()
         self.number_of_processors = processors
         self.processors = []
-        self.buffer_record_limit = int(config["buffer_record_limit"])
-        self.buffer_time_limit_s = float(config["buffer_time_limit_s"])
+
         logger.info("Initializing EngineThread")
         self.run_engine = False
+        self.buffer_record_limit = int(config["buffer_record_limit"])
+        self.buffer_time_limit_s = float(config["buffer_time_limit_s"])
+        self.buffer = np.array([{0: 0}] * (
+            self.buffer_record_limit * self.number_of_processors)).reshape(
+            self.number_of_processors, self.buffer_record_limit)
+        self.buffer_roll = -buffer_roll
+        if buffer_roll > 0:
+            self.buffer_roll_index = -buffer_roll
+        else:
+            self.buffer_roll_index = None
 
     def _init_processors(self):
         """Initializes + starts set number of processors"""
@@ -201,41 +209,97 @@ class EngineThread(Process):
             processor.start()
             self.processors.append(processor)
 
+    # def run(self):
+    #     """
+    #
+    #     """
+    #     old_records = 0
+    #     self._init_processors()
+    #     self.run_engine = True
+    #     while self.run_engine:
+    #         st = time()
+    #         while (len(self.buffer) - old_records) < self.buffer_record_limit \
+    #                 and time() - st < self.buffer_time_limit_s:
+    #             received = self.pipe_conn.recv()
+    #             if received == "stop_poison_pill":
+    #                 self.run_engine = False
+    #                 break
+    #             else:
+    #                 self.buffer.append(received)
+    #         if len(self.buffer) > old_records:
+    #             logger.info("New batch- buffer length: {}".format(len(self.buffer)))
+    #             buff_i = len(self.buffer) - old_records + self.buffer_roll
+    #             buffer_data = self.buffer[-buff_i:]
+    #             self.message_q.put(buffer_data)
+    #             if len(self.buffer) >= 150:
+    #                 self.buffer.reset()
+    #                 logger.info("Resetting buffer")
+    #                 old_records -= old_records
+    #             else:
+    #                 old_records += len(buffer_data) - self.buffer_roll
+    #             logger.debug("Took {} s, queue size is {}".format(
+    #                 time() - st, str(self.message_q.qsize())))
+    #         else:
+    #             logger.info("no messages in buffer")
+
     def run(self):
         """
-        Starts running ConsumerThread instance attribute.
-        When buffer reaches set size or time limit is reached,
-        buffer contents are put in queue to be processed &
-        buffer is emptied.
+
         """
         self._init_processors()
         self.run_engine = True
+
+        last_col = self.buffer_record_limit - 1
+        last_row = self.number_of_processors - 1
+        cur_row = 0
+        cur_col = 0
+
+        def put_in_buffer(datum):
+            self.buffer[cur_row, cur_col] = datum
+
         while self.run_engine:
-            st = time()
-            old_records = 0
-            while (len(self.buffer) - old_records) < self.buffer_record_limit \
-                    and time() - st < self.buffer_time_limit_s:
-                received = self.pipe_conn.recv()
-                if received == "stop_poison_pill":
+            batch_timer = time()
+
+            while time() - batch_timer < self.buffer_time_limit_s:
+                item = self.pipe_conn.recv()
+                if item == "stop_poison_pill":
                     self.run_engine = False
                     break
-                else:
-                    self.buffer.append(received)
-            if len(self.buffer) > old_records:
-                logger.debug("Buffer max reached")
-                buff_i = len(self.buffer) - old_records + self.buffer_roll
-                buffer_data = self.buffer[-buff_i:]
-                self.message_q.put(buffer_data)
-                if len(self.buffer) >= 150:
-                    self.buffer.reset()
-                    old_records -= old_records
-                else:
-                    old_records += len(buffer_data) - self.buffer_roll
-                logger.debug("Took {} s, queue size is {}".format(
-                    time() - st, str(self.message_q.qsize())))
-            else:
-                logger.info("no messages in buffer")
 
+                elif type(item) is dict:
+                    if cur_row < last_row:
+                        if cur_col < last_col:
+                            put_in_buffer(item)
+                            cur_col += 1
+                        else:
+                            put_in_buffer(item)
+                            self.message_q.put(self.buffer[cur_row].copy())
+                            logger.info("New batch queued")
+                            roll_window = self.buffer[cur_row, self.buffer_roll_index:] # index/ None roll
+                            cur_row += 1
+                            for n in roll_window:
+                                for i in range(abs(self.buffer_roll)): # num/zero roll ABS
+                                    self.buffer[cur_row, i] = n
+                            cur_col -= cur_col + self.buffer_roll # num/zero roll subtract
+                            batch_timer += time()
+                    else:
+                        if cur_col < last_col:
+                            put_in_buffer(item)
+                            cur_col += 1
+                        else:
+                            put_in_buffer(item)
+                            self.message_q.put(self.buffer[cur_row].copy())
+                            roll_window = self.buffer[cur_row, self.buffer_roll_index:] # index/ None roll
+                            cur_row -= cur_row
+                            for n in roll_window:
+                                for i in range(abs(self.buffer_roll)): # num/zero roll ABS
+                                    self.buffer[cur_row, i] = n
+                            cur_col -= cur_col + self.buffer_roll # num/zero roll
+                            batch_timer += time()
+                else:
+                    raise TypeError("Queued item is not valid dictionary.")
+            if cur_col >= abs(self.buffer_roll): # num/zero roll ABS
+                self.message_q.put(self.buffer[cur_row, :cur_col].copy())
 
         logger.info("Terminating Engine Thread")
         self.stop_engine()

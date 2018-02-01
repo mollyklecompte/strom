@@ -7,7 +7,8 @@ from strom.engine.engine import EngineThread
 from strom.coordinator.coordinator import Coordinator
 
 demo_data_dir = "demo_data/"
-dstreams_str = open(demo_data_dir + "demo_trip26.txt").readline().rstrip()
+# dstreams_str = open(demo_data_dir + "demo_trip26.txt").readline().rstrip()
+dstreams = json.load(open(demo_data_dir + "demo_trip26.txt"))
 
 
 class TestEngineThread(unittest.TestCase):
@@ -15,7 +16,7 @@ class TestEngineThread(unittest.TestCase):
         self.coordinator = Coordinator() # need MongoManager, process_data_async for test case
         self.template = json.load(open(demo_data_dir + "demo_template.txt"))
         self.token = self.template["stream_token"]
-        self.dstreams = dstreams_str.encode().decode("utf-8")
+        self.dstreams = dstreams
         self.dlist = [self.dstreams]
 
     # def test_init_with_processors(self):
