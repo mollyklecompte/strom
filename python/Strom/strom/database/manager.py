@@ -23,9 +23,10 @@ class Sql:
         df.to_sql(name, self.conn, if_exists="replace")
 
     def _data_to_table(self, data, column_names, table_name):
-        """ create dataframe from given params
+        """ create dataframe from given params & store as table
         :param data: 2-dimensional array of column data
         :param column_names: string array, declare the name of each column
+        :param table_name: name of table to create
         """
         df = pandas.DataFrame(data, columns=column_names)
         self._df_to_table(df, table_name)
