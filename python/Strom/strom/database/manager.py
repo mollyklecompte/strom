@@ -15,15 +15,7 @@ class Sql:
         """
         self.db = filename
 
-    def _connect(self):
-        """ init db connection """
-        self.conn = sql.connect(self.db)
-
-    def _close(self):
-        """ stop db connection """
-        self.conn.close()
-
-    def _tosql(self, df, name):
+    def _df_to_table(self, df, name):
         """ convert dataframe to sql table
         :param df: pandas dataframe
         :param name: name of table to create
@@ -37,3 +29,12 @@ class Sql:
         """
         res = pandas.read_sql(statement, self.conn)
         return res
+
+
+    def connect(self):
+        """ init db connection """
+        self.conn = sql.connect(self.db)
+
+    def close(self):
+        """ stop db connection """
+        self.conn.close()
