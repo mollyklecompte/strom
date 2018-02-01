@@ -16,6 +16,7 @@ class Sql:
         :param filename: sqlite3 db file
         """
         self.db = filename
+        self.conn = None
 
     def _df_to_table(self, df, name):
         """ convert dataframe to sql table
@@ -41,6 +42,10 @@ class Sql:
         res = pandas.read_sql(statement, self.conn)
         return res
 
+    @staticmethod
+    def _makequerystr(func, quant, this=None, that=None):
+        return None
+
 
     def connect(self):
         """ init db connection """
@@ -52,6 +57,7 @@ class Sql:
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def test(self):
+        """ testing datatypes for possible errors """
         with open('dataframe.pkl', 'rb') as doc:
             df = pickle.load(doc)
             df["location"] = df["location"].apply(lambda x: json.dumps(x))
