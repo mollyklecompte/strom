@@ -29,3 +29,11 @@ class Sql:
         :param name: name of table to create
         """
         df.to_sql(name, self.conn, if_exists="replace")
+
+    def _query(self, statement):
+        """
+        :param statement: string, sql query to execute
+        :return: query result as dataframe
+        """
+        res = pandas.read_sql(statement, self.conn)
+        return res
