@@ -6,7 +6,7 @@ Initializes a Bstream dict off Dstream, using a Dstream template to initialize a
 import json
 
 from strom.transform.apply_transformer import apply_transformation
-from strom.transform.derive_param import *
+from strom.transform.derive_dataframe import *
 from strom.transform.detect_event import *
 from strom.transform.filter_dataframe import *
 from .dstream import DStream
@@ -179,8 +179,8 @@ class BStream(DStream):
         logger.debug("deriving parameters")
         self["derived_measures"] = {}
         for dparam_rule in self["dparam_rules"]:
-            logger.debug("deriving %s" % (dparam_rule["measure_rules"]["output_name"]))
-            self.apply_transform(dparam_rule["partition_list"], dparam_rule["transform_type"], dparam_rule["transform_name"], dparam_rule["measure_list"], dparam_rule["param_dict"], dparam_rule["logical_comparision"])
+            logger.debug("deriving %s" % (dparam_rule["param_dict"]["measure_rules"]["output_name"]))
+            self.apply_transform(dparam_rule["partition_list"], dparam_rule["measure_list"], dparam_rule["transform_type"], dparam_rule["transform_name"], dparam_rule["param_dict"], dparam_rule["logical_comparison"])
     def find_events(self):
         logger.debug("finding events")
         self["events"] = {}
