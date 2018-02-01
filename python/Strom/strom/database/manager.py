@@ -22,20 +22,20 @@ class Sql:
         """
         df.to_sql(name, self.conn, if_exists="replace")
 
+    def _data_to_table(self, data, column_names, table_name):
+        """ create dataframe from given params
+        :param data: 2-dimensional array of column data
+        :param column_names: string array, declare the name of each column
+        """
+        df = pandas.DataFrame(data, columns=column_names)
+        self._df_to_table(df, table_name)
+
     def _query(self, statement):
         """
         :param statement: string, sql query to execute
         :return: query result as dataframe
         """
         res = pandas.read_sql(statement, self.conn)
-        return res
-
-    def _dframe(self, data, column_names):
-        """ create dataframe from given params
-        :param data: 2-dimensional array of column data
-        :param column_names: string array, declare the name of each column
-        """
-        res = pandas.DataFrame(data, columns=column_names)
         return res
 
 
