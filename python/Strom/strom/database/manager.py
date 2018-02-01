@@ -1,3 +1,4 @@
+""" Database Manager module for sqlite3, dataframes used for CRUD operations """
 import pandas
 import sqlite3 as sql
 import pickle
@@ -15,15 +16,15 @@ class Sql:
         """
         :param filename: sqlite3 db file
         """
-        self.db = filename
+        self.db = str(filename)
         self.conn = None
 
     def _df_to_table(self, df, name):
-        """ convert dataframe to sql table
+        """ convert dataframe to sql table, replaces existing
         :param df: pandas dataframe
         :param name: name of table to create
         """
-        df.to_sql(name, self.conn, if_exists="replace")
+        df.to_sql(str(name), self.conn, if_exists="replace")
 
     def _data_to_table(self, data, column_names, table_name):
         """ create dataframe from given params & store as table
@@ -32,19 +33,16 @@ class Sql:
         :param table_name: name of table to create
         """
         df = pandas.DataFrame(data, columns=column_names)
-        self._df_to_table(df, table_name)
+        self._df_to_table(df, str(table_name))
 
-    def _query(self, statement):
+    def _query_df(self, statement, pars=None):
         """
         :param statement: string, sql query to execute
+        :param pars: array of argmuents to pass
         :return: query result as dataframe
         """
-        res = pandas.read_sql(statement, self.conn)
+        res = pandas.read_sql(str(statement), self.conn, params=pars)
         return res
-
-    @staticmethod
-    def _makequerystr(func, quant, this=None, that=None):
-        return None
 
 
     def connect(self):
@@ -66,12 +64,3 @@ class Sql:
             print(df, df.dtypes)
             self._df_to_table(df, "test")
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    def insert(self):
-        pass
-    def select(self):
-        pass
-    def update(self):
-        pass
-    def delete(self):
-        pass
