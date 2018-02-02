@@ -311,14 +311,16 @@ class EngineThread(Process):
                     # branch 3 bad data
                     else:
                         raise TypeError("Queued item is not valid dictionary.")
-            # engine running, batch timeout with new buffer data (partial row)
+            # buffer time max reached, engine still running
             print("im here @$$h0le")
             if self.run_engine is True:
+                # engine running, batch timeout with new buffer data (partial row)
                 if cur_col >= abs(self.buffer_roll) and batch_tracker['leftos_collected'] is False:
                     print("leftos")
                     self.message_q.put(self.buffer[cur_row, :cur_col].copy())
                     batch_tracker['start_time'] = time()
                     batch_tracker['leftos_collected'] = True
+                # leftovers already collected
                 else:
                     logger.info("No new data- resetting start time")
                     batch_tracker['start_time'] = time()
