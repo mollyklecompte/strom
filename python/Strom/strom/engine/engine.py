@@ -262,7 +262,7 @@ class EngineThread(Process):
             self.buffer[cur_row, cur_col] = datum
 
         while self.run_engine:
-            # while time() - batch_tracker['start_time'] < self.buffer_time_limit_s:
+            while time() - batch_tracker['start_time'] < self.buffer_time_limit_s:
                 if self.pipe_conn.poll():
                     item = self.pipe_conn.recv()
                     # branch 2 - stop engine
@@ -312,16 +312,16 @@ class EngineThread(Process):
                     else:
                         raise TypeError("Queued item is not valid dictionary.")
             # engine running, batch timeout with new buffer data (partial row)
-            # print("im here @$$h0le")
-            # if self.run_engine is True:
-            #     if cur_col >= abs(self.buffer_roll) and batch_tracker['leftos_collected'] is False:
-            #         print("leftos")
-            #         self.message_q.put(self.buffer[cur_row, :cur_col].copy())
-            #         batch_tracker['start_time'] = time()
-            #         batch_tracker['leftos_collected'] = True
-            #     else:
-            #         logger.info("No new data- resetting start time")
-            #         batch_tracker['start_time'] = time()
+            print("im here @$$h0le")
+            if self.run_engine is True:
+                if cur_col >= abs(self.buffer_roll) and batch_tracker['leftos_collected'] is False:
+                    print("leftos")
+                    self.message_q.put(self.buffer[cur_row, :cur_col].copy())
+                    batch_tracker['start_time'] = time()
+                    batch_tracker['leftos_collected'] = True
+                else:
+                    logger.info("No new data- resetting start time")
+                    batch_tracker['start_time'] = time()
 
         logger.info("Terminating Engine Thread")
         self.stop_engine()
