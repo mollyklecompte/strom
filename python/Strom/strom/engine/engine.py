@@ -157,14 +157,17 @@ class Processor(Process):
         logger.debug("running json loader")
         while self.is_running:
             queued = self.q.get()
-            if queued == "666_kIlL_thE_pROCess_666":
-                print("HAIL SATAN")
-                # self.is_running = False
-                break
+            if type(queued) is str:
+                if queued == "666_kIlL_thE_pROCess_666":
+                    print("HAIL SATAN")
+                    # self.is_running = False
+                    break
             else:
-                data_list = [datum for datum in queued]
-                for data in data_list:
-                    coordinator.process_data_async(data, data[0]["stream_token"])
+                data = queued.tolist()
+                coordinator.process_data_async(data, data[0]["stream_token"])
+                # data_list = [datum for datum in queued]
+                # for data in data_list:
+                #     coordinator.process_data_async(data, data[0]["stream_token"])
             self.q.task_done()
 
 class EngineThread(Process):
@@ -175,7 +178,7 @@ class EngineThread(Process):
     Contains buffer, queue for processors, processors, ConsumerThread.
     """
 
-    def __init__(self, engine_conn, processors=8, buffer_roll=0):
+    def __init__(self, engine_conn, processors=8, buffer_roll=0, buffer_max_batch=50, buffer_max_seconds=1):
         """
         Initializes with empty buffer & queue,
          set # of processors...
@@ -191,8 +194,8 @@ class EngineThread(Process):
 
         logger.info("Initializing EngineThread")
         self.run_engine = False
-        self.buffer_record_limit = int(config["buffer_record_limit"])
-        self.buffer_time_limit_s = float(config["buffer_time_limit_s"])
+        self.buffer_record_limit = int(buffer_max_batch)
+        self.buffer_time_limit_s = float(buffer_max_seconds)
         self.buffer = np.array([{0: 0}] * (
             self.buffer_record_limit * self.number_of_processors)).reshape(
             self.number_of_processors, self.buffer_record_limit)
@@ -253,53 +256,72 @@ class EngineThread(Process):
         last_row = self.number_of_processors - 1
         cur_row = 0
         cur_col = 0
+        batch_tracker = {'start_time': time(), 'leftos_collected': False}
 
         def put_in_buffer(datum):
             self.buffer[cur_row, cur_col] = datum
 
         while self.run_engine:
-            batch_timer = time()
-
-            while time() - batch_timer < self.buffer_time_limit_s:
-                item = self.pipe_conn.recv()
-                if item == "stop_poison_pill":
-                    self.run_engine = False
-                    break
-
-                elif type(item) is dict:
-                    if cur_row < last_row:
-                        if cur_col < last_col:
-                            put_in_buffer(item)
-                            cur_col += 1
+            while time() - batch_tracker['start_time'] < self.buffer_time_limit_s:
+                if self.pipe_conn.poll():
+                    item = self.pipe_conn.recv()
+                    # branch 2 - stop engine
+                    if item == "stop_poison_pill":
+                        self.run_engine = False
+                        break
+                    # branch 1 - engine running, good data
+                    elif type(item) is dict:
+                        # branch 1.1 - not last row
+                        if cur_row < last_row:
+                            # branch 1.1a - not last column, continue row
+                            if cur_col < last_col:
+                                logger.info("Buffering- row {}".format(cur_row))
+                                put_in_buffer(item)
+                                cur_col += 1
+                            # branch 1.1b - last column, start new row
+                            else:
+                                put_in_buffer(item)
+                                self.message_q.put(self.buffer[cur_row].copy())
+                                logger.info("New batch queued")
+                                roll_window = self.buffer[cur_row, self.buffer_roll_index:]
+                                cur_row += 1
+                                for n in roll_window:
+                                    for i in range(abs(self.buffer_roll)):
+                                        self.buffer[cur_row, i] = n
+                                cur_col -= cur_col + self.buffer_roll
+                                batch_tracker['start_time'] = time()
+                        # branch 1.2 - last row
                         else:
-                            put_in_buffer(item)
-                            self.message_q.put(self.buffer[cur_row].copy())
-                            logger.info("New batch queued")
-                            roll_window = self.buffer[cur_row, self.buffer_roll_index:] # index/ None roll
-                            cur_row += 1
-                            for n in roll_window:
-                                for i in range(abs(self.buffer_roll)): # num/zero roll ABS
-                                    self.buffer[cur_row, i] = n
-                            cur_col -= cur_col + self.buffer_roll # num/zero roll subtract
-                            batch_timer += time()
+                            # branch 1.2a - not last column, continue row
+                            if cur_col < last_col:
+                                put_in_buffer(item)
+                                cur_col += 1
+                            # branch 1.2b - last column, start return to first row in new cycle
+                            else:
+                                put_in_buffer(item)
+                                self.message_q.put(self.buffer[cur_row].copy())
+                                roll_window = self.buffer[cur_row, self.buffer_roll_index:]
+                                cur_row -= cur_row
+                                for n in roll_window:
+                                    for i in range(abs(self.buffer_roll)):
+                                        self.buffer[cur_row, i] = n
+                                cur_col -= cur_col + self.buffer_roll
+                                batch_tracker['start_time'] = time()
+                        batch_tracker['leftos_collected'] = False
+                    # branch 3 bad data
                     else:
-                        if cur_col < last_col:
-                            put_in_buffer(item)
-                            cur_col += 1
-                        else:
-                            put_in_buffer(item)
-                            self.message_q.put(self.buffer[cur_row].copy())
-                            roll_window = self.buffer[cur_row, self.buffer_roll_index:] # index/ None roll
-                            cur_row -= cur_row
-                            for n in roll_window:
-                                for i in range(abs(self.buffer_roll)): # num/zero roll ABS
-                                    self.buffer[cur_row, i] = n
-                            cur_col -= cur_col + self.buffer_roll # num/zero roll
-                            batch_timer += time()
-                else:
-                    raise TypeError("Queued item is not valid dictionary.")
-            if cur_col >= abs(self.buffer_roll): # num/zero roll ABS
-                self.message_q.put(self.buffer[cur_row, :cur_col].copy())
+                        raise TypeError("Queued item is not valid dictionary.")
+            # engine running, batch timeout with new buffer data (partial row)
+            # print("im here @$$h0le")
+            # if self.run_engine is True:
+            #     if cur_col >= abs(self.buffer_roll) and batch_tracker['leftos_collected'] is False:
+            #         print("leftos")
+            #         self.message_q.put(self.buffer[cur_row, :cur_col].copy())
+            #         batch_tracker['start_time'] = time()
+            #         batch_tracker['leftos_collected'] = True
+            #     else:
+            #         logger.info("No new data- resetting start time")
+            #         batch_tracker['start_time'] = time()
 
         logger.info("Terminating Engine Thread")
         self.stop_engine()
@@ -319,7 +341,6 @@ class EngineThread(Process):
         for p in self.processors:
             p.join()
             logger.info("Engine shutdown- processor joined")
-        #logger.info("Engine shutdown- EngineThread joined")
 
 
 class EngineThreadKafka(Thread):
