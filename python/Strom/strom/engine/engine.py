@@ -262,7 +262,7 @@ class EngineThread(Process):
             self.buffer[cur_row, cur_col] = datum
 
         while self.run_engine:
-            while time() - batch_tracker['start_time'] < self.buffer_time_limit_s:
+            # while time() - batch_tracker['start_time'] < self.buffer_time_limit_s:
                 if self.pipe_conn.poll():
                     item = self.pipe_conn.recv()
                     # branch 2 - stop engine
