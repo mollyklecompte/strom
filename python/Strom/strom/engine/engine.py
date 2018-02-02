@@ -178,7 +178,7 @@ class EngineThread(Process):
     Contains buffer, queue for processors, processors, ConsumerThread.
     """
 
-    def __init__(self, engine_conn, processors=8, buffer_roll=0, buffer_max_batch=50, buffer_max_seconds=1):
+    def __init__(self, engine_conn, processors=4, buffer_roll=0, buffer_max_batch=50, buffer_max_seconds=1):
         """
         Initializes with empty buffer & queue,
          set # of processors...
