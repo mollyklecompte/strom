@@ -9,6 +9,7 @@ __version__= '0.0.1'
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~NOTE(s)
 # list of col names: df.columns.values.tolist()
 # ndf.index[-1] last index of DF
+# df.at[1, 'id'] = 20
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 class Sql:
 
