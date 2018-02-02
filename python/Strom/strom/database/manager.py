@@ -6,8 +6,10 @@ import json
 
 __author__= 'Adrian Agnic'
 __version__= '0.0.1'
-
-
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~NOTE(s)
+# list of col names: df.columns.values.tolist()
+# ndf.index[-1] last index of DF
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 class Sql:
 
     __slots__=["db", "conn"]
@@ -35,11 +37,11 @@ class Sql:
         df = pandas.DataFrame(data, columns=column_names)
         self._df_to_table(df, str(table_name))
 
-    def _query_df(self, statement, pars=None):
-        """
+    def _query_to_df(self, statement, pars=None):
+        """ execute sql query and return result as dataframe
         :param statement: string, sql query to execute
         :param pars: array of argmuents to pass
-        :return: query result as dataframe
+        :return: dataframe
         """
         res = pandas.read_sql(str(statement), self.conn, params=pars)
         return res
@@ -52,6 +54,18 @@ class Sql:
     def close(self):
         """ stop db connection """
         self.conn.close()
+        self.conn = None
+
+    def insert(self, name, data): # TEMP TESTING CAPABILITIES
+        """
+        ::
+        """
+        df = self._query_to_df("select * from accnts;")#, [name])
+        del df['level_0']
+        if isinstance(data, pandas.DataFrame):
+            ndf = df.append(data)
+            print(ndf)
+            self._df_to_table(ndf, 'accnts')
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def test(self):
@@ -63,4 +77,7 @@ class Sql:
             print(df)
             print(df, df.dtypes)
             self._df_to_table(df, "test")
+
+    def testConcur(self):
+        pass
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
