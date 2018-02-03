@@ -59,33 +59,21 @@ def compare_threshold(data_array, comparison_operator, comparision_val, absolute
     return match_inds[0]
 
 
-def DetectThreshold(data_frame, param_dict):
-    def __init__(self):
-        """
-        Creates a new DetectThreshold object with default parameters. Use get_params() for
-        parameter description.
-        This event compares the target measure to a threshold value using a binary operator. All
-        points where the relation is true are returned as events.
-        """
-        super().__init__()
-        self.params["event_rules"] = {"measure":"measure_name", "threshold_value":"value to compare against",
-                                       "comparison_operator":["==", "!=", ">=", "<=", ">", "<"], "absolute_compare":False}
-        logger.debug("initialized DetectThreshold. Use get_params() to see parameter values")
+def DetectThreshold(data_frame, params):
+    logger.debug("staring DetectThreshold")
+    if params == None:
+        params = {}
+        params["event_rules"] = {"measure":"measure_name", "threshold_value":"value to compare against",
+                                    "comparison_operator":["==", "!=", ">=", "<=", ">", "<"]
+                                    "absolute_compare":False}
+        params["event_name"] = "threshold_event"
+        return params
 
-
-
-    def transform_data(self):
-        """
-        Finds and returns all events where the threshold comparision is True
-        :return: All the found events
-        :rtype: list of event dicts
-
-        """
-        logger.debug("transforming data")
-        measure_array = np.array(self.data[self.params["event_rules"]["measure"]]["val"], dtype=float)
-        if "absolute_compare" in self.params["event_rules"]:
-            abs_comp = self.params["event_rules"]["absolute_compare"]
-        else:
-            abs_comp = False
-        event_inds = self.compare_threshold(measure_array, self.params["event_rules"]["comparison_operator"], self.params["event_rules"]["threshold_value"], abs_comp)
-        return self.create_events(event_inds)
+    logger.debug("transforming data")
+    measure_array = np.array(self.data[self.params["event_rules"]["measure"]]["val"], dtype=float)
+    if "absolute_compare" in params["event_rules"]:
+        abs_comp = params["event_rules"]["absolute_compare"]
+    else:
+        abs_comp = False
+    event_inds = compare_threshold(measure_array, params["event_rules"]["comparison_operator"], params["event_rules"]["threshold_value"], abs_comp)
+    return self.create_events(event_inds)
