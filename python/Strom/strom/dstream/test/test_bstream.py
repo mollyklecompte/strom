@@ -92,12 +92,11 @@ class TestBStream(unittest.TestCase):
         for dparam_rule in self.dstream_template["dparam_rules"]:
             self.assertIn(dparam_rule["param_dict"]["measure_rules"]["output_name"], bstream["measures"].columns)
 
-        # bstream.find_events()
-        # self.assertIsInstance(bstream["events"], dict)
-        # for cur_event in self.dstream_template["event_rules"].values():
-        #     self.assertIn(cur_event["event_name"], bstream["events"])
-        #     self.assertIsInstance(bstream["events"][cur_event["event_name"]], list)
-        #     self.assertIsInstance(bstream["events"][cur_event["event_name"]][0], dict)
+        bstream.find_events()
+        self.assertIsInstance(bstream["events"], dict)
+        for cur_name, cur_event in self.dstream_template["event_rules"].items():
+            self.assertIn(cur_name, bstream["events"])
+            self.assertIsInstance(bstream["events"][cur_name], pd.DataFrame)
 
 
 if __name__ == "__main__":
