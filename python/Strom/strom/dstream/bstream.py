@@ -36,16 +36,6 @@ class BStream(DStream):
                 self[key] = dictionary[key]
                 logger.debug("added key %s" % key)
 
-    def _aggregate_measures(self):
-        logger.debug("aggregating measures")
-        all_measures = [s["measures"] for s in self.dstreams]
-        self["measures"] = {
-            m: {
-                'val': [i[m]['val'] for i in all_measures],
-                'dtype': v['dtype']
-            } for m, v in self["measures"].items()
-        }
-
     def _aggregate_uids(self):
         logger.debug("aggregating uids")
         uids = [s["user_ids"] for s in self.dstreams]
@@ -69,17 +59,17 @@ class BStream(DStream):
     def _measure_df(self):
         logger.debug("aggregating into DataFrame")
         all_measures = [s["measures"] for s in self.dstreams]
-        self["new_measures"] = {
+        self["measures"] = {
             m: [i[m]['val'] for i in all_measures] for m, v in self["measures"].items()
         }
-        self["new_measures"]["timestamp"] = self["timestamp"]
+        self["measures"]["timestamp"] = self["timestamp"]
         for user_id, value in self["user_ids"].items():
-            self["new_measures"][user_id] = value
+            self["measures"][user_id] = value
 
-        self["new_measures"]["tags"] = self["tags"]
-        self["new_measures"]["fields"] = self["fields"]
+        self["measures"]["tags"] = self["tags"]
+        self["measures"]["fields"] = self["fields"]
 
-        self["new_measures"] = pd.DataFrame.from_dict(self["new_measures"])
+        self["measures"] = pd.DataFrame.from_dict(self["measures"])
 
     def prune_dstreams(self):
         logger.debug("removing input dstreams to save space")
@@ -89,7 +79,6 @@ class BStream(DStream):
     def aggregate(self):
         logger.debug("aggregating everything")
         self._aggregate_uids()
-        self._aggregate_measures()
         self._aggregate_ts()
         self._aggregate_fields()
         self._aggregate_tags()
@@ -104,16 +93,16 @@ class BStream(DStream):
         logger.debug("Finding the row indices that meet the partition condition")
         comparisons= {"==":np.equal, "!=":np.not_equal, ">=":np.greater_equal, "<=":np.less_equal, ">":np.greater, "<":np.less}
         cur_comp = comparisons[comparison_operator]
-        return cur_comp(self["new_measures"][parition_key], partition_value)
+        return cur_comp(self["measures"][parition_key], partition_value)
 
     def partition_data(self, list_of_partitions, logical_comparison="AND"):
         """This function takes a list of tuples of partition parameters used by partition_rows() and
         returns all rows from the measure DataFrame that meet the logical AND or logical OR of those conditions"""
         logger.debug("building parition rows")
         if logical_comparison == "AND":
-            start_bools = np.ones((self["new_measures"].shape[0],))
+            start_bools = np.ones((self["measures"].shape[0],))
         elif logical_comparison == "OR":
-            start_bools = np.zeros((self["new_measures"].shape[0],))
+            start_bools = np.zeros((self["measures"].shape[0],))
         else:
             raise ValueError("{} is not a supported logical comparision".format(logical_comparison))
 
@@ -126,7 +115,7 @@ class BStream(DStream):
             else:
                 raise ValueError("{} is not a supported logical comparision".format(logical_comparison))
 
-        return self["new_measures"][start_bools]
+        return self["measures"][start_bools]
 
     @staticmethod
     def select_transform(transform_type, transform_name):
@@ -152,7 +141,7 @@ class BStream(DStream):
         return available_transforms[transform_type][transform_name]
 
     def add_columns(self, new_data_frame):
-        self["new_measures"] = self["new_measures"].join(new_data_frame, rsuffix="_r", lsuffix="_l")
+        self["measures"] = self["measures"].join(new_data_frame, rsuffix="_r", lsuffix="_l")
 
     def apply_transform(self, partition_list, measure_list, transform_type, transform_name, param_dict, logical_comparison="AND"):
         """This function takes uses the inputs to partition the measures DataFrame, apply the specified
@@ -162,7 +151,7 @@ class BStream(DStream):
         selected_data = self.partition_data(partition_list, logical_comparison)[measure_list] #partition rows then select columns
         tranformer = self.select_transform(transform_type,transform_name) #grab your transformer
         transformed_data = tranformer(selected_data, param_dict) #Return data, either as array or DataFrame
-        #Concatonate data with self["new_measures"]
+        #Concatonate data with self["measures"]
         if transform_type != "detect_event":
             self.add_columns(transformed_data)
 
