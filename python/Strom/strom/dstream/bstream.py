@@ -100,9 +100,9 @@ class BStream(DStream):
         returns all rows from the measure DataFrame that meet the logical AND or logical OR of those conditions"""
         logger.debug("building parition rows")
         if logical_comparison == "AND":
-            start_bools = np.ones((self["measures"].shape[0],))
+            start_bools = np.ones((self["measures"].shape[0],),dtype=bool)
         elif logical_comparison == "OR":
-            start_bools = np.zeros((self["measures"].shape[0],))
+            start_bools = np.zeros((self["measures"].shape[0],), dtype=bool)
         else:
             raise ValueError("{} is not a supported logical comparision".format(logical_comparison))
 
@@ -162,7 +162,7 @@ class BStream(DStream):
         logger.debug("applying filters")
         self["filter_measures"] = {}
         for filter_rule in self["filters"]:
-            logger.debug("applying filter {}".format(filter_rule["param_dict"]["filter_name"]))
+            # logger.debug("applying filter {}".format(filter_rule["param_dict"]["filter_name"]))
             self.apply_transform(filter_rule["partition_list"], filter_rule["measure_list"], filter_rule["transform_type"], filter_rule["transform_name"], filter_rule["param_dict"], filter_rule["logical_comparision"])
 
 
@@ -170,7 +170,7 @@ class BStream(DStream):
         logger.debug("deriving parameters")
         self["derived_measures"] = {}
         for dparam_rule in self["dparam_rules"]:
-            logger.debug("deriving {}".format(dparam_rule["param_dict"]["measure_rules"]["output_name"]))
+            print("deriving {}".format(dparam_rule["param_dict"]["measure_rules"]["output_name"]))
             self.apply_transform(dparam_rule["partition_list"], dparam_rule["measure_list"], dparam_rule["transform_type"], dparam_rule["transform_name"], dparam_rule["param_dict"], dparam_rule["logical_comparison"])
 
 
@@ -178,5 +178,5 @@ class BStream(DStream):
         logger.debug("finding events")
         self["events"] = {}
         for event_name, event_rule in self["event_rules"].items():
-            logger.debug("finding event {}".format(event_name))
+            print("finding event {}".format(event_name))
             self["events"][event_name] = self.apply_transform(event_rule["partition_list"], event_rule["measure_list"], event_rule["transform_type"], event_rule["transform_name"], event_rule["param_dict"], event_rule["logical_comparison"])
