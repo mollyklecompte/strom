@@ -1,7 +1,11 @@
-import unittest
 import json
+import unittest
 from copy import deepcopy
-from strom.dstream.bstream import DStream, BStream
+
+import pandas as pd
+
+from strom.dstream.bstream import BStream
+
 
 class TestBStream(unittest.TestCase):
     def setUp(self):
@@ -19,15 +23,6 @@ class TestBStream(unittest.TestCase):
 
     def test_load_from_dict(self):
         self.assertEqual(self.bstream["stream_name"], self.dstream_template["stream_name"])
-
-
-    def test_aggregate_measures(self):
-        self.bstream._aggregate_measures()
-        for measure in self.dstream_template["measures"].keys():
-            self.assertIn(measure, self.bstream["measures"])
-            self.assertIsInstance(self.bstream["measures"][measure]["val"], list)
-            self.assertEqual(len(self.bstream["measures"][measure]["val"]),len(self.dstreams))
-
 
     def test_aggregate_uids(self):
         self.bstream._aggregate_uids()
@@ -65,9 +60,9 @@ class TestBStream(unittest.TestCase):
             self.assertIsInstance(self.bstream["user_ids"][uuid], list)
             self.assertEqual(len(self.bstream["user_ids"][uuid]), len(self.dstreams))
         for measure in self.dstream_template["measures"].keys():
-            self.assertIn(measure, self.bstream["measures"])
-            self.assertIsInstance(self.bstream["measures"][measure]["val"], list)
-            self.assertEqual(len(self.bstream["measures"][measure]["val"]),len(self.dstreams))
+            self.assertIn(measure, self.bstream["measures"].columns)
+            self.assertIsInstance(self.bstream["measures"], pd.DataFrame)
+            self.assertEqual(len(self.bstream["measures"].shape[0],len(self.dstreams))
         for cur_field in self.dstream_template["fields"]:
             self.assertIn(cur_field, self.bstream["fields"])
             self.assertIsInstance(self.bstream["fields"][cur_field], list)
@@ -78,21 +73,22 @@ class TestBStream(unittest.TestCase):
             self.assertEqual(len(self.bstream["tags"][tag]), len(self.dstreams))
         self.assertEqual(b, self.bstream)
 
+    def test_prune_dstreams(self):
+        self.assertIsInstance(self.bstream.dstreams, list)
+        self.bstream.prune_dstreams()
+        self.assertIsNone(self.bstream.dstreams)
+
     def test_applying(self):
         bstream = deepcopy(self.bstream)
         bstream.aggregate
 
         bstream.apply_filters()
-        self.assertIsInstance(bstream["filter_measures"], dict)
         for cur_filter in self.dstream_template["filters"]:
-            self.assertIn(cur_filter["filter_name"], bstream["filter_measures"])
-            self.assertIsInstance(bstream["filter_measures"][cur_filter["filter_name"]]["val"], list)
+            self.assertIn(cur_filter["filter_name"], bstream["measures"].columns)
 
         bstream.apply_dparam_rules()
-        self.assertIsInstance(bstream["derived_measures"], dict)
         for dparam_rule in self.dstream_template["dparam_rules"]:
-            self.assertIn(dparam_rule["measure_rules"]["output_name"], bstream["derived_measures"])
-            self.assertIsInstance(bstream["derived_measures"][dparam_rule["measure_rules"]["output_name"]]["val"], list)
+            self.assertIn(dparam_rule["measure_rules"]["output_name"], bstream["measures"].columns)
 
         bstream.find_events()
         self.assertIsInstance(bstream["events"], dict)
