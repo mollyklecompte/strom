@@ -10,30 +10,28 @@ BStream["events"]
 import numpy as np
 
 from strom.utils.logger.logger import logger
-from .event import Event
 
 
-def create_events(event_inds):
-    """
-    Function that takes the index of events in the data and uses them to create events
-    :param event_inds: indices where the events occur
-    :type event_inds: numpy array
-    :return: all the events corresponding to event_inds
-    :rtype: list of event dicts
-    """
-    logger.debug("creating events")
-    event_list = []
-    for e_ind in event_inds:
-        cur_event = Event({"event_name":self.params["event_name"], "event_rules":self.params["event_rules"],"stream_token":self.params["stream_token"]})
-        cur_event["event_ind"] = int(e_ind)
-        cur_event["timestamp"] = self.data["timestamp"]["val"][e_ind]
-        for key, val in self.data.items():
-            logger.debug("added %s to event_context" % (key))
-            if key != "timestamp":
-                cur_ind = min(e_ind, len(val["val"])-1)
-                cur_event["event_context"][key] = val["val"][cur_ind]
-        event_list.append(deepcopy(cur_event))
-    return event_list
+#
+#
+# def create_events(event_times, data_frame, stream_id, event_name):
+#     """
+#     Function that takes the index of events in the data and uses them to create events
+#     :param event_inds: indices where the events occur
+#     :type event_inds: numpy array
+#     :return: all the events corresponding to event_inds
+#     :rtype: list of event dicts
+#     """
+#     logger.debug("creating events")
+#
+#     event_dict = {}
+#     event_dict["event_name"] = []
+#     event_dict["stream_id"] = []
+#     event_dict["event_time"] = []
+#
+#     for e_ind in event_inds:
+#
+#
 
 
 def compare_threshold(data_array, comparison_operator, comparision_val, absolute_compare=False):
@@ -55,8 +53,8 @@ def compare_threshold(data_array, comparison_operator, comparision_val, absolute
         data_array = np.abs(data_array)
     comparisons= {"==":np.equal, "!=":np.not_equal, ">=":np.greater_equal, "<=":np.less_equal, ">":np.greater, "<":np.less}
     cur_comp = comparisons[comparison_operator]
-    match_inds = np.nonzero(cur_comp(np.nan_to_num(data_array), comparision_val))
-    return match_inds[0]
+    match_inds = cur_comp(np.nan_to_num(data_array), comparision_val)
+    return match_inds
 
 
 def DetectThreshold(data_frame, params):
@@ -64,16 +62,20 @@ def DetectThreshold(data_frame, params):
     if params == None:
         params = {}
         params["event_rules"] = {"measure":"measure_name", "threshold_value":"value to compare against",
-                                    "comparison_operator":["==", "!=", ">=", "<=", ">", "<"]
+                                    "comparison_operator":["==", "!=", ">=", "<=", ">", "<"],
                                     "absolute_compare":False}
         params["event_name"] = "threshold_event"
+        params["stream_id"]
         return params
 
-    logger.debug("transforming data")
-    measure_array = np.array(self.data[self.params["event_rules"]["measure"]]["val"], dtype=float)
+    logger.debug("Finding events")
+    measure_array = data_frame[params["event_rules"]["measure"]].values
     if "absolute_compare" in params["event_rules"]:
         abs_comp = params["event_rules"]["absolute_compare"]
     else:
         abs_comp = False
     event_inds = compare_threshold(measure_array, params["event_rules"]["comparison_operator"], params["event_rules"]["threshold_value"], abs_comp)
-    return self.create_events(event_inds)
+    event_times=data_frame[["timestamp"]][event_inds]
+    event_times["stream_id"] =  params["stream_id"]
+    event_times["event_name"] = params["event_name"]
+    return event_times

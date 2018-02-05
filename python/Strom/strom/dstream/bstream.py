@@ -5,9 +5,8 @@ Initializes a Bstream dict off Dstream, using a Dstream template to initialize a
 """
 import json
 
-from strom.transform.apply_transformer import apply_transformation
+from strom.transform.dataframe_event import *
 from strom.transform.derive_dataframe import *
-from strom.transform.detect_event import *
 from strom.transform.filter_dataframe import *
 from .dstream import DStream
 
@@ -149,7 +148,7 @@ class BStream(DStream):
                                                 "DeriveScaled":DeriveScaled,
                                                 "DeriveInBox":DeriveInBox,
                                                 }
-        available_transforms["detect_event"] = {"DetectThreshold":DetectThreshold()}
+        available_transforms["detect_event"] = {"DetectThreshold":DetectThreshold}
         return available_transforms[transform_type][transform_name]
 
     def add_columns(self, new_data_frame):
@@ -164,7 +163,9 @@ class BStream(DStream):
         tranformer = self.select_transform(transform_type,transform_name) #grab your transformer
         transformed_data = tranformer(selected_data, param_dict) #Return data, either as array or DataFrame
         #Concatonate data with self["new_measures"]
-        self.add_columns(transformed_data)
+        if transform_type != "detect_event":
+            self.add_columns(transformed_data)
+
         return transformed_data
 
 
@@ -172,18 +173,21 @@ class BStream(DStream):
         logger.debug("applying filters")
         self["filter_measures"] = {}
         for filter_rule in self["filters"]:
-            logger.debug("applying filter %s" % (filter_rule["param_dict"]["filter_name"]))
+            logger.debug("applying filter {}".format(filter_rule["param_dict"]["filter_name"]))
             self.apply_transform(filter_rule["partition_list"], filter_rule["measure_list"], filter_rule["transform_type"], filter_rule["transform_name"], filter_rule["param_dict"], filter_rule["logical_comparision"])
+
 
     def apply_dparam_rules(self):
         logger.debug("deriving parameters")
         self["derived_measures"] = {}
         for dparam_rule in self["dparam_rules"]:
-            logger.debug("deriving %s" % (dparam_rule["param_dict"]["measure_rules"]["output_name"]))
+            logger.debug("deriving {}".format(dparam_rule["param_dict"]["measure_rules"]["output_name"]))
             self.apply_transform(dparam_rule["partition_list"], dparam_rule["measure_list"], dparam_rule["transform_type"], dparam_rule["transform_name"], dparam_rule["param_dict"], dparam_rule["logical_comparison"])
+
+
     def find_events(self):
         logger.debug("finding events")
         self["events"] = {}
-        for event_rule in self["event_rules"].values():
-            logger.debug("finding event %s" % (event_rule["event_name"]))
-            self["events"][event_rule["event_name"]] = apply_transformation(event_rule, self)
+        for event_name, event_rule in self["event_rules"].items():
+            logger.debug("finding event {}".format(event_name))
+            self["events"][event_name] = self.apply_transform(event_rule["partition_list"], event_rule["measure_list"], event_rule["transform_type"], event_rule["transform_name"], event_rule["param_dict"], event_rule["logical_comparison"])
