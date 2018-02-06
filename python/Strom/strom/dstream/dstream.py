@@ -40,14 +40,6 @@ class DStream(dict):
         logger.debug("DStream initialize")
 
 
-    def _add_source(self, source_name, source_location):
-        """Adds source_location to our dict of sources under source_name
-        source_location: dict with key(s):
-            type: file or kafka
-            if type == kafka, we also have
-            topic: kafka topic name"""
-        self["source_key"][source_name] = source_location
-        logger.debug("added source %s" % (source_name))
 
     def _add_measure(self, measure_name, dtype):
         """Creates entry in measures dict for new measure"""
@@ -76,6 +68,7 @@ class DStream(dict):
         self["filters"].append(filter_dict)
         logger.debug("added filter")
 
+
     def _add_derived_param(self, dparam_dict):
         """Add dparam_dict to our dparam_rules
         dparam_dict: dict of the parameters needed to create the derived parameter"""
@@ -87,10 +80,34 @@ class DStream(dict):
         self["event_rules"][event_name] = event_dict
         logger.debug("adding event %s" % (event_name))
 
-    def _publish_version(self):
+    def publish_version(self):
         """Increment version number"""
         self["version"] += 1
         logger.debug("version now %s" % (str(self['version'])))
+
+    def add_measures(self, measure_list):
+        for measure_name, dtype in measure_list:
+            self._add_measure(measure_name, dtype)
+
+    def add_events(self, event_list):
+        for event_name, event_rules in event_list:
+            self._add_event(event_name, event_rules)
+
+    def add_user_ids(self, ids_list):
+        for uid in ids_list:
+            self._add_user_id(uid)
+
+    def add_fields(self, field_names):
+        for field in field_names:
+            self._add_field(field)
+
+    def add_tags(self, tag_list):
+        for tag_name in tag_list:
+            self._add_tag(tag_name)
+
+    def add_foreign_keys(self, fks):
+        for fk in fks:
+            self._add_fk(fk)
 
     def load_from_json(self, json_file):
         """
@@ -130,8 +147,6 @@ class DStream(dict):
         logger.warning("Don't use this method, it is cumbersome")
         self["storage_rules"] = storage_rules
         self["ingest_rules"] = ingestion_rules
-        for key in source_dict.keys():
-            self._add_source(key, source_dict[key])
 
         for measure_name, dtype in measure_list:
             self._add_measure(measure_name, dtype)
