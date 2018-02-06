@@ -73,9 +73,12 @@ class TestBStream(unittest.TestCase):
         self.bstream.prune_dstreams()
         self.assertIsNone(self.bstream.dstreams)
 
-    def test_parition_rows(self):
+    def test_parition(self):
         bstream = deepcopy(self.bstream)
         bstream.aggregate
+        start_time = int(bstream["measures"][["timestamp"]][0:1].values)
+        part_df = bstream.partition_data([["timestamp", start_time, ">"]])
+        self.assertEqual(bstream["measures"].shape[0], part_df.shape[0]+1)
 
 
 
