@@ -5,7 +5,7 @@ from copy import deepcopy
 from multiprocessing import Queue
 from strom.kafka.producer.producer import Producer
 from strom.kafka.topics.checker import TopicChecker
-from strom.engine.engine import Processor, EngineConsumer, ConsumerThread, EngineThread, Engine
+from strom.engine.engine import Processor, EngineConsumer, ConsumerThread, EngineThreadKafka, Engine
 from strom.utils.stopwatch import Timer
 from strom.utils.configer import configer as config
 from strom.coordinator.coordinator import Coordinator
@@ -63,10 +63,6 @@ class TestEngineConsumer(unittest.TestCase):
         x = len(json.loads(self.consumer.buffer[0]))
 
         self.assertEqual(x, len(dstreams))
-        for processor in self.engine_thread.processors:
-            processor.q.put("666_kIlL_thE_pROCess_666")
-            processor.join()
-
 
     def test_update_buffer(self):
         new_buff = [1,2,3]
@@ -96,7 +92,7 @@ class TestConsumerThread(unittest.TestCase):
         self.assertFalse(x == 0)
 
 
-class TestEngineThread(unittest.TestCase):
+class TestEngineThreadKafka(unittest.TestCase):
     def setUp(self):
         self.topic = b'test3'
         self.url = 'localhost:9092'
@@ -106,7 +102,7 @@ class TestEngineThread(unittest.TestCase):
         self.token = "new"
         self.producer = Producer(self.url, self.topic)
         self.coordinator = Coordinator()
-        self.engine_thread = EngineThread(self.url, self.topic, consumer_timeout=100)
+        self.engine_thread = EngineThreadKafka(self.url, self.topic, consumer_timeout=100)
 
     def test_run(self):
         self.coordinator.process_template(self.template)

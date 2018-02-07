@@ -20,9 +20,11 @@ class DStream(dict):
         initialized as empty data structures of the desired type.
         """
         self["stream_name"] = None
+        self["user_description"] = None
         self["version"] = 0
         self["stream_token"] = uuid.uuid1()
-        self["sources"] = {}
+        self["source_key"] = None
+        self["template_id"] = uuid.uuid1()
         self["storage_rules"] = {}
         self["ingest_rules"] = {}
         self["engine_rules"] = {}
@@ -44,7 +46,7 @@ class DStream(dict):
             type: file or kafka
             if type == kafka, we also have
             topic: kafka topic name"""
-        self["sources"][source_name] = source_location
+        self["source_key"][source_name] = source_location
         logger.debug("added source %s" % (source_name))
 
     def _add_measure(self, measure_name, dtype):
@@ -150,3 +152,9 @@ class DStream(dict):
             self._add_event(event_name, event_rules)
 
         self["version"] += 1
+
+
+class DataDStream(DStream):
+    def __init__(self):
+        logger.debug("initializing DataDStream")
+        super().__init__()
