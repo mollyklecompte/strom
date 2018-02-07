@@ -1,15 +1,14 @@
-import unittest
 import json
 import time
+import unittest
 from copy import deepcopy
 from multiprocessing import Queue
-from strom.kafka.producer.producer import Producer
-from strom.kafka.topics.checker import TopicChecker
-from strom.engine.engine import Processor, EngineConsumer, ConsumerThread, EngineThreadKafka, Engine
-from strom.utils.stopwatch import Timer
-from strom.utils.configer import configer as config
+
 from strom.coordinator.coordinator import Coordinator
 from strom.database.mongo_management import MongoManager
+from strom.engine.engine import Processor, EngineConsumer, ConsumerThread, EngineThreadKafka, Engine
+from strom.kafka.producer.producer import Producer
+from strom.utils.configer import configer as config
 
 demo_data_dir = "demo_data/"
 dstreams_str = open(demo_data_dir + "demo_trip26.txt").readline().rstrip()
