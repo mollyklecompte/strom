@@ -11,47 +11,47 @@ class PandaDB(metaclass=ABCMeta):
         self.conn = conn
         super().__init__()
 
+    @abstractmethod
     def select(self, query, df=None):
         """ standard sql parametrized select """
-        raise NotImplementedError()
         if not df:
             pass
         pass
 
+    @abstractmethod
     def create(self, query, df=None):
         """ standard sql parametrized create """
-        raise NotImplementedError()
         if not df:
             pass
         pass
 
+    @abstractmethod
     def read(self, query, df=None):
         """ standard sql parametrized read """
-        raise NotImplementedError()
         if not df:
             pass
         pass
 
+    @abstractmethod
     def update(self, query, df=None):
         """ standard sql parametrized update """
-        raise NotImplementedError()
         if not df:
             pass
         pass
 
+    @abstractmethod
     def delete(self, query, df=None):
         """ standard sql parametrized delete """
-        raise NotImplementedError()
         if not df:
             pass
         pass
 
+    @abstractmethod
     def connect(self):
         """ open database connection """
-        raise NotImplementedError()
         pass
 
+    @abstractmethod
     def close(self):
         """ close database connection """
-        raise NotImplementedError()
         pass
