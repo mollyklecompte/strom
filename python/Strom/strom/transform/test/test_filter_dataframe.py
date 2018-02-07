@@ -31,7 +31,7 @@ class TestFilter(unittest.TestCase):
         butter_df = ButterLowpass(self.bstream["measures"][butter_rules["measure_list"]], butter_rules["param_dict"])
         for measure_name in butter_rules["measure_list"]:
             self.assertIn(measure_name+butter_rules["param_dict"]["filter_name"], butter_df.columns)
-            self.assertEqual(self.bstream["measures"].shape[0], butter_df.shape[0])
+        self.assertEqual(self.bstream["measures"].shape[0], butter_df.shape[0])
 
 
     def test_window(self):
@@ -45,7 +45,7 @@ class TestFilter(unittest.TestCase):
         window_df = WindowAverage(self.bstream["measures"][window_rule["measure_list"]], window_rule["param_dict"])
         for measure_name in window_rule["measure_list"]:
             self.assertIn(measure_name+window_rule["param_dict"]["filter_name"], window_df.columns)
-            self.assertEqual(self.bstream["measures"].shape[0], window_df.shape[0])
+        self.assertEqual(self.bstream["measures"].shape[0], window_df.shape[0])
 
 
 
