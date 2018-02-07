@@ -16,10 +16,17 @@ class TestFilter(unittest.TestCase):
 
 
     def test_butter(self):
-        for filter_rule in self.dstream_template["filters"]:
-            if filter_rule["transform_name"] == "ButterLowpass":
-                butter_rules = filter_rule
-                break
+        butter_rules = {"partition_list":[],
+         "measure_list":["timestamp"],
+         "transform_type":"filter_data",
+         "transform_name": "ButterLowpass",
+         "param_dict":{
+             "order":2,
+             "nyquist": 0.01,
+             "filter_name": "_buttery"
+         },
+         "logical_comparision": "AND"
+         }
 
         butter_df = ButterLowpass(self.bstream["measures"][butter_rules["measure_list"]], butter_rules["param_dict"])
         for measure_name in butter_rules["measure_list"]:
@@ -28,10 +35,12 @@ class TestFilter(unittest.TestCase):
 
 
     def test_window(self):
-        for filter_rule in self.dstream_template["filters"]:
-            if filter_rule["transform_name"] == "WindowAverage":
-                window_rule = filter_rule
-                break
+        window_rule = {"partition_list":[],
+         "measure_list":["timestamp"],
+         "transform_type":"filter_data",
+         "transform_name": "WindowAverage",
+         "param_dict":{"window_len":3, "filter_name":"_winning"},
+         "logical_comparision": "AND"}
 
         window_df = WindowAverage(self.bstream["measures"][window_rule["measure_list"]], window_rule["param_dict"])
         for measure_name in window_rule["measure_list"]:
