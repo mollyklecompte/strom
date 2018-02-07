@@ -1,52 +1,43 @@
+import json
 import unittest
-from strom.transform.detect_event import DetectEvent, DetectThreshold
 
-class TestDetectEvent(unittest.TestCase):
+from strom.dstream.bstream import BStream
+from strom.transform.detect_dataframe_event import *
+
+
+class TestDeriveDataFrame(unittest.TestCase):
     def setUp(self):
-        self.de = DetectEvent()
-        event_params = {}
-        event_params["event_rules"] = {"measure":"change_in_heading", "threshold_value":90, "comparison_operator":">="}
-        event_params["event_name"] = "ninety_degree_turn"
-        event_params["stream_token"] = "token_stream_token"
-        self.event_params = event_params
+        demo_data_dir = "demo_data/"
+        self.dstream_template = json.load(open(demo_data_dir + "demo_template_unit_test.txt"))
+        self.dstream_template["_id"] = "crowley666"
+        self.dstreams = json.load(open(demo_data_dir+"demo_trip26.txt"))
+        self.bstream = BStream(self.dstream_template, self.dstreams)
+        self.bstream.aggregate
 
-    def test_params(self):
-        self.de.load_params(self.event_params)
-        out_param = self.de.get_params()
-        self.assertIsInstance(out_param, dict)
-        for key, val in self.event_params.items():
-            self.assertIn(key, out_param)
-            self.assertEqual(val, out_param[key])
 
-    def test_timestamp(self):
-        fake_time = [0, 1, 2]
-        self.de.add_timestamp(fake_time)
-        self.assertIsInstance(self.de.data["timestamp"], dict)
-        self.assertEqual(self.de.data["timestamp"]["val"], fake_time)
-        self.assertEqual(self.de.data["timestamp"]["dtype"], "decimal")
+    def test_detect_threshold(self):
+        threshold_rules = {
+        "partition_list": [],
+        "measure_list":["timestamp",],
+        "transform_type":"detect_event",
+        "transform_name":"DetectThreshold",
+        "param_dict":{
+            "event_rules":{
+                "measure":"timestamp",
+                "threshold_value":1510603565552,
+                "comparison_operator":">=",
+                "absolute_compare":True
+            },
+            "event_name":"nice_event",
+            "stream_id":"abc123",
+        },
+        "logical_comparison": "AND"
+        }
 
-class TestDetectThreshold(unittest.TestCase):
-    def setUp(self):
-        self.dt = DetectThreshold()
-        event_params = {}
-        event_params["event_rules"] = {"measure":"ranger", "threshold_value":5, "comparison_operator":">="}
-        event_params["event_name"] = "over5"
-        event_params["stream_token"] = "token_stream_token"
-        event_m = {}
-        event_m["ranger"] =  {"val":range(10), "dtype":"int"}
-        event_m["timestamp"] = {"val":range(50,60), "dtype":"int"}
-        event_m["context"] = {"val":['a','b','c','d','e','f','g','h','i','j'], "dtype":"varchar"}
-        self.dt.load_params(event_params)
-        self.dt.load_measures(event_m)
-
-    def test_transform(self):
-        event_list = self.dt.transform_data()
-        for event in event_list:
-            self.assertIn("event_ind", event)
-            cur_ind = event["event_ind"]
-            self.assertIn("event_context", event)
-            self.assertEqual(event["event_context"]["context"], self.dt.data["context"]["val"][cur_ind])
-
+        threshold_df = DetectThreshold(self.bstream["measures"][threshold_rules["measure_list"]], threshold_rules["param_dict"])
+        self.assertIn("timestamp", threshold_df.columns)
+        self.assertIn("stream_id", threshold_df.columns)
+        self.assertIn("event_name", threshold_df.columns)
 
 
 if __name__ == "__main__":

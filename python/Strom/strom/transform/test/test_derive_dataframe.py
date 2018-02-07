@@ -160,3 +160,6 @@ class TestDeriveDataFrame(unittest.TestCase):
                                 box_rules["param_dict"])
         self.assertIn(box_rules["param_dict"]["measure_rules"]["output_name"], box_df.columns)
         self.assertEqual(self.bstream["measures"].shape[0], box_df.shape[0])
+
+if __name__ == "__main__":
+    unittest.main()
