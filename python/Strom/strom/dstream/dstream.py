@@ -39,44 +39,44 @@ class DStream(dict):
         self["event_rules"] = {}
         logger.debug("DStream initialize")
 
-
-
-    def _add_measure(self, measure_name, dtype):
+    def add_measure(self, measure_name, dtype):
         """Creates entry in measures dict for new measure"""
         self["measures"][measure_name] = {"val":None, "dtype":dtype}
         logger.debug("added measure %s" % (measure_name))
 
-    def _add_field(self, field_name):
+    def add_field(self, field_name):
         self["fields"][field_name] = {}
         logger.debug("added field %s" % (field_name))
 
-    def _add_user_id(self, id_name):
+    def add_user_id(self, id_name):
         self["user_ids"][id_name] = {}
         logger.debug("added id_name %s" % (id_name))
 
-    def _add_tag(self, tag_name):
+    def add_tag(self, tag_name):
         self["tags"][tag_name] = {}
         logger.debug("added tag %s" % (tag_name))
 
-    def _add_fk(self, foreign_key):
+    def add_fk(self, foreign_key):
         self["foreign_keys"][foreign_key] = {}
         logger.debug("added key %s" % (foreign_key))
 
-    def _add_filter(self, filter_dict):
+    def add_filter(self, filter_dict):
         """Add filter to our storage.
          filter_dict: dict of parameters for filter class object"""
+        filter_dict["filter_id"] = uuid.uuid1()
         self["filters"].append(filter_dict)
         logger.debug("added filter")
 
-
-    def _add_derived_param(self, dparam_dict):
+    def add_derived_param(self, dparam_dict):
         """Add dparam_dict to our dparam_rules
         dparam_dict: dict of the parameters needed to create the derived parameter"""
+        dparam_dict["dparam_id"] = uuid.uuid1()
         self["dparam_rules"].append(dparam_dict)
         logger.debug("added derived parameter")
 
-    def _add_event(self, event_name, event_dict):
+    def add_event(self, event_name, event_dict):
         """Add rules for event definition to our storage"""
+        event_dict["event_id"] = uuid.uuid1()
         self["event_rules"][event_name] = event_dict
         logger.debug("adding event %s" % (event_name))
 
@@ -87,27 +87,35 @@ class DStream(dict):
 
     def add_measures(self, measure_list):
         for measure_name, dtype in measure_list:
-            self._add_measure(measure_name, dtype)
+            self.add_measure(measure_name, dtype)
+
+    def add_filters(self, filter_list):
+        for filter in filter_list:
+            self.add_filter(filter)
+
+    def add_dparams(self, dparam_list):
+        for dparam in dparam_list:
+            self.add_derived_param(dparam)
 
     def add_events(self, event_list):
         for event_name, event_rules in event_list:
-            self._add_event(event_name, event_rules)
+            self.add_event(event_name, event_rules)
 
     def add_user_ids(self, ids_list):
         for uid in ids_list:
-            self._add_user_id(uid)
+            self.add_user_id(uid)
 
     def add_fields(self, field_names):
         for field in field_names:
-            self._add_field(field)
+            self.add_field(field)
 
     def add_tags(self, tag_list):
         for tag_name in tag_list:
-            self._add_tag(tag_name)
+            self.add_tag(tag_name)
 
     def add_foreign_keys(self, fks):
         for fk in fks:
-            self._add_fk(fk)
+            self.add_fk(fk)
 
     def load_from_json(self, json_file):
         """
@@ -116,7 +124,7 @@ class DStream(dict):
         :type json_file: dict
         """
         for key in json_file.keys():
-            if key != 'stream_token':
+            if key != 'stream_token' and key != 'template_id':
                 self[key] = json_file[key]
                 logger.debug("added key %s" % (key))
 
@@ -149,22 +157,22 @@ class DStream(dict):
         self["ingest_rules"] = ingestion_rules
 
         for measure_name, dtype in measure_list:
-            self._add_measure(measure_name, dtype)
+            self.add_measure(measure_name, dtype)
 
         for field in field_names:
-            self._add_field(field)
+            self.add_field(field)
 
         for uid in user_id_names:
-            self._add_user_id(uid)
+            self.add_user_id(uid)
 
         for tag_name in tag_list:
-            self._add_tag(tag_name)
+            self.add_tag(tag_name)
 
         self["filters"].extend(filter_list)
         self["dparam_rules"].extend(dparam_rule_list)
 
         for event_name, event_rules in event_list:
-            self._add_event(event_name, event_rules)
+            self.add_event(event_name, event_rules)
 
         self["version"] += 1
 
