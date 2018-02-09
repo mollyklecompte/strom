@@ -66,7 +66,7 @@ Structurally DStreams are a dict subclass with the following keys:
     - Storage for non-measure meta data
     - type: dict of "file_name":"field_value" pairs
 - user_ids
-    - Storage for user supplied IDs
+    - Storage for user supplied ID
     - type: dict of "id_name":"id" pairs
 - tags
     - User generated tags for a timestamp
@@ -76,6 +76,5 @@ Structurally DStreams are a dict subclass with the following keys:
 
 In the Engine, data-Dstreams are aggregated into a BStream. The BStream follows the same template as
  a DStream but the *timestamp, measures, user_ids, fields,* and *tags* are aggregated so instead of
- single values, they are now lists of values. Once this aggregation takes place, the BStream applies
- the *filter_rules, dparam_rules,* and *event_rules* to the aggregated measures creating new keys:
- *filter_measures, derived_measures,* and *events*.
+ single values, they are now stored in a Pandas DataFrame under the *measures* key. Once this aggregation takes place, the BStream applies
+ the *filter_rules, dparam_rules,* and stores the results as new columns in the DataFrame. Then *event_rules* are applies and the results are stored in the *events* key.
