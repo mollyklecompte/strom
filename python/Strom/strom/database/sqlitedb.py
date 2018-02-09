@@ -14,6 +14,7 @@ class SqliteDB(PandaDB):
         super().__init__(self.conn)
 
     def connect(self):
+        """ pandadb override """
         self.conn = sql.connect(self.db)
 
     def close(self):
@@ -22,14 +23,8 @@ class SqliteDB(PandaDB):
     def select(self, query=None, pars=None, table=None):
         return super().select(query, pars, table)
 
-    def create(self, query, pars=None, df=None, table=None):
+    def create(self, query=None, pars=None, df=None, table=None):
         super().create(query, pars, df, table)
-
-    def update(self, query, pars=None, df=None, table=None):
-        super().update(query, pars, df, table)
-
-    def delete(self, query, pars):
-        super().delete(query, pars)
 
     def table(self, df, table):
         super().table(df, table)

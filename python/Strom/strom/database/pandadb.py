@@ -12,6 +12,7 @@ class PandaDB(metaclass=ABCMeta):
         self.conn = conn
         super().__init__()
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BASIC FUNC's
     @abstractmethod
     def select(self, query, pars, table):
         """ standard sql parametrized select, default select all w/ given table name
@@ -19,6 +20,8 @@ class PandaDB(metaclass=ABCMeta):
         :param query: standard sql query with ? or '?' for params
         :type pars: list, tuple
         :param pars: values to be passed into query
+        :type table: str
+        :param table: name of table
         :return: pandas
         """
         if not query:
@@ -27,6 +30,16 @@ class PandaDB(metaclass=ABCMeta):
             return defres
         res = pandas.read_sql(str(query), self.conn, params=pars)
         return res
+
+    @abstractmethod
+    def table(self, df, table):
+        """
+        :type df: pandas
+        :param df: dataframe to seed table with
+        :type table: str
+        :param table: name of table
+        """
+        df.to_sql(str(table), self.conn, if_exists="replace", index=False)
 
     @abstractmethod
     def create(self, query, pars, df, table):
@@ -40,50 +53,9 @@ class PandaDB(metaclass=ABCMeta):
         :type table: str
         :param table: name of table
         """
-        if not df:
+        if df is None:
             pandas.read_sql(str(query), self.conn, params=pars)
-        dfres = self.select(table='yup')
-        dfcat = dfres.concat(df, ignore_index=True)
-        dfcat.to_sql(str(table), self.conn, if_exists="replace")
-
-    @abstractmethod
-    def update(self, query, pars, df, table):
-        """
-        :type query: str
-        :param query: standard sql query with ? or '?' for params
-        :type pars: list, tuple
-        :param pars: values to be passed into query
-        :type df: pandas
-        :param df: row, as a dataframe, to be updated
-        :type table: str
-        :param table: name of table
-        """
-        if not df:
-            pandas.read_sql(str(query), self.conn, params=pars)
-        dfres = self.select(table='yup')
-        dfres.loc[df['index'], :] = df
-        dfres.to_sql(str(table), self.conn, if_exists="replace")
-
-    @abstractmethod
-    def delete(self, query, pars):
-        """ standard sql parametrized delete
-        :type query: str
-        :param query: standard sql query with ? or '?' for params
-        :type pars: list, tuple
-        :param pars: values to be passed into query
-        :return: pandas
-        """
-        pandas.read_sql(str(query), self.conn, params=pars)
-
-    @abstractmethod
-    def table(self, df, table):
-        """
-        :type df: pandas
-        :param df: dataframe to seed table with
-        :type table: str
-        :param table: name of table
-        """
-        df.to_sql(str(table), self.conn, if_exists="replace")
+        df.to_sql(str(table), self.conn, if_exists="append", index=False)
 
     @abstractmethod
     def connect(self):
@@ -92,3 +64,38 @@ class PandaDB(metaclass=ABCMeta):
     @abstractmethod
     def close(self):
         self.conn.close()
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~SPECIFIC FUNC's
+    @abstractmethod
+    def latest_version(self):
+        pass
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TESTS
+    # NOTE TODO REFACTOR/REVISE
+    # @abstractmethod
+    # def update(self, query, pars, df, table):
+    #     """
+    #     :type query: str
+    #     :param query: standard sql query with ? or '?' for params
+    #     :type pars: list, tuple
+    #     :param pars: values to be passed into query
+    #     :type df: pandas
+    #     :param df: row, as a dataframe, to be updated
+    #     :type table: str
+    #     :param table: name of table
+    #     """
+    #     if df is None:
+    #         pandas.read_sql(str(query), self.conn, params=pars)
+    #     dfres = self.select(table=table)
+    #     dfres.loc[df['index'], :] = df
+    #     dfres.to_sql(str(table), self.conn, if_exists="replace")
+    #
+    # @abstractmethod
+    # def delete(self, query, pars):
+    #     """ standard sql parametrized delete
+    #     :type query: str
+    #     :param query: standard sql query with ? or '?' for params
+    #     :type pars: list, tuple
+    #     :param pars: values to be passed into query
+    #     """
+    #     pandas.read_sql(str(query), self.conn, params=pars)
