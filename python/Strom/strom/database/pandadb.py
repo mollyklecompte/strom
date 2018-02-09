@@ -5,7 +5,7 @@
 *   more stable with dataframes passed instead of straight queries
 ~ ISSUES ~
 *   problem with certain queries: delete, insert, drop, update REASON: read_sql() returning count instead of columns
-FIX: use query() method
+    --FIX: use query() method
 """
 import pandas
 import json
@@ -27,7 +27,7 @@ class PandaDB(metaclass=ABCMeta):
 
     @abstractmethod
     def connect(self):
-        """ must be overridden with specific engine connection method """
+        """ override with specific engine connection method """
         pass
 
     @abstractmethod
@@ -91,7 +91,7 @@ class PandaDB(metaclass=ABCMeta):
 
     @abstractmethod
     def query(self, stmnt):
-        """ normal database query method, must be overridden """
+        """ normal database query method, override this"""
         pass
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~SPECIFIC METHODS
@@ -100,6 +100,7 @@ class PandaDB(metaclass=ABCMeta):
         """
         :type table: str
         :param table: name of table
+        :return: boolean
         """
         try:
             bewl = self.select(table=str(table))
