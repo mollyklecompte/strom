@@ -1,17 +1,17 @@
 """ Flask server for coordination of processes: device registration, ingestion/processing of data, and retrieval of found events. """
 import json
-import time
+from multiprocessing import Pipe
 
 from flask import Flask, request, Response, jsonify
-from multiprocessing import Pipe
 from flask_restful import reqparse
 from flask_socketio import SocketIO
+
 from strom.coordinator.coordinator import Coordinator
 from strom.dstream.dstream import DStream
+from strom.engine.engine import EngineThread
 # from strom.kafka.producer.producer import Producer
 from strom.utils.logger.logger import logger
 from strom.utils.stopwatch import stopwatch as tk
-from strom.engine.engine import EngineThread
 
 __version__ = '0.1.0'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
@@ -161,6 +161,10 @@ def handle_event_detection():
     tk['handle_event_detection'].stop()
     return jsonify(json_data)
 
+
+def stop_engine():
+    srv.engine.stop_engine()
+
 # def load_kafka():
 #     """ Collect data and produce to kafka topic.
 #     Expects 'stream_data' argument containing user dataset to process.
@@ -212,6 +216,7 @@ app.add_url_rule('/new_event', 'handle_event_detection', handle_event_detection,
 # GET
 app.add_url_rule('/', 'index', index, methods=['GET'])
 app.add_url_rule('/api/get/<this>', 'get', get, methods=['GET'])
+app.add_url_rule('/stop_engine', 'stop_engine', stop_engine, methods=["GET"])
 # KAFKA POST
 # app.add_url_rule('/kafka/load', 'load_kafka', load_kafka, methods=['POST'])
 # app.add_url_rule('/api/kafka/load', 'load_kafka', load_kafka, methods=['POST'])
