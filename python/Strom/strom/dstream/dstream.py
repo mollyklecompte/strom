@@ -33,7 +33,7 @@ class DStream(dict):
         self["fields"] = {}
         self["user_ids"] = {}
         self["tags"] = {}
-        self["foreign_keys"] = {}
+        self["foreign_keys"] = []
         self["filters"] = []
         self["dparam_rules"] = []
         self["event_rules"] = {}
@@ -57,7 +57,7 @@ class DStream(dict):
         logger.debug("added tag %s" % (tag_name))
 
     def add_fk(self, foreign_key):
-        self["foreign_keys"][foreign_key] = {}
+        self["foreign_keys"].append({foreign_key: None})
         logger.debug("added key %s" % (foreign_key))
 
     def add_filter(self, filter_dict):
