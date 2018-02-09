@@ -109,3 +109,9 @@ class PandaDB(metaclass=ABCMeta):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def serialize(stuff):
     return json.dumps(stuff)
+
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~NOTE(s)
+# # list of col names: df.columns.values.tolist()
+# # ndf.index[-1] last index of DF
+# # df.at[1, 'id'] = 20
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
