@@ -372,6 +372,6 @@ class Coordinator(object):
         endpoint = 'http://{}:{}/storage'.format(config['server_host'],
                                                    config['server_port'])
         logger.debug(dataframe)
-        r = requests.post(endpoint, json=dataframe)
+        r = requests.post(endpoint, json=dataframe.to_json())
 
         return 'request status: ' + str(r.status_code)
