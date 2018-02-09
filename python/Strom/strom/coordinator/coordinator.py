@@ -10,11 +10,11 @@ Handles Bstream data storage via StorageThread classes at appropriate steps.
 """
 
 import time
-import requests
 from copy import deepcopy
+
+import requests
 from bson.objectid import ObjectId
-from strom.database.maria_management import SQL_Connection
-from strom.database.mongo_management import MongoManager
+
 from strom.dstream.bstream import BStream
 from strom.storage_thread.storage_thread import *
 from strom.utils.configer import configer as config
@@ -170,21 +170,21 @@ class Coordinator(object):
         token = temp_dstream["stream_token"]
         name = temp_dstream["stream_name"]
         version = temp_dstream["version"]
-        mongo_id = str(self._store_json(temp_dstream, 'template'))
-
-        # Maria Manager checks for metadata table, creates if not there
-        metadata_tabel_check = self.maria.check_metadata_table_exists()
-        if not metadata_tabel_check:
-            self.maria.create_metadata_table()
-
-        # Inserts template info into metadata table
-        self.maria.insert_row_into_metadata_table(name, token, version, mongo_id)
-
-        # Create stream lookup table for raw data
-        self.maria.create_stream_lookup_table(temp_dstream)
-
-        # Create stream lookup table for filtered data
-        self.maria.create_stream_filtered_table(temp_dstream)
+        # mongo_id = str(self._store_json(temp_dstream, 'template'))
+        #
+        # # Maria Manager checks for metadata table, creates if not there
+        # metadata_tabel_check = self.maria.check_metadata_table_exists()
+        # if not metadata_tabel_check:
+        #     self.maria.create_metadata_table()
+        #
+        # # Inserts template info into metadata table
+        # self.maria.insert_row_into_metadata_table(name, token, version, mongo_id)
+        #
+        # # Create stream lookup table for raw data
+        # self.maria.create_stream_lookup_table(temp_dstream)
+        #
+        # # Create stream lookup table for filtered data
+        # self.maria.create_stream_filtered_table(temp_dstream)
 
     def process_data_async(self, dstream_list, token):
         """
@@ -328,6 +328,22 @@ class Coordinator(object):
 
     @staticmethod
     def _post_events(event_data):
+        """
+        Sends post request containing event data to API
+        :param event_data: event data (individual event)
+        :type event_data: dict
+        :return: request status
+        :rtype: string
+        """
+        endpoint = 'http://{}:{}/new_event'.format(config['server_host'],
+                                                   config['server_port'])
+        logger.debug(event_data)
+        r = requests.post(endpoint, json=event_data)
+
+        return 'request status: ' + str(r.status_code)
+
+    @staticmethod
+    def _post_template(template):
         """
         Sends post request containing event data to API
         :param event_data: event data (individual event)
