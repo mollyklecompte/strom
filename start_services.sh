@@ -16,5 +16,5 @@ sleep 2
 gnome-terminal --tab -e "bash --rcfile $venv_bin/activate -ci 'python -m strom.engine.engine ; bash'"
 
 ### start data pushing script ###
-cd ../../cli/data_poster
-./post_data.sh
+#cd ../../cli/data_poster
+#./post_data.sh

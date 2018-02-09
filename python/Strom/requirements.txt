@@ -13,6 +13,7 @@ Flask==0.12.2
 flask_restful==0.3.6
 requests==2.18.4
 flask-socketio==2.9.3
+pandas==0.20.3
 #
 ###### Refer to other requirements files ######
 #
