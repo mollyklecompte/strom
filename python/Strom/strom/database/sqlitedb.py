@@ -31,12 +31,24 @@ class SqliteDB(PandaDB):
     def table(self, df, table, action="replace"):
         super().table(df, table, action)
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def table_exists(self, table):
-        return super().table_exists(table)
+    def query(self, stmnt):
+        cur = self.conn.cursor()
+        cur.execute(str(stmnt))
+        self.conn.commit()
 
-    def retrieve(self):
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def exists(self, table):
+        return super().exists(table)
+
+    def retrieve(self):# NOTE TODO
         pass
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def serialarrays(self, df):
+        """ handle unruly datatypes for conversion to sql table """
+        df["location"] = df["location"].apply(lambda x: serialize(x))
+        df["not_location"] = df["not_location"].apply(lambda x: serialize(x))
+        return df
 
     def test(self):
         with open('dataframe.pkl', 'rb') as doc:

@@ -2,6 +2,10 @@
 ~ NOTES ~
 *   pandas.to_sql method creates columns 'index' and 'level_0' for backup reference to original indices
 *   contains static wrapper function around json.dumps if needed
+*   more stable with dataframes passed instead of straight queries
+~ ISSUES ~
+*   problem with certain queries: delete, insert, drop, update REASON: read_sql() returning count instead of columns
+FIX: use query() method
 """
 import pandas
 import json
@@ -66,7 +70,7 @@ class PandaDB(metaclass=ABCMeta):
     @abstractmethod
     def create(self, query, pars, df, table):
         """ similar to table method but w/ query functionality and flexibility with # of columns
-        EX. db.create(df=myDataframe, table='test') or db.create(query="insert into test values (?,?,?)", pars=(1,2,3))
+        EX. db.create(df=myDataframe, table='test')
         :type query: str
         :param query: standard sql query with ? or '?' for params
         :type pars: list, tuple
@@ -85,9 +89,14 @@ class PandaDB(metaclass=ABCMeta):
             daf = daf.append(df)
             daf.to_sql(str(table), self.conn, if_exists="replace")
 
+    @abstractmethod
+    def query(self, stmnt):
+        """ normal database query method, must be overridden """
+        pass
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~SPECIFIC METHODS
     @abstractmethod
-    def table_exists(self, table):
+    def exists(self, table):
         """
         :type table: str
         :param table: name of table
