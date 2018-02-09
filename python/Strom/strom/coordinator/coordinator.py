@@ -170,6 +170,7 @@ class Coordinator(object):
         token = temp_dstream["stream_token"]
         name = temp_dstream["stream_name"]
         version = temp_dstream["version"]
+        self._post_template(temp_dstream)
         # mongo_id = str(self._store_json(temp_dstream, 'template'))
         #
         # # Maria Manager checks for metadata table, creates if not there
@@ -206,38 +207,39 @@ class Coordinator(object):
         # create bstream for dstream list
         bstream = self._list_to_bstream(template, dstream_list)
         # thread store raw measures from bstream
-        if storage_rules['store_raw'] :
-            self.threads.append('raw_thread')
-            raw_thread = StorageRawThread(bstream)
-            raw_thread.start()
-            logger.debug('store_raw thread started')
+        # if storage_rules['store_raw'] :
+        #     self.threads.append('raw_thread')
+        #     raw_thread = StorageRawThread(bstream)
+        #     raw_thread.start()
+        #     logger.debug('store_raw thread started')
 
         # filter bstream data
         bstream.apply_filters()
         # thread store filtered dstream data
-        if storage_rules['store_filtered']:
-            self.threads.append('filtered_thread')
-            filtered_thread = StorageFilteredThread(bstream)
-            filtered_thread.start()
-            logger.debug('store_filtered thread started')
+        # if storage_rules['store_filtered']:
+        #     self.threads.append('filtered_thread')
+        #     filtered_thread = StorageFilteredThread(bstream)
+        #     filtered_thread.start()
+        #     logger.debug('store_filtered thread started')
 
         # apply derived param transforms
         bstream.apply_dparam_rules()
         # thread store derived params
-        if storage_rules['store_derived']:
-            self.threads.append('derived_thread')
-            derived_thread = StorageJsonThread(bstream, 'derived')
-            derived_thread.start()
-            logger.debug('store_json thread started')
+        # if storage_rules['store_derived']:
+        #     self.threads.append('derived_thread')
+        #     derived_thread = StorageJsonThread(bstream, 'derived')
+        #     derived_thread.start()
+        #     logger.debug('store_json thread started')
 
         # apply event transforms
         bstream.find_events()
         # post events to server
         self._post_parsed_events(bstream)
+        self._post_dataframe(bstream["measures"])
 
-        # thread store events
-        event_thread = StorageJsonThread(bstream, 'event')
-        event_thread.start()
+        # # thread store events
+        # event_thread = StorageJsonThread(bstream, 'event')
+        # event_thread.start()
         print("whoop WHOOOOP", time.time() - st, len(bstream["timestamp"]))
 
     def get_events(self, token):
@@ -351,9 +353,25 @@ class Coordinator(object):
         :return: request status
         :rtype: string
         """
-        endpoint = 'http://{}:{}/new_event'.format(config['server_host'],
+        endpoint = 'http://{}:{}/storage'.format(config['server_host'],
                                                    config['server_port'])
-        logger.debug(event_data)
-        r = requests.post(endpoint, json=event_data)
+        logger.debug(template)
+        r = requests.post(endpoint, json=template)
+
+        return 'request status: ' + str(r.status_code)
+
+    @staticmethod
+    def _post_dataframe(dataframe):
+        """
+        Sends post request containing event data to API
+        :param event_data: event data (individual event)
+        :type event_data: dict
+        :return: request status
+        :rtype: string
+        """
+        endpoint = 'http://{}:{}/storage'.format(config['server_host'],
+                                                   config['server_port'])
+        logger.debug(dataframe)
+        r = requests.post(endpoint, json=dataframe)
 
         return 'request status: ' + str(r.status_code)
