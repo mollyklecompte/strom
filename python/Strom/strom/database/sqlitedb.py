@@ -32,6 +32,7 @@ class SqliteDB(PandaDB):
         super().table(df, table, action)
 
     def query(self, stmnt):
+        """ pandadb override, simple db query wrapper """
         cur = self.conn.cursor()
         cur.execute(str(stmnt))
         self.conn.commit()
