@@ -163,7 +163,7 @@ class BStream(DStream):
         self["filter_measures"] = {}
         for filter_rule in self["filters"]:
             # logger.debug("applying filter {}".format(filter_rule["param_dict"]["filter_name"]))
-            self.apply_transform(filter_rule["partition_list"], filter_rule["measure_list"], filter_rule["transform_type"], filter_rule["transform_name"], filter_rule["param_dict"], filter_rule["logical_comparision"])
+            self.apply_transform(filter_rule["partition_list"], filter_rule["measure_list"], filter_rule["transform_type"], filter_rule["transform_name"], filter_rule["param_dict"], filter_rule["logical_comparison"])
 
 
     def apply_dparam_rules(self):
