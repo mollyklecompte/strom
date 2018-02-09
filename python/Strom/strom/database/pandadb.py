@@ -12,7 +12,7 @@ class PandaDB(metaclass=ABCMeta):
         self.conn = conn
         super().__init__()
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BASIC FUNC's
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BASIC FUNCTIONS
     @abstractmethod
     def select(self, query, pars, table):
         """ standard sql parametrized select, default select all w/ given table name
@@ -39,7 +39,7 @@ class PandaDB(metaclass=ABCMeta):
         :type table: str
         :param table: name of table
         """
-        df.to_sql(str(table), self.conn, if_exists="replace", index=False)
+        df.to_sql(str(table), self.conn, if_exists="replace")
 
     @abstractmethod
     def create(self, query, pars, df, table):
@@ -55,7 +55,12 @@ class PandaDB(metaclass=ABCMeta):
         """
         if df is None:
             pandas.read_sql(str(query), self.conn, params=pars)
-        df.to_sql(str(table), self.conn, if_exists="append", index=False)
+        try:
+            df.to_sql(str(table), self.conn, if_exists="append")
+        except:
+            daf = self.select(table=str(table))
+            daf = daf.append(df)
+            daf.to_sql(str(table), self.conn, if_exists="replace")
 
     @abstractmethod
     def connect(self):
@@ -65,37 +70,7 @@ class PandaDB(metaclass=ABCMeta):
     def close(self):
         self.conn.close()
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~SPECIFIC FUNC's
-    @abstractmethod
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~SPECIFIC FUNCTIONS
+    # @abstractmethod
     def latest_version(self):
         pass
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TESTS
-    # NOTE TODO REFACTOR/REVISE
-    # @abstractmethod
-    # def update(self, query, pars, df, table):
-    #     """
-    #     :type query: str
-    #     :param query: standard sql query with ? or '?' for params
-    #     :type pars: list, tuple
-    #     :param pars: values to be passed into query
-    #     :type df: pandas
-    #     :param df: row, as a dataframe, to be updated
-    #     :type table: str
-    #     :param table: name of table
-    #     """
-    #     if df is None:
-    #         pandas.read_sql(str(query), self.conn, params=pars)
-    #     dfres = self.select(table=table)
-    #     dfres.loc[df['index'], :] = df
-    #     dfres.to_sql(str(table), self.conn, if_exists="replace")
-    #
-    # @abstractmethod
-    # def delete(self, query, pars):
-    #     """ standard sql parametrized delete
-    #     :type query: str
-    #     :param query: standard sql query with ? or '?' for params
-    #     :type pars: list, tuple
-    #     :param pars: values to be passed into query
-    #     """
-    #     pandas.read_sql(str(query), self.conn, params=pars)
