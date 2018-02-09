@@ -25,7 +25,7 @@ class PandaDB(metaclass=ABCMeta):
         :return: pandas
         """
         if not query:
-            stmnt = "SELECT * FROM {0}".format(table)
+            stmnt = "SELECT * FROM {0}".format(str(table))
             defres = pandas.read_sql(stmnt, self.conn)
             return defres
         res = pandas.read_sql(str(query), self.conn, params=pars)
