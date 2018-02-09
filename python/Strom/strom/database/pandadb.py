@@ -34,6 +34,7 @@ class PandaDB(metaclass=ABCMeta):
     @abstractmethod
     def select(self, query, pars, table):
         """ standard sql parametrized select, default select all if just given table name
+        EX. result = db.select(table='test') or db.select(query="select * from test;")
         :type query: str
         :param query: standard sql query with ? or '?' for params
         :type pars: list, tuple
@@ -52,6 +53,7 @@ class PandaDB(metaclass=ABCMeta):
     @abstractmethod
     def table(self, df, table, action):
         """
+        EX. db.table(df=myDataframe, table='test', action='replace')
         :type df: pandas
         :param df: dataframe to seed table with
         :type table: str
@@ -64,6 +66,7 @@ class PandaDB(metaclass=ABCMeta):
     @abstractmethod
     def create(self, query, pars, df, table):
         """ similar to table method but w/ query functionality and flexibility with # of columns
+        EX. db.create(df=myDataframe, table='test') or db.create(query="insert into test values (?,?,?)", pars=(1,2,3))
         :type query: str
         :param query: standard sql query with ? or '?' for params
         :type pars: list, tuple

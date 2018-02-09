@@ -12,11 +12,11 @@ class SqliteDB(PandaDB):
     def __init__(self, filename):
         self.db = str(filename)
         self.conn = None
-        super().__init__(self.conn)
 
     def connect(self):
         """ pandadb override """
         self.conn = sql.connect(self.db)
+        super().__init__(self.conn)
 
     def close(self):
         super().close()
