@@ -1,165 +1,8 @@
 from copy import deepcopy
 from strom.fun_factory_children import *
 from strom.dstream.dstream import DStream
+from strom.fun_update_guide import update_guide
 
-
-
-update_guide = {
-    'stream_name': {
-        'new': {
-            'function': update_stream_name,
-            'field_key_arg': False,
-            'args': ['new_name',]
-        }
-    },
-    'user_description': {
-        'new': {
-            'function': update_description,
-            'field_key_arg': False,
-            'args': ['new_description'],
-        }
-    },
-    'source_key': {
-        'new': {
-            'function': update_source_key,
-            'field_key_arg': False,
-            'args': ['new_source_key'],
-        }
-    },
-    'user_ids': {
-        'new': {
-            'function': update_user_id,
-            'field_key_arg': False,
-            'args': ['new_id'],
-        },
-        'remove': {
-            'function': prune_key,
-            'field_key_arg': True,
-            'args': ['type_key', 'remove_key'],
-        }
-    },
-    'fields': {
-        'new': {
-            'function': update_field,
-            'field_key_arg': False,
-            'args': ['new_field'],
-        },
-        'remove': {
-            'function': prune_key,
-            'field_key_arg': True,
-            'args': ['type_key', 'remove_key'],
-        }
-    },
-    'tags': {
-        'new': {
-            'function': update_tag,
-            'field_key_arg': False,
-            'args': ['tag_name'],
-        },
-        'remove': {
-            'function': prune_key,
-            'field_key_arg': True,
-            'args': ['type_key', 'remove_key'],
-        }
-    },
-    'foreign_keys': {
-        'new': {
-            'function': update_foreign_key,
-            'field_key_arg': False,
-            'args': ['fk'],
-        },
-        'remove': {
-            'function': prune_list_key,
-            'field_key_arg': True,
-            'args': ['type_key', 'remove_key'],
-        }
-    },
-    'storage_rules': {
-        'modify': {
-            'function': update_rules,
-            'field_key_arg': True,
-            'args': ['rule_tups']
-        }
-    },
-    'ingest_rules': {
-        'modify': {
-            'function': update_rules,
-            'field_key_arg': True,
-            'args': ['rule_tups']
-        }
-    },
-    'engine_rules': {
-        'modify': {
-            'function': update_rules,
-            'field_key_arg': True,
-            'args': ['rule_tups']
-        }
-    },
-    'measures': {
-        'new': {
-            'function': new_measure,
-            'field_key_arg': False,
-            'args': ['measure_tup']
-        },
-        'remove': {
-            'function': prune_key,
-            'field_key_arg': True,
-            'args': ['type_key', 'remove_key'],
-        }
-    },
-    'filters': {
-        'new': {
-            'function': new_filter,
-            'field_key_arg': False,
-            'args': ['filter'],
-        },
-        'modify': {
-            'function': modify_filter,
-            'field_key_arg': False,
-            'args': ['filter_id', 'filter_param_tups'],
-        },
-        'remove': {
-            'function': remove_transform,
-            'field_key_arg': True,
-            'args': ['type_key', 'transform_id']
-        }
-    },
-    'dparam_rules': {
-        'new': {
-            'function': new_dparam(),
-            'field_key_arg': False,
-            'args': ['dparam'],
-        },
-        'modify': {
-            'function': modify_dparam,
-            'field_key_arg': False,
-            'args': ['dparam_id', 'dparam_param_tups'],
-        },
-        'remove': {
-            'function': remove_transform,
-            'field_key_arg': True,
-            'args': ['type_key', 'transform_id']
-        }
-    },
-    'event_rules': {
-        'new': {
-            'function': new_event,
-            'field_key_arg': False,
-            'args': ['new_event_key', 'new_event_dict']
-        },
-        'modify': {
-            'function': modify_event,
-            'field_key_arg': False,
-            'args': ['event_key', 'event_param_tups']
-        },
-        'remove': {
-            'function': prune_key,
-            'field_key_arg': True,
-            'args': ['type_key', 'remove_key'],
-        }
-    }
-
-}
 
 
 def create_template(strm_nm, src_key, measures: list, uids: list, events: list, dparam_rules: list, usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, filters=None, tags=None, fields=None):
@@ -230,52 +73,26 @@ def update_template(template_json, updates_list: list):
         template.publish_version()
         return 'ok', template
     else:
-        return 'invalid update', valid_update(template)
-
+        return 'invalid update', old_template, valid_update(template)
 
 
 def valid_update(template: DStream):
     bad_updates = []
 
     # possible names of filtered measures
-    filtered_measure_names = [
-        '{}{}'.format(m, f_name)
-        for m in template['measures'].keys()
-        for f_name in [
-            f['param_dict']['filter_name']
-            for f in template['filters']
-        ]
-    ]
+    possible_filtered_measures = ['{}{}'.format(m, f_name) for m in template['measures'].keys() for f_name in [ f['param_dict']['filter_name'] for f in template['filters']]]
+
+    possible_filtered_measures.extend(
+        ['{}{}'.format('timestamp', f_name) for f_name in [ f['param_dict']['filter_name'] for f in template['filters']]]
+    )
 
     # measure required by filter missing
-    bad_updates.extend(
-        [('filter', f['transform_name'], 'measure', m)
-         for f in template['filters']
-         for m in f['measure_list']
-         if m not in template['measures'].keys() and m != 'timestamp']
-    )
+    bad_updates.extend([('filter', f['transform_name'], 'measure', m) for f in template['filters'] for m in f['measure_list'] if m not in template['measures'].keys() and m != 'timestamp'])
 
     # measure required by derived param missing
-    bad_updates.extend(
-        [
-            ('derived param', dp['transform_name'], 'measure', m)
-            for dp in template['dparam_rules']
-            for m in dp['measure_list'] if m not in template['measures'].keys()
-                                           and m not in filtered_measure_names
-                                           and m != 'timestamp'
-        ]
-    )
+    bad_updates.extend([('derived param', dp['transform_name'], 'measure', m) for dp in template['dparam_rules'] for m in dp['measure_list'] if m not in template['measures'].keys() and m not in possible_filtered_measures and m != 'timestamp'])
 
-    # PLACEHOLDER - DEAL WITH FILTER NAMES -___-
-
-    bad_updates.extend(
-        [('event', event_key, 'derived param', m)
-            for event_key, event_dict in template['event_rules'].items()
-            for m in event_dict["measure_list"]
-            if m not in [
-            dp['param_dict']['measure_rules']['output_name'] for dp in template['dparam_rules']] and m not in filtered_measure_names and m not in template['measures'].keys() and m != 'timestamp'
-        ]
-    )
+    bad_updates.extend([('event', event_key, 'derived param', m) for event_key, event_dict in template['event_rules'].items() for m in event_dict["measure_list"] if m not in [dp['param_dict']['measure_rules']['output_name'] for dp in template['dparam_rules']] and m not in possible_filtered_measures and m not in template['measures'].keys() and m != 'timestamp'])
 
     if len(bad_updates) == 0:
         return True
