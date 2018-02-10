@@ -9,7 +9,12 @@ This template is then used as the format for the second role, sending data. The 
 measurements are inserted into the template and sent to the Strom server.
 
 Structurally DStreams are a dict subclass with the following keys:
-
+- stream_name
+  - The user supplied name for the stream
+  - type: str
+- user_description
+  - The user supplied description of the stream
+  - type: str
 - version
   - The version number for the dstream.
   - Set when a new DStream is created and incremented when the dstream is updated
@@ -17,8 +22,12 @@ Structurally DStreams are a dict subclass with the following keys:
 - stream_token
   - Internally generated UUID to identify this DStream. Created when a new DStream is initialized
   - type: python UUID
-- sources
-  - List of data sources. Currently unused.
+- source_key
+  - Identifies which of the user_ids keys should be considered the stream source
+  - type: str
+- template_id
+  - UUID for the current template
+  - type: python UUID
 - storage_rules:
   - Rules for when the DStream data is stored.
   - See stream_rules.py for expected format
@@ -45,7 +54,7 @@ Structurally DStreams are a dict subclass with the following keys:
   - See stream_rules.py for expected format
   - type: list of dict
 - timestamp
-  - The time of a given sample. Not used for template creation but each data-Dstream must have a timestamp
+  - The time of a given sample. Could be used for template cration timestamp
   - type: int
 - measures
   - The measured data supplied by the DStream. The measures are set durning DStream template creation.

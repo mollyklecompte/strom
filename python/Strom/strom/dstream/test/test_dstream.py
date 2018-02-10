@@ -1,5 +1,6 @@
 import unittest
 import uuid
+
 from strom.dstream.dstream import DStream
 
 
@@ -8,17 +9,18 @@ class TestDStream(unittest.TestCase):
         self.dstream = DStream()
 
     def test_init(self):
-        init_keys = ['stream_name', 'version', 'stream_token', 'sources', 'storage_rules',
+        init_keys = ['stream_name', 'version', 'stream_token', 'source_key', 'storage_rules',
                      'ingest_rules', 'engine_rules', 'timestamp', 'measures', 'fields',
-                     'user_ids', 'tags', 'foreign_keys', 'filters', 'dparam_rules', 'event_rules']
-        self.assertEqual(init_keys, list(self.dstream.keys()))
+                     'user_ids', 'tags', 'foreign_keys', 'filters', 'dparam_rules', 'event_rules', 'user_description', 'template_id']
+        for key in init_keys:
+            self.assertIn(key, self.dstream.keys())
 
     def test_add_methods(self):
         self.assertIsInstance(self.dstream["stream_token"], uuid.UUID)
 
         source = {"kafka":"On the shore"}
         self.dstream._add_source("kafka", "On the shore")
-        self.assertEqual(self.dstream["sources"], source)
+        self.assertEqual(self.dstream["source_key"], source)
         m_name = "viscosity"
         m_dtype = "float"
         self.dstream._add_measure(m_name, m_dtype)
