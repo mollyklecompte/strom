@@ -1,5 +1,5 @@
-"""Mongo Manager Module
 
+"""Mongo Manager Module
 Interface for MongoDB using pymongo library.
 """
 from pymongo import MongoClient
