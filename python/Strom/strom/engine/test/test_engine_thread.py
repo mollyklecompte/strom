@@ -1,8 +1,9 @@
-import unittest
 import json
+import unittest
 from time import sleep
-from strom.engine.engine import EngineThread
+
 from strom.coordinator.coordinator import Coordinator
+from strom.engine.engine import EngineThread
 
 demo_data_dir = "demo_data/"
 dstreams_str = open(demo_data_dir + "demo_trip26.txt").readline().rstrip()

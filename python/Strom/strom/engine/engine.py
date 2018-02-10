@@ -29,13 +29,14 @@ from copy import deepcopy
 from multiprocessing import Process, JoinableQueue
 from threading import Thread
 from time import time
-from .buffer import Buffer
+
 from strom.coordinator.coordinator import Coordinator
 from strom.kafka.consumer.consumer import Consumer
 from strom.kafka.topics.checker import TopicChecker
 from strom.utils.configer import configer as config
 from strom.utils.logger.logger import logger
 from strom.utils.stopwatch import stopwatch
+from .buffer import Buffer
 
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"
