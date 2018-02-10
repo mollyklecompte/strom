@@ -212,42 +212,10 @@ class EngineThread(Process):
             processor.start()
             self.processors.append(processor)
 
-    # def run(self):
-    #     """
-    #
-    #     """
-    #     old_records = 0
-    #     self._init_processors()
-    #     self.run_engine = True
-    #     while self.run_engine:
-    #         st = time()
-    #         while (len(self.buffer) - old_records) < self.buffer_record_limit \
-    #                 and time() - st < self.buffer_time_limit_s:
-    #             received = self.pipe_conn.recv()
-    #             if received == "stop_poison_pill":
-    #                 self.run_engine = False
-    #                 break
-    #             else:
-    #                 self.buffer.append(received)
-    #         if len(self.buffer) > old_records:
-    #             logger.info("New batch- buffer length: {}".format(len(self.buffer)))
-    #             buff_i = len(self.buffer) - old_records + self.buffer_roll
-    #             buffer_data = self.buffer[-buff_i:]
-    #             self.message_q.put(buffer_data)
-    #             if len(self.buffer) >= 150:
-    #                 self.buffer.reset()
-    #                 logger.info("Resetting buffer")
-    #                 old_records -= old_records
-    #             else:
-    #                 old_records += len(buffer_data) - self.buffer_roll
-    #             logger.debug("Took {} s, queue size is {}".format(
-    #                 time() - st, str(self.message_q.qsize())))
-    #         else:
-    #             logger.info("no messages in buffer")
 
     def run(self):
         """
-
+        ADD DOCSTRING
         """
         self._init_processors()
         self.run_engine = True
