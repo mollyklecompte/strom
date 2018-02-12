@@ -13,7 +13,7 @@ class SqliteDB(PandaDB):
         self.conn = None
         super().__init__(self.conn)
 
-    def open(self):
+    def connect(self):
         """ pandadb override """
         self.conn = sql.connect(self.db)
 

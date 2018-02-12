@@ -21,7 +21,7 @@ class PandaDB(metaclass=ABCMeta):
         super().__init__()
 
     @abstractmethod
-    def open(self):
+    def connect(self):
         """ override with specific engine connection method """
         pass
 
