@@ -112,7 +112,7 @@ class PandaDB(metaclass=ABCMeta):
 
     @abstractmethod
     def serialize(self, df, fields):
-        """ serializes data for e. field given
+        """ serializes data for e. given field
         :type df: pandas
         :param df: dataframe with fields needing to be serialized
         :type fields: list, tuple
