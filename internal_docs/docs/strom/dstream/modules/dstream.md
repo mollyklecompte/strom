@@ -9,6 +9,7 @@ This template is then used as the format for the second role, sending data. The 
 measurements are inserted into the template and sent to the Strom server.
 
 Structurally DStreams are a dict subclass with the following keys:
+
 - stream_name
     - The user supplied name for the stream
     - type: str

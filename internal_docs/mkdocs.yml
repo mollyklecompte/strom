@@ -2,7 +2,27 @@ site_name: My Docs
 site_description: Documentation for the strom project
 theme: readthedocs
 pages:
-- Index: 'index.md'
-- Project Components:
-    - DStreams: 'dstream.md'
-    - Web Sockets: 'web_sockets.md'
+- Docs Guide: 'index.md'
+- Sample Docs:
+    - 'Package Page Template': 'sample-docs/sample-package.md'
+    - 'Module Page Template': 'sample-docs/sample-module.md'
+- Strom:
+    - 'Project Overview': 'strom/project-overview.md'
+    - DStream:
+        - 'DStream Package': 'strom/dstream/dstream.md'
+        - DStream Modules:
+            - 'DStream': 'strom/dstream/modules/dstream.md'
+            - 'BStream': 'strom/dstream/modules/bstream.md'
+    - Engine:
+        - 'Engine Package': 'strom/engine/engine.md'
+        - Engine Modules:
+            - 'Coordinator': 'strom/engine/modules/coordinator.md'
+            - 'Engine': 'strom/engine/modules/engine.md'
+    - Storage:
+        - 'Storage Package': 'strom/storage/storage.md'
+    - Strom API:
+        - 'Strom API': 'strom/strom-api/strom-api.md'
+    - Transform:
+        - 'Transform Package': 'strom/transform/transform.md'
+- Technologies:
+    - 'Web Sockets': 'technologies/websockets.md'
