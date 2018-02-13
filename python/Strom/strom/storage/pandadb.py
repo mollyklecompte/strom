@@ -107,10 +107,6 @@ class PandaDB(metaclass=ABCMeta):
         return True
 
     @abstractmethod
-    def retrieve(self):# NOTE TODO
-        pass
-
-    @abstractmethod
     def serialize(self, df, fields):
         """ serializes data for e. given field
         :type df: pandas
@@ -122,6 +118,16 @@ class PandaDB(metaclass=ABCMeta):
         for key in fields:
             df[key] = df[key].apply(lambda x: json.dumps(x))
         return df
+
+    @abstractmethod
+    def retrieve(self):# NOTE TODO
+        """
+        retrieve all
+        retrieve all w/ same (blank)
+        retrieve most recent version of (^) 
+        """
+        pass
+
 
 # #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~NOTE(s)
 # # list of col names: df.columns.values.tolist()

@@ -40,8 +40,8 @@ class SqliteDB(PandaDB):
     def exists(self, table):
         return super().exists(table)
 
-    def retrieve(self):# NOTE TODO
-        pass
-
     def serialize(self, df, fields):
         return super().serialize(df, fields)
+
+    def retrieve(self):# NOTE TODO
+        pass
