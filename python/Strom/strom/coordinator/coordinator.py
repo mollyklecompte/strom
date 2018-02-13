@@ -13,8 +13,6 @@ import time
 import requests
 from copy import deepcopy
 from bson.objectid import ObjectId
-from strom.database.maria_management import SQL_Connection
-from strom.database.mongo_management import MongoManager
 from strom.dstream.bstream import BStream
 from strom.storage_thread.storage_thread import *
 from strom.utils.configer import configer as config

@@ -31,8 +31,6 @@ from threading import Thread
 from time import time
 
 from strom.coordinator.coordinator import Coordinator
-from strom.kafka.consumer.consumer import Consumer
-from strom.kafka.topics.checker import TopicChecker
 from strom.utils.configer import configer as config
 from strom.utils.logger.logger import logger
 from strom.utils.stopwatch import stopwatch
