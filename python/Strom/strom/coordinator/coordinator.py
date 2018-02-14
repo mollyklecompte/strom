@@ -13,7 +13,6 @@ import time
 from copy import deepcopy
 
 import requests
-
 from strom.dstream.bstream import BStream
 from strom.utils.configer import configer as config
 from strom.utils.logger.logger import logger

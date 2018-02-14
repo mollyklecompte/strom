@@ -125,7 +125,7 @@ const StromClient = ({url='http://127.0.0.1:5000', socket=io(url), tokens={}} = 
   process(name, topic, data) {
     let token_data = this.tokenizeData(name, data);
     send_r = new XMLHttpRequest();
-    send_r.open('POST', this.url + '/api/kafka/load', true);
+    send_r.open('POST', this.url + '/api/load', true);
     send_r.onreadystatechange = function() {
       if (send_r.readyState === 4) {
         if (send_r.status === 202) {

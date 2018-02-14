@@ -8,7 +8,6 @@ from flask_restful import reqparse
 from flask_socketio import SocketIO
 from strom.coordinator.coordinator import Coordinator
 from strom.dstream.dstream import DStream
-# from strom.kafka.producer.producer import Producer
 from strom.utils.logger.logger import logger
 from strom.utils.stopwatch import stopwatch as tk
 from strom.engine.engine import EngineThread
@@ -25,9 +24,6 @@ class Server():
         ]
         self.parser = reqparse.RequestParser()
         self.coordinator = Coordinator()
-        # self.kafka_url = '127.0.0.1:9092'
-        # self.load_producer = Producer(self.kafka_url, b'load')
-        # self.producers = {}
         self.dstream = None
         for word in self.expected_args:
             self.parser.add_argument(word)
@@ -42,15 +38,6 @@ class Server():
         dstream = DStream()
         tk['Server._dstream_new'].stop()
         return dstream
-
-    # def producer_new(self, topic):
-    #     """
-    #     :param topic: Name of topic to produce to
-    #     :type topic: byte string
-    #     """
-    #     tk['Server.producer_new'].start()
-    #     self.producers[topic] = Producer(self.kafka_url, topic.encode())
-    #     tk['Server.producer_new'].stop()
 
     def parse(self):
         """ Wrapper function for reqparse.parse_args """
@@ -80,7 +67,6 @@ def define():
         cur_dstream.load_from_json(json_template)
         logger.debug("define: dstream.load_from_json done")
         srv.coordinator.process_template(cur_dstream)
-        # srv.producer_new(cur_dstream["engine_rules"]["kafka"])
         logger.debug("define: coordinator.process-template done")
         tk['define : try (template loading/processing)'].stop()
     except Exception as ex:
@@ -165,25 +151,13 @@ def handle_event_detection():
     tk['handle_event_detection'].stop()
     return jsonify(json_data)
 
+
 def storage():
     return 'i am database?'
 
-
-# def add_source():
-#     """ Collect data source and set in DStream field """
-#     args = srv.parse()
-#     if args['topic'] is not None:
-#         topic = args['topic']   #   kafka topic
-#         print(topic)
-#     source = args['source'] #   file/kafka
-#     token = args['token']   #   stream_token
-#     print(source)
-#     print(token)
-#     return 'Success.', 200
-
+  
 # POST
 app.add_url_rule('/api/define', 'define', define, methods=['POST'])
-# app.add_url_rule('/api/add-source', 'add_source', add_source, methods=['POST'])
 app.add_url_rule('/api/load', 'load', load, methods=['POST'])
 app.add_url_rule('/new_event', 'handle_event_detection', handle_event_detection, methods=['POST'])
 app.add_url_rule('/storage', 'storage', storage, methods=['POST'])
@@ -194,9 +168,6 @@ app.add_url_rule('/api/kafka/load', 'load_kafka', load_kafka, methods=['POST'])
 # GET
 app.add_url_rule('/', 'index', index, methods=['GET'])
 app.add_url_rule('/api/get/<this>', 'get', get, methods=['GET'])
-# KAFKA POST
-# app.add_url_rule('/kafka/load', 'load_kafka', load_kafka, methods=['POST'])
-# app.add_url_rule('/api/kafka/load', 'load_kafka', load_kafka, methods=['POST'])
 
 
 def start():

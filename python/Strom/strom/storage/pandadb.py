@@ -1,11 +1,6 @@
-""" abstract database class w/ default basic pandas sql statements
+""" abstract database class w/ default pandas-sql interface
 ~ NOTES ~
 *   pandas.to_sql method creates columns 'index' and 'level_0' for backup reference to original indices
-*   contains static wrapper function around json.dumps if needed
-*   more stable with dataframes passed instead of straight queries
-~ ISSUES ~
-*   problem with certain queries: delete, insert, drop, update REASON: read_sql() returning count instead of columns
-    --FIX: use query() method
 """
 import pandas
 import json
@@ -20,7 +15,7 @@ class PandaDB(metaclass=ABCMeta):
     def __init__(self, conn):
         """
         :type conn: database connection object
-        :param conn: must assign this property in child class through connect() override
+        :param conn: assign this property in interface through connect() override
         """
         self.conn = conn
         super().__init__()
@@ -32,13 +27,18 @@ class PandaDB(metaclass=ABCMeta):
 
     @abstractmethod
     def close(self):
-        self.conn.close()
+        """ might require override depending on engine close method """
+        try:
+            self.conn.close()
+        except Exception as err:
+            print(err)
+            return False
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BASIC METHODS
     @abstractmethod
     def select(self, query, pars, table):
         """ standard sql parametrized select, default select all if just given table name
-        EX. result = db.select(table='test') or db.select(query="select * from test;")
+        eg. db.select(table='test') or db.select(query="select * from test;")
         :type query: str
         :param query: standard sql query with ? or '?' for params
         :type pars: list, tuple
@@ -49,15 +49,15 @@ class PandaDB(metaclass=ABCMeta):
         """
         if not query:
             stmnt = "SELECT * FROM {0}".format(str(table))
-            defres = pandas.read_sql(stmnt, self.conn)
+            defres = pandas.read_sql(sql=stmnt, con=self.conn)
             return defres
-        res = pandas.read_sql(str(query), self.conn, params=pars)
+        res = pandas.read_sql(sql=str(query), con=self.conn, params=pars)
         return res
 
     @abstractmethod
     def table(self, df, table, action):
         """
-        EX. db.table(df=myDataframe, table='test', action='replace')
+        eg. db.table(df=myDataframe, table='test', action='replace')
         :type df: pandas
         :param df: dataframe to seed table with
         :type table: str
@@ -65,33 +65,30 @@ class PandaDB(metaclass=ABCMeta):
         :type action: str
         :param action: action to take if table exists: 'replace', 'append', or 'fail'
         """
-        df.to_sql(str(table), self.conn, if_exists=str(action))
+        df.to_sql(name=str(table), con=self.conn, if_exists=str(action))
 
     @abstractmethod
-    def create(self, query, pars, df, table):
-        """ similar to table method but w/ query functionality and flexibility with # of columns
-        EX. db.create(df=myDataframe, table='test')
-        :type query: str
-        :param query: standard sql query with ? or '?' for params
-        :type pars: list, tuple
-        :param pars: values to be passed into query
+    def create(self, df, table):
+        """ similar to table method but w/ flexibility with # of columns and meant for inserting data
+        eg. db.create(df=myDataframe, table='test')
         :type df: pandas
         :param df: row(s), as a dataframe, to be created
         :type table: str
         :param table: name of table
         """
-        if df is None:
-            pandas.read_sql(str(query), self.conn, params=pars)
         try:
-            df.to_sql(str(table), self.conn, if_exists="append")
+            df.to_sql(name=str(table), con=self.conn, if_exists="append")
         except:
             daf = self.select(table=str(table))
             daf = daf.append(df)
-            daf.to_sql(str(table), self.conn, if_exists="replace")
+            daf.to_sql(name=str(table), con=self.conn, if_exists="replace")
 
     @abstractmethod
     def query(self, stmnt):
-        """ normal database query method, override this"""
+        """ normal database query method, override this
+        :type stmnt: str
+        :param stmnt: normal sql query
+        """
         pass
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~SPECIFIC METHODS
@@ -109,19 +106,31 @@ class PandaDB(metaclass=ABCMeta):
             return False
         return True
 
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~RETRIEVAL METHODS
     @abstractmethod
-    def retrieve(self):
-        pass
+    def serialize(self, df, fields):
+        """ serializes data for e. given field
+        :type df: pandas
+        :param df: dataframe with fields needing to be serialized
+        :type fields: list, tuple
+        :param fields: names of fields to serialize
+        :return: pandas
+        """
+        for key in fields:
+            if key in df.columns.values.tolist():
+                df[key] = df[key].apply(lambda x: json.dumps(x))
+        return df
 
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def serialize(stuff):
-    return json.dumps(stuff)
-
-# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~NOTE(s)
-# # list of col names: df.columns.values.tolist()
-# # ndf.index[-1] last index of DF
-# # df.at[1, 'id'] = 20
-# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    @abstractmethod
+    def retrieve(self, table, col, val):
+        """
+        :type table: str
+        :param table: name of table
+        :type col: str
+        :param col: name of column
+        :type val: any, enclosing quotes if str (eg. "'stringValue'")
+        :param val: name of value to search for
+        """
+        stmnt = "SELECT * FROM {0} WHERE {1}={2};".format(str(table), str(col), str(val))
+        dfres = self.select(query=stmnt)
+        return dfres
+        # SELECT MAX(version) FROM test WHERE blah de blah;)
