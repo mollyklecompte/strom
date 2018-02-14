@@ -128,54 +128,6 @@ class DStream(dict):
                 self[key] = json_file[key]
                 logger.debug("added key %s" % (key))
 
-    def define_dstream(self, storage_rules, ingestion_rules, source_dict, measure_list, field_names, user_id_names,
-                      tag_list, filter_list, dparam_rule_list, event_list):
-        """
-        Old method for filling DStream from input data if not already in dict form.
-        :param storage_rules: dict containing storage rules
-        :type storage_rules: dict
-        :param ingestion_rules: dict containing ingestion rules
-        :type ingestion_rules: dict
-        :param measure_list: list of tuples: (measure_name, dtype) for each measure supplied to the
-        stream
-        :type measure_list: list
-        :param field_names: list of field names
-        :type field_names: list
-        :param user_id_names: list of user_id names
-        :type user_id_names: list
-        :param tag_list: list of tags
-        :type tag_list: list
-        :param filter_list: list of filter rules which are dicts
-        :type filter_list: list of dict
-        :param dparam_rule_list: list of dparam_rules, which are dicts
-        :type dparam_rule_list: list of dict
-        :param event_list: list of tuples: (event_name, event_rules)
-        :type event_list: list of tuples
-        """
-        logger.warning("Don't use this method, it is cumbersome")
-        self["storage_rules"] = storage_rules
-        self["ingest_rules"] = ingestion_rules
-
-        for measure_name, dtype in measure_list:
-            self.add_measure(measure_name, dtype)
-
-        for field in field_names:
-            self.add_field(field)
-
-        for uid in user_id_names:
-            self.add_user_id(uid)
-
-        for tag_name in tag_list:
-            self.add_tag(tag_name)
-
-        self["filters"].extend(filter_list)
-        self["dparam_rules"].extend(dparam_rule_list)
-
-        for event_name, event_rules in event_list:
-            self.add_event(event_name, event_rules)
-
-        self["version"] += 1
-
 
 class DataDStream(DStream):
     def __init__(self):
