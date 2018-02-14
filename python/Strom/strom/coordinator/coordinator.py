@@ -10,11 +10,11 @@ Handles Bstream data storage via StorageThread classes at appropriate steps.
 """
 
 import time
-import requests
 from copy import deepcopy
+
+import requests
 from bson.objectid import ObjectId
-from strom.database.maria_management import SQL_Connection
-from strom.database.mongo_management import MongoManager
+
 from strom.dstream.bstream import BStream
 from strom.storage_thread.storage_thread import *
 from strom.utils.configer import configer as config
@@ -170,21 +170,22 @@ class Coordinator(object):
         token = temp_dstream["stream_token"]
         name = temp_dstream["stream_name"]
         version = temp_dstream["version"]
-        mongo_id = str(self._store_json(temp_dstream, 'template'))
-
-        # Maria Manager checks for metadata table, creates if not there
-        metadata_tabel_check = self.maria.check_metadata_table_exists()
-        if not metadata_tabel_check:
-            self.maria.create_metadata_table()
-
-        # Inserts template info into metadata table
-        self.maria.insert_row_into_metadata_table(name, token, version, mongo_id)
-
-        # Create stream lookup table for raw data
-        self.maria.create_stream_lookup_table(temp_dstream)
-
-        # Create stream lookup table for filtered data
-        self.maria.create_stream_filtered_table(temp_dstream)
+        self._post_template(temp_dstream)
+        # mongo_id = str(self._store_json(temp_dstream, 'template'))
+        #
+        # # Maria Manager checks for metadata table, creates if not there
+        # metadata_tabel_check = self.maria.check_metadata_table_exists()
+        # if not metadata_tabel_check:
+        #     self.maria.create_metadata_table()
+        #
+        # # Inserts template info into metadata table
+        # self.maria.insert_row_into_metadata_table(name, token, version, mongo_id)
+        #
+        # # Create stream lookup table for raw data
+        # self.maria.create_stream_lookup_table(temp_dstream)
+        #
+        # # Create stream lookup table for filtered data
+        # self.maria.create_stream_filtered_table(temp_dstream)
 
     def process_data_async(self, dstream_list, token):
         """
@@ -206,38 +207,39 @@ class Coordinator(object):
         # create bstream for dstream list
         bstream = self._list_to_bstream(template, dstream_list)
         # thread store raw measures from bstream
-        if storage_rules['store_raw'] :
-            self.threads.append('raw_thread')
-            raw_thread = StorageRawThread(bstream)
-            raw_thread.start()
-            logger.debug('store_raw thread started')
+        # if storage_rules['store_raw'] :
+        #     self.threads.append('raw_thread')
+        #     raw_thread = StorageRawThread(bstream)
+        #     raw_thread.start()
+        #     logger.debug('store_raw thread started')
 
         # filter bstream data
         bstream.apply_filters()
         # thread store filtered dstream data
-        if storage_rules['store_filtered']:
-            self.threads.append('filtered_thread')
-            filtered_thread = StorageFilteredThread(bstream)
-            filtered_thread.start()
-            logger.debug('store_filtered thread started')
+        # if storage_rules['store_filtered']:
+        #     self.threads.append('filtered_thread')
+        #     filtered_thread = StorageFilteredThread(bstream)
+        #     filtered_thread.start()
+        #     logger.debug('store_filtered thread started')
 
         # apply derived param transforms
         bstream.apply_dparam_rules()
         # thread store derived params
-        if storage_rules['store_derived']:
-            self.threads.append('derived_thread')
-            derived_thread = StorageJsonThread(bstream, 'derived')
-            derived_thread.start()
-            logger.debug('store_json thread started')
+        # if storage_rules['store_derived']:
+        #     self.threads.append('derived_thread')
+        #     derived_thread = StorageJsonThread(bstream, 'derived')
+        #     derived_thread.start()
+        #     logger.debug('store_json thread started')
 
         # apply event transforms
         bstream.find_events()
         # post events to server
         self._post_parsed_events(bstream)
+        self._post_dataframe(bstream["measures"])
 
-        # thread store events
-        event_thread = StorageJsonThread(bstream, 'event')
-        event_thread.start()
+        # # thread store events
+        # event_thread = StorageJsonThread(bstream, 'event')
+        # event_thread.start()
         print("whoop WHOOOOP", time.time() - st, len(bstream["timestamp"]))
 
     def get_events(self, token):
@@ -339,5 +341,37 @@ class Coordinator(object):
                                                    config['server_port'])
         logger.debug(event_data)
         r = requests.post(endpoint, json=event_data)
+
+        return 'request status: ' + str(r.status_code)
+
+    @staticmethod
+    def _post_template(template):
+        """
+        Sends post request containing event data to API
+        :param event_data: event data (individual event)
+        :type event_data: dict
+        :return: request status
+        :rtype: string
+        """
+        endpoint = 'http://{}:{}/storage'.format(config['server_host'],
+                                                   config['server_port'])
+        logger.debug(template)
+        r = requests.post(endpoint, json=template)
+
+        return 'request status: ' + str(r.status_code)
+
+    @staticmethod
+    def _post_dataframe(dataframe):
+        """
+        Sends post request containing event data to API
+        :param event_data: event data (individual event)
+        :type event_data: dict
+        :return: request status
+        :rtype: string
+        """
+        endpoint = 'http://{}:{}/storage'.format(config['server_host'],
+                                                   config['server_port'])
+        logger.debug(dataframe)
+        r = requests.post(endpoint, json=dataframe.to_json())
 
         return 'request status: ' + str(r.status_code)
