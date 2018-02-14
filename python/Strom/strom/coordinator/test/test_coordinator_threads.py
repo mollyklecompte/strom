@@ -127,7 +127,7 @@ class TestCoordinator(unittest.TestCase):
         # tpds_dstream["stream_token"] = "the final token"
         tpds_dstream.pop("_id", None)
         self.coordinator.process_template(tpds_dstream)
-        self.coordinator.process_data_async(self.dstreams, tpds_dstream["stream_token"])
+        self.coordinator.process_data(self.dstreams, tpds_dstream["stream_token"])
 
         # pause to let threaded storage complete
         time.sleep(1)
@@ -153,7 +153,7 @@ class TestCoordinator(unittest.TestCase):
         tpds_dstream['storage_rules'] = {'store_raw': False, 'store_filtered': False, 'store_derived': False}
         tpds_dstream.pop("_id", None)
         self.coordinator.process_template(tpds_dstream)
-        self.coordinator.process_data_async(self.dstreams, tpds_dstream["stream_token"])
+        self.coordinator.process_data(self.dstreams, tpds_dstream["stream_token"])
 
         # pause to let threaded storage complete
         time.sleep(1)

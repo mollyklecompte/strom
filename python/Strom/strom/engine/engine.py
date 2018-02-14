@@ -57,7 +57,7 @@ class Processor(Process):
                     break
             else:
                 data = queued.tolist()
-                coordinator.process_data_async(data, data[0]["stream_token"])
+                coordinator.process_data(data, data[0]["stream_token"])
                 # data_list = [datum for datum in queued]
                 # for data in data_list:
                 #     coordinator.process_data_async(data, data[0]["stream_token"])
