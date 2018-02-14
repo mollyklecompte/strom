@@ -5,9 +5,9 @@ Initializes a Bstream dict off Dstream, using a Dstream template to initialize a
 """
 import json
 
-from strom.transform.derive_dataframe import *
-from strom.transform.detect_dataframe_event import *
-from strom.transform.filter_dataframe import *
+from strom.transform.derive_param import *
+from strom.transform.detect_event import *
+from strom.transform.filter_data import *
 from .dstream import DStream
 
 __version__ = "0.1"

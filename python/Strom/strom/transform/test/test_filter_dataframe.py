@@ -2,7 +2,7 @@ import json
 import unittest
 
 from strom.dstream.bstream import BStream
-from strom.transform.filter_dataframe import *
+from strom.transform.filter_data import *
 
 
 class TestFilter(unittest.TestCase):

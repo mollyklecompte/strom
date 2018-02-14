@@ -2,7 +2,7 @@ import json
 import unittest
 
 from strom.dstream.bstream import BStream
-from strom.transform.detect_dataframe_event import *
+from strom.transform.detect_event import *
 
 
 class TestDeriveDataFrame(unittest.TestCase):

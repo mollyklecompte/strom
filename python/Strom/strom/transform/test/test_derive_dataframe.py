@@ -2,7 +2,7 @@ import json
 import unittest
 
 from strom.dstream.bstream import BStream
-from strom.transform.derive_dataframe import *
+from strom.transform.derive_param import *
 
 
 class TestDeriveDataFrame(unittest.TestCase):
