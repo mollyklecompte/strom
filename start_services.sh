@@ -13,8 +13,8 @@ gnome-terminal --tab -e "bash --rcfile $venv_bin/activate -ci 'python -m strom.s
 sleep 2
 
 ### startup engine in background ###
-gnome-terminal --tab -e "bash --rcfile $venv_bin/activate -ci 'python -m strom.engine.engine ; bash'"
+#gnome-terminal --tab -e "bash --rcfile $venv_bin/activate -ci 'python -m strom.engine.engine ; bash'"
 
 ### start data pushing script ###
-cd ../../cli/data_poster
-./post_data.sh
+#cd ../../cli/data_poster
+#./post_data.sh
