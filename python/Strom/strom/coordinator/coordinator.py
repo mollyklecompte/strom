@@ -13,6 +13,7 @@ import time
 from copy import deepcopy
 
 import requests
+
 from strom.dstream.bstream import BStream
 from strom.utils.configer import configer as config
 from strom.utils.logger.logger import logger
@@ -113,14 +114,15 @@ class Coordinator(object):
         :return: list of individual events
         :rtype: list of dicts
         """
+        context_data = bstream["measures"]
         parsed_events = [
             {
                 "event": "{}_{}".format(event_name.replace(" ", ""),
                                         bstream['engine_rules']['kafka']),
-                "data": single_event
+            "data": single_row.to_json()
             }
-            for event_name, event_list in bstream[config['event_coll_suf']].items()
-            for single_event in event_list
+            for event_name, event_df in bstream[config['event_coll_suf']].items()
+            for single_ind,`~ single_row in context_data.join(event_df.set_index("timestamp"), on="timestamp").iterrows()
         ]
 
         return parsed_events
