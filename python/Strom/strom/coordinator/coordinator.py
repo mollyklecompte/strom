@@ -119,9 +119,10 @@ class Coordinator(object):
             {
                 "event": "{}_{}".format(event_name.replace(" ", ""),
                                         bstream['engine_rules']['kafka']),
-            "data": context_data.join(event_df.set_index("timestamp"), on="timestamp").to_json()
+            "data": single_row.to_json()
             }
             for event_name, event_df in bstream[config['event_coll_suf']].items()
+            for single_ind,`~ single_row in context_data.join(event_df.set_index("timestamp"), on="timestamp").iterrows()
         ]
 
         return parsed_events
