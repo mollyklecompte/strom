@@ -1,10 +1,13 @@
-import unittest
 import json
+import unittest
 from copy import deepcopy
+
+from pymongo.errors import DuplicateKeyError
+
 from strom.coordinator.coordinator import Coordinator
 from strom.dstream.bstream import BStream
-from pymysql.err import ProgrammingError
-from pymongo.errors import DuplicateKeyError
+
+
 class TestCoordinator(unittest.TestCase):
     def setUp(self):
         self.coordinator = Coordinator()
@@ -20,56 +23,25 @@ class TestCoordinator(unittest.TestCase):
         self.bstream.apply_dparam_rules()
         self.bstream.find_events()
 
-    def test_store_raw_filtered(self):
-        tsrf_template = deepcopy((self.dstream_template))
-        tsrf_bstream = deepcopy(self.bstream)
-        tsrf_template.pop("_id", None)
-        cur_stream_token = "storing_token_token"
-        tsrf_bstream["stream_token"] = cur_stream_token
-        tsrf_template["stream_token"] = cur_stream_token
-
-        self.assertRaises(ProgrammingError, lambda: self.coordinator._store_raw(tsrf_bstream))
-
-
-        self.coordinator.process_template(tsrf_template)
-        inserted_count = self.coordinator._store_raw(tsrf_bstream)
-        self.assertEqual(inserted_count, len(tsrf_bstream["timestamp"]))
-        self.assertFalse(inserted_count == 0)
-        self.assertIsNotNone(inserted_count)
-
-        qt = self.coordinator._retrieve_current_template(tsrf_template["stream_token"])
-        bstream = self.coordinator._list_to_bstream(qt, self.dstreams)
-        bstream.apply_filters()
-
-        # test storing filtered data
-        filtered_inserted_count = self.coordinator._store_filtered(bstream)
-        bstream['stream_token'] = "this_token_is_bad"
-        self.assertRaises(ProgrammingError,lambda: self.coordinator._store_filtered(bstream))
-        bstream['stream_token'] = cur_stream_token
-        self.assertEqual(filtered_inserted_count, len(self.bstream["timestamp"]))
-
-        # checks to make sure raw data with bad stream token raises error during storage attempt
-        self.bstream["stream_token"] = "not_a_real_token"
-        self.assertRaises(ProgrammingError, lambda: self.coordinator._store_raw(self.bstream))
-
-    def test_store_json(self):
-        inserted_template_id = self.coordinator._store_json(self.dstream_template, 'template')
-        inserted_derived_id = self.coordinator._store_json(self.bstream, 'derived')
-        inserted_event_id = self.coordinator._store_json(self.bstream, 'event')
-
-        queried_template = self.coordinator.mongo.get_by_id(inserted_template_id, 'template')
-        queried_derived = self.coordinator.mongo.get_by_id(inserted_derived_id, 'derived', token=self.dstream_template["stream_token"])
-        queried_event= self.coordinator.mongo.get_by_id(inserted_event_id, 'event', token=self.dstream_template["stream_token"])
-
-        self.assertEqual(inserted_template_id, queried_template["_id"])
-        self.assertEqual(inserted_derived_id, queried_derived["_id"])
-        self.assertEqual(inserted_event_id, queried_event["_id"])
-
     def test_list_to_bstream(self):
         bstream = self.coordinator._list_to_bstream(self.dstream_template, self.dstreams)
 
         self.assertEqual(bstream["measures"], self.bstream["measures"])
 
+    def test_parse_events(self):
+        pass
+
+    def test_post_events(self):
+        pass
+
+    def test_post_parsed_events(self):
+        pass
+
+    def test_post_template(self):
+        pass
+
+    def test_post_dataframe(self):
+        pass
 
     def test_process_template(self):
         tpt_dstream = deepcopy(self.dstream_template)
@@ -93,7 +65,7 @@ class TestCoordinator(unittest.TestCase):
         qt = self.coordinator._retrieve_current_template(tpt_dstream["stream_token"])
         self.assertEqual(qt["version"], 1)
 
-    def test_process_data_sync(self):
+    def test_process_data(self):
         tpds_dstream = deepcopy(self.dstream_template)
         # tpds_dstream["stream_token"] = "the final token"
         tpds_dstream.pop("_id", None)
