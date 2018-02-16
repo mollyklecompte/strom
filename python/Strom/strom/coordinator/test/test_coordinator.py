@@ -44,7 +44,8 @@ class TestCoordinator(unittest.TestCase):
         self.coordinator._post_parsed_events(self.bstream)
 
     def test_post_template(self):
-        self.coordinator._post_template(self.dstream_template)
+        status = self.coordinator._post_template(self.dstream_template)
+        self.assertIn("request status: 200", status)
 
     def test_post_dataframe(self):
         pass
