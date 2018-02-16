@@ -11,6 +11,7 @@ Handles Bstream data storage via StorageThread classes at appropriate steps.
 import json
 import pickle
 import time
+import uuid
 
 import pandas as pd
 import requests
@@ -45,6 +46,9 @@ class Coordinator(object):
         :type temp_dstream: dict
         """
         # PUT STUFF HERE
+        for key, val in temp_dstream.items():
+            if type(val) == uuid.UUID:
+                temp_dstream[key] = str(val)
         self._post_template(temp_dstream)
 
     def process_data(self, dstream_list, token):
@@ -154,10 +158,13 @@ class Coordinator(object):
             'template': json.dumps(template),
             'index':0}])
 
+        logger.debug("made DataFrame from template")
+
         endpoint = 'http://{}:{}/template_storage'.format(config['server_host'],
                                                  config['server_port'])
+        logger.debug("posting to "+endpoint)
         r = requests.post(endpoint, data=pickle.dumps(temp_pd))
-
+        logger.debug("Finished post")
         return 'request status: ' + str(r.status_code)
 
     @staticmethod
