@@ -11,7 +11,6 @@ Handles Bstream data storage via StorageThread classes at appropriate steps.
 import json
 import pickle
 import time
-from copy import deepcopy
 
 import pandas as pd
 import requests
@@ -27,16 +26,6 @@ __author__ = "Molly <molly@tura.io>"
 class Coordinator(object):
     def __init__(self):
         self.threads = []
-
-    def _retrieve_current_template(self, token):
-        """
-        Retrieves most recent/ highest versioned template for stream (by token).
-        :param token: the stream token
-        :type token: string
-        :return: the current dstream template
-        :rtype: dict
-        """
-        pass
 
     def _post_parsed_events(self, bstream):
         """Wrapper on `_parse_events` + `_post_events`- parses individual events & posts to API"""
@@ -55,7 +44,6 @@ class Coordinator(object):
         :param temp_dstream: dstream template
         :type temp_dstream: dict
         """
-        temp_dstream = deepcopy(temp_dstream)
         # PUT STUFF HERE
         self._post_template(temp_dstream)
 
@@ -71,7 +59,7 @@ class Coordinator(object):
         st = time.time()
 
         # retrieve most recent versioned dstream template
-        template = self._retrieve_current_template(token)
+        template = dstream_list[0]
 
         # create bstream for dstream list
         bstream = self._list_to_bstream(template, dstream_list)
@@ -184,6 +172,6 @@ class Coordinator(object):
         endpoint = 'http://{}:{}/data_storage'.format(config['server_host'],
                                                    config['server_port'])
         logger.debug(dataframe)
-        r = requests.post(endpoint, data=pickle.dumps(stream_token, dataframe))
+        r = requests.post(endpoint, data=pickle.dumps((stream_token, dataframe)))
 
         return 'request status: ' + str(r.status_code)
