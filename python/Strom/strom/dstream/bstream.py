@@ -4,13 +4,12 @@ B-stream class
 Initializes a Bstream dict off Dstream, using a Dstream template to initialize all keys, static values. The Bstream contains methods to aggregate measures, timestamps, user ids, fields and tags, as well as a wrapper aggregate method.
 """
 import json
-import numpy as np
-import pandas as pd
+
 from strom.transform.derive_param import *
 from strom.transform.detect_event import *
 from strom.transform.filter_data import *
-from .dstream import DStream
 from strom.utils.logger.logger import logger
+from .dstream import DStream
 
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"
@@ -172,7 +171,7 @@ class BStream(DStream):
         logger.debug("deriving parameters")
         self["derived_measures"] = {}
         for dparam_rule in self["dparam_rules"]:
-            print("deriving {}".format(dparam_rule["param_dict"]["measure_rules"]["output_name"]))
+            # print("deriving {}".format(dparam_rule["param_dict"]["measure_rules"]["output_name"]))
             self.apply_transform(dparam_rule["partition_list"], dparam_rule["measure_list"], dparam_rule["transform_type"], dparam_rule["transform_name"], dparam_rule["param_dict"], dparam_rule["logical_comparison"])
 
 
@@ -180,5 +179,5 @@ class BStream(DStream):
         logger.debug("finding events")
         self["events"] = {}
         for event_name, event_rule in self["event_rules"].items():
-            print("finding event {}".format(event_name))
+            # print("finding event {}".format(event_name))
             self["events"][event_name] = self.apply_transform(event_rule["partition_list"], event_rule["measure_list"], event_rule["transform_type"], event_rule["transform_name"], event_rule["param_dict"], event_rule["logical_comparison"])

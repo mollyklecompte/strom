@@ -11,9 +11,11 @@ Handles Bstream data storage via StorageThread classes at appropriate steps.
 import json
 import pickle
 import time
-import requests
 from copy import deepcopy
+
 import pandas as pd
+import requests
+
 from strom.dstream.bstream import BStream
 from strom.utils.configer import configer as config
 from strom.utils.logger.logger import logger
@@ -117,8 +119,7 @@ class Coordinator(object):
         context_data = bstream["measures"]
         parsed_events = [
             {
-                "event": "{}_{}".format(event_name.replace(" ", ""),
-                                        bstream['engine_rules']['kafka']),
+                "event": "{}".format(event_name.replace(" ", "")),
             "data": single_row.to_json()
             }
             for event_name, event_df in bstream[config['event_coll_suf']].items()
@@ -156,13 +157,14 @@ class Coordinator(object):
         logger.debug(template)
 
 
-        temp_pd = pd.DataFrame.from_dict({
+        temp_pd = pd.DataFrame.from_dict([{
             'stream_token': template['stream_token'],
             'template_id': template['template_id'],
             'stream_name': template['stream_name'],
             'version': template['version'],
             'user_description': template['user_description'],
-            'template': json.dumps(template)})
+            'template': json.dumps(template),
+            'index':0}])
 
         endpoint = 'http://{}:{}/template_storage'.format(config['server_host'],
                                                  config['server_port'])
