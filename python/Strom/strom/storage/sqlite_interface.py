@@ -1,7 +1,7 @@
 import json
+
 from .abstract_interface import StorageInterface
 from .sqlitedb import SqliteDB
-
 
 __version__ = '0.0.1'
 __author__ = 'Molly LeCompte'
@@ -12,27 +12,33 @@ class SqliteInterface(StorageInterface):
         super().__init__()
         self.db = SqliteDB(db_file)
 
-    def store_template(self, template):
-        self.db.create(template, 'templates')
+    def store_template(self, template_df):
+        self.db.create(template_df, 'templates')
 
     def retrieve_template_by_id(self, template_id):
-        result_df = self.db.retrieve('templates', 'template_id', template_id)
+        result_df = self.db.retrieve('templates', 'template_id', f"'{template_id}'")
 
-        if result_df.size == 1:
-            return json.loads(result_df.iloc[0])
+        if result_df.shape[0] == 1:
+            # return json.loads(result_df.iloc[0])
+            return result_df.iloc[0]
+        # print(result_df.shape[0])
 
         # HANDLE CASES WITH 0 OR MULTI RESULT
 
     def retrieve_current_template(self, stream_token):
         result_df = self.db.retrieve(f'templates', 'stream_token', stream_token, latest=True)
 
-        if result_df.size == 1:
+        if result_df.shape[0] == 1:
             return json.loads(result_df.iloc[0])
 
         # HANDLE CASES WITH 0 OR MULTI RESULT
 
-    def store_bstream_data(self, bstream, token):
-        self.db.create(bstream, f'{token}_data')
+    def retrieve_all_templates(self):
+        return self.db.select(query='SELECT * FROM templates')
+
+    def store_bstream_data(self, token, bstream_df):
+        object_columns = list(bstream_df.select_dtypes(include=["object"]).columns)
+        self.db.create(self.db.serialize(bstream_df, object_columns), f'{token}_data')
 
     def retrieve_data(self, stream_token, *retrieval_args, **retrieval_kwargs):
         retrieval_args = [arg for arg in retrieval_args]
@@ -48,3 +54,9 @@ class SqliteInterface(StorageInterface):
         result = self.db.select(query=query)
 
         return result
+
+    def open_connection(self):
+        self.db.connect()
+
+    def close_connection(self):
+        self.db.close()

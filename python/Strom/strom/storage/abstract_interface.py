@@ -47,6 +47,13 @@ class StorageInterface(metaclass=ABCMeta):
         raise NotImplementedError("subclass must implement this abstract method.")
 
     @abstractmethod
+    def retrieve_all_templates(self):
+        """
+
+        """
+        raise NotImplementedError("subclass must implement this abstract method.")
+
+    @abstractmethod
     def store_bstream_data(self, bstream, token):
         """
         Stores bstream
@@ -56,6 +63,7 @@ class StorageInterface(metaclass=ABCMeta):
         :rtype:
         """
         raise NotImplementedError("subclass must implement this abstract method.")
+
 
     @abstractmethod
     def retrieve_data(self, stream_token, *retrieval_args, **retrieval_kwargs):
