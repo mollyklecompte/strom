@@ -1,5 +1,6 @@
 import json
 import unittest
+from copy import deepcopy
 
 from strom.coordinator.coordinator import Coordinator
 from strom.dstream.bstream import BStream
@@ -44,44 +45,23 @@ class TestCoordinator(unittest.TestCase):
         self.coordinator._post_parsed_events(self.bstream)
 
     def test_post_template(self):
-        self.coordinator._post_template(self.dstream_template)
+        status = self.coordinator._post_template(self.dstream_template)
+        self.assertIn("request status: 200", status)
 
     def test_post_dataframe(self):
-        pass
+        status = self.coordinator._post_dataframe(self.bstream["stream_token"], self.bstream["measures"])
+        self.assertIn("request status: 200", status)
 
     def test_process_template(self):
-        pass
-        # tpt_dstream = deepcopy(self.dstream_template)
-        # tpt_dstream["stream_token"] = "a_tpt_token"
-        # tpt_dstream.pop("_id", None)
-        #
-        # self.coordinator.process_template(tpt_dstream)
-        #
-        # qt = self.coordinator._retrieve_current_template(tpt_dstream["stream_token"])
-        # self.assertEqual(qt["stream_token"], tpt_dstream["stream_token"])
-        # self.assertEqual(qt["stream_name"], tpt_dstream["stream_name"])
-        #
-        # tpt_dstream["version"] = 1
-        # tpt_dstream["_id"] = qt["_id"]
-        # self.assertRaises(DuplicateKeyError, lambda: self.coordinator.process_template(tpt_dstream))
-        #
-        # tpt_dstream.pop("_id", None)
-        # tpt_dstream["stream_token"] = "last_tpt_token"
-        # self.coordinator.process_template(tpt_dstream)
-        # qt = self.coordinator._retrieve_current_template(tpt_dstream["stream_token"])
-        # self.assertEqual(qt["version"], 1)
+        self.coordinator.process_template(self.dstream_template)
 
     def test_process_data(self):
         pass
-        # tpds_dstream = deepcopy(self.dstream_template)
-        # # tpds_dstream["stream_token"] = "the final token"
-        # tpds_dstream.pop("_id", None)
-        # self.coordinator.process_template(tpds_dstream)
-        # self.coordinator.process_data_sync(self.dstreams, tpds_dstream["stream_token"])
-        # stored_events = self.coordinator.get_events(tpds_dstream["stream_token"])
-        # self.assertIn("events", stored_events[0])
-        # for event in tpds_dstream["event_rules"].keys():
-        #     self.assertIn(event, stored_events[0]["events"])
+        tpds_dstream = deepcopy(self.dstream_template)
+        tpds_dstream["stream_token"] = "the final token"
+        tpds_dstream.pop("_id", None)
+        self.coordinator.process_template(tpds_dstream)
+
 
 
 if __name__ == "__main__":
