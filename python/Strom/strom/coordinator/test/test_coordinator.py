@@ -34,11 +34,17 @@ class TestCoordinator(unittest.TestCase):
             self.assertIn(event_dict["event"], [event_names.replace(" ","") for event_names in self.bstream["event_rules"].keys()])
             self.assertIsInstance(event_dict["data"], str)
 
+    def test_post_events(self):
+        parsed_events = self.coordinator._parse_events(self.bstream)
+        status = self.coordinator._post_events(parsed_events[0])
+        self.assertIsInstance(status, str)
+        self.assertIn("request status: 200", status)
+
     def test_post_parsed_events(self):
         self.coordinator._post_parsed_events(self.bstream)
 
     def test_post_template(self):
-        pass
+        self.coordinator._post_template(self.dstream_template)
 
     def test_post_dataframe(self):
         pass

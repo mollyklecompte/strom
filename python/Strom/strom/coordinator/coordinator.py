@@ -157,13 +157,14 @@ class Coordinator(object):
         logger.debug(template)
 
 
-        temp_pd = pd.DataFrame.from_dict({
+        temp_pd = pd.DataFrame.from_dict([{
             'stream_token': template['stream_token'],
             'template_id': template['template_id'],
             'stream_name': template['stream_name'],
             'version': template['version'],
             'user_description': template['user_description'],
-            'template': json.dumps(template)})
+            'template': json.dumps(template),
+            'index':0}])
 
         endpoint = 'http://{}:{}/template_storage'.format(config['server_host'],
                                                  config['server_port'])
