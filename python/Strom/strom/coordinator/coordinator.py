@@ -8,12 +8,12 @@ Creates Bstream objects from Dstream lists by calling Bstream class aggregate me
 Applies transformations to Bstreams by calling relevant Bstream class methods.
 Handles Bstream data storage via StorageThread classes at appropriate steps.
 """
-
+import json
+import pickle
 import time
-from copy import deepcopy
-
 import requests
-
+from copy import deepcopy
+import pandas as pd
 from strom.dstream.bstream import BStream
 from strom.utils.configer import configer as config
 from strom.utils.logger.logger import logger
@@ -152,15 +152,26 @@ class Coordinator(object):
         :return: request status
         :rtype: string
         """
-        endpoint = 'http://{}:{}/storage'.format(config['server_host'],
-                                                   config['server_port'])
+
         logger.debug(template)
-        r = requests.post(endpoint, json=template)
+
+
+        temp_pd = pd.DataFrame.from_dict({
+            'stream_token': template['stream_token'],
+            'template_id': template['template_id'],
+            'stream_name': template['stream_name'],
+            'version': template['version'],
+            'user_description': template['user_description'],
+            'template': json.dumps(template)})
+
+        endpoint = 'http://{}:{}/template_storage'.format(config['server_host'],
+                                                 config['server_port'])
+        r = requests.post(endpoint, data=pickle.dumps(temp_pd))
 
         return 'request status: ' + str(r.status_code)
 
     @staticmethod
-    def _post_dataframe(dataframe):
+    def _post_dataframe(stream_token, dataframe):
         """
         Sends post request containing event data to API
         :param event_data: event data (individual event)
@@ -168,9 +179,9 @@ class Coordinator(object):
         :return: request status
         :rtype: string
         """
-        endpoint = 'http://{}:{}/storage'.format(config['server_host'],
+        endpoint = 'http://{}:{}/data_storage'.format(config['server_host'],
                                                    config['server_port'])
         logger.debug(dataframe)
-        r = requests.post(endpoint, json=dataframe.to_json())
+        r = requests.post(endpoint, data=pickle.dumps(stream_token, dataframe))
 
         return 'request status: ' + str(r.status_code)
