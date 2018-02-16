@@ -58,7 +58,7 @@ class StorageInterface(metaclass=ABCMeta):
         raise NotImplementedError("subclass must implement this abstract method.")
 
     @abstractmethod
-    def retrieve_data(self, stream_token, **retrieval_args, **retrieval_kwargs):
+    def retrieve_data(self, stream_token, *retrieval_args, **retrieval_kwargs):
         """
         Retrieves raw data, optionally within certain parameters i.e. timestamp range
         :param stream_token: stream token
