@@ -28,7 +28,7 @@ class BStream(DStream):
         logger.debug("init BStream")
         super().__init__()
         self.dstreams = dstreams
-        self["template_id"] = template["_id"]
+        self["template_id"] = template["template_id"]
         self._load_from_dict(template)
         self["stream_token"] = str(template["stream_token"])
 
