@@ -49,7 +49,9 @@ class Coordinator(object):
         for key, val in temp_dstream.items():
             if type(val) == uuid.UUID:
                 temp_dstream[key] = str(val)
-        self._post_template(temp_dstream)
+        return self.return_template_df(temp_dstream)
+
+        # self._post_template(temp_dstream)
 
     def process_data(self, dstream_list, token):
         """
@@ -166,6 +168,19 @@ class Coordinator(object):
         r = requests.post(endpoint, data=pickle.dumps(temp_pd))
         logger.debug("Finished post")
         return 'request status: ' + str(r.status_code)
+
+    @staticmethod
+    def return_template_df(template):
+        temp_pd = pd.DataFrame.from_dict([{
+            'stream_token': template['stream_token'],
+            'template_id': template['template_id'],
+            'stream_name': template['stream_name'],
+            'version': template['version'],
+            'user_description': template['user_description'],
+            'template': json.dumps(template),
+            'index': 0}])
+
+        return temp_pd
 
     @staticmethod
     def _post_dataframe(stream_token, dataframe):
