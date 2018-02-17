@@ -80,7 +80,7 @@ class Coordinator(object):
         bstream.find_events()
         # post events to server
         self._post_parsed_events(bstream)
-        self._post_dataframe(bstream["measures"])
+        self._post_dataframe(bstream["stream_token"], bstream["measures"])
 
         print("whoop WHOOOOP", time.time() - st, len(bstream["timestamp"]))
 
@@ -110,6 +110,7 @@ class Coordinator(object):
         :return: list of individual events
         :rtype: list of dicts
         """
+        logger.fatal("Parsing event")
         context_data = bstream["measures"]
         parsed_events = [
             {
@@ -117,7 +118,7 @@ class Coordinator(object):
             "data": single_row.to_json()
             }
             for event_name, event_df in bstream[config['event_coll_suf']].items()
-            for single_ind, single_row in context_data.join(event_df.set_index("timestamp"), on="timestamp").iterrows()
+            for single_ind, single_row in context_data.join(event_df.set_index("timestamp"), on="timestamp", how="right").iterrows()
         ]
 
         return parsed_events
@@ -133,7 +134,7 @@ class Coordinator(object):
         """
         endpoint = 'http://{}:{}/new_event'.format(config['server_host'],
                                                    config['server_port'])
-        logger.debug(event_data)
+        logger.fatal(event_data)
         r = requests.post(endpoint, json=event_data)
 
         return 'request status: ' + str(r.status_code)

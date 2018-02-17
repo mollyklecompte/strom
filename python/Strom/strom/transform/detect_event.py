@@ -58,14 +58,14 @@ def compare_threshold(data_array, comparison_operator, comparision_val, absolute
 
 
 def DetectThreshold(data_frame, params):
-    logger.debug("staring DetectThreshold")
+    logger.fatal("staring DetectThreshold")
     if params == None:
         params = {}
         params["event_rules"] = {"measure":"measure_name", "threshold_value":"value to compare against",
                                     "comparison_operator":["==", "!=", ">=", "<=", ">", "<"],
                                     "absolute_compare":False}
         params["event_name"] = "threshold_event"
-        params["stream_id"]
+        params["stream_id"] = "foo"
         return params
 
     logger.debug("Finding events")
@@ -75,7 +75,11 @@ def DetectThreshold(data_frame, params):
     else:
         abs_comp = False
     event_inds = compare_threshold(measure_array, params["event_rules"]["comparison_operator"], params["event_rules"]["threshold_value"], abs_comp)
+    logger.debug("found events")
     event_times=data_frame[["timestamp"]][event_inds]
+    logger.debug(params["stream_id"])
+    logger.debug(params["event_name"])
     event_times["stream_id"] =  params["stream_id"]
     event_times["event_name"] = params["event_name"]
+    logger.fatal(event_times.to_string())
     return event_times
