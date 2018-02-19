@@ -118,7 +118,7 @@ class Coordinator(object):
             "data": single_row.to_json()
             }
             for event_name, event_df in bstream[config['event_coll_suf']].items()
-            for single_ind, single_row in context_data.join(event_df.set_index("timestamp"), on="timestamp", how="right").iterrows()
+            for single_ind, single_row in context_data.join(event_df, how="right").iterrows()
         ]
 
         return parsed_events
