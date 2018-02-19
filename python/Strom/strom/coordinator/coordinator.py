@@ -114,7 +114,7 @@ class Coordinator(object):
         context_data = bstream["measures"]
         parsed_events = [
             {
-                "event": "{}".format(event_name.replace(" ", "")),
+                "event": "{}_{}".format(event_name.replace(" ", ""), bstream["stream_name"].replace(" ", "")),
             "data": single_row.to_json()
             }
             for event_name, event_df in bstream[config['event_coll_suf']].items()
