@@ -52,12 +52,17 @@ class Processor(Process):
             queued = self.q.get()
             if type(queued) is str:
                 if queued == "666_kIlL_thE_pROCess_666":
-                    print("HAIL SATAN")
                     # self.is_running = False
                     break
             else:
-                data = queued.tolist()
-                coordinator.process_data(data, data[0]["stream_token"])
+                try:
+                    data = queued.tolist()
+                    if len(data) > 0:
+                        coordinator.process_data(data, data[0]["stream_token"])
+                    else:
+                        logger.warn("Empty data list received from queue- nothing will process")
+                except:
+                    raise TypeError("Data cannot be converted to list")
                 # data_list = [datum for datum in queued]
                 # for data in data_list:
                 #     coordinator.process_data_async(data, data[0]["stream_token"])
@@ -175,13 +180,13 @@ class EngineThread(Process):
             if self.run_engine is True:
                 # engine running, batch timeout with new buffer data (partial row)
                 if cur_col >= abs(self.buffer_roll) and batch_tracker['leftos_collected'] is False:
-                    print("leftos")
+                    logger.info("Putting leftovers in queue")
                     self.message_q.put(self.buffer[cur_row, :cur_col].copy())
                     batch_tracker['start_time'] = time()
                     batch_tracker['leftos_collected'] = True
                 # leftovers already collected
                 else:
-                    logger.info("No new data- resetting start time")
+                    logger.info("No new data- resetting batch timer")
                     batch_tracker['start_time'] = time()
 
         logger.info("Terminating Engine Thread")
