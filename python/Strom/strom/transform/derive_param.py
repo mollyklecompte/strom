@@ -221,7 +221,7 @@ def flat_angle(position_array, window_len, units="deg"):
     diff_array = np.diff(position_array, axis=0)
     diff_angle = np.arctan2(diff_array[:,1], diff_array[:,0])
     if units == "deg":
-        diff_angle = (np.rad2deg(diff_angle) + 360 ) % 360
+        diff_angle = (np.rad2deg(diff_angle) + 180.0 ) % 360 - 180
     elif units == "rad":
         diff_angle = (diff_angle + 2*np.pi) % np.pi
     if window_len > 1:
@@ -251,7 +251,7 @@ def bearing(position_array, window_len, units="deg"):
     second_val = np.cos(lat1)*np.sin(lat2)-np.sin(lat1)*np.cos(lat2)*np.cos(dlon)
     cur_bear = np.arctan2(first_val, second_val)
     if units == "deg":
-        cur_bear = (np.rad2deg(cur_bear) + 360 ) % 360
+        cur_bear = (np.rad2deg(cur_bear) + 180.0 ) % 360 - 180
     if window_len > 1:
         cur_bear = window_data(cur_bear, window_len)
     return cur_bear
