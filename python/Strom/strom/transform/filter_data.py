@@ -25,15 +25,18 @@ def window_data(in_array, window_len):
     :return: windowed average of the data
     :rtype: numpy array
     """
-    logger.debug("Windowing data with window length {:d}".format(window_len))
-    w_data = np.convolve(in_array, np.ones(window_len), "valid") / window_len
-    # Dealing with the special case for endpoints of in_array
-    ends_divisor = np.arange(1, window_len, 2)
-    start = np.cumsum(in_array[:window_len - 1])[::2] / ends_divisor
-    stop = (np.cumsum(in_array[:-window_len:-1])[::2] / ends_divisor)[::-1]
-    if in_array.shape[0] - w_data.shape[0] - start.shape[0] < stop.shape[0]:
-        stop = stop[1:]
-    return np.concatenate((start, w_data, stop))
+    if in_array.shape[0] < window_len*2:
+        return in_array
+    else:
+        logger.debug("Windowing data with window length {:d}".format(window_len))
+        w_data = np.convolve(in_array, np.ones(window_len), "valid") / window_len
+        # Dealing with the special case for endpoints of in_array
+        ends_divisor = np.arange(1, window_len, 2)
+        start = np.cumsum(in_array[:window_len - 1])[::2] / ends_divisor
+        stop = (np.cumsum(in_array[:-window_len:-1])[::2] / ends_divisor)[::-1]
+        if in_array.shape[0] - w_data.shape[0] - start.shape[0] < stop.shape[0]:
+            stop = stop[1:]
+        return np.concatenate((start, w_data, stop))
 
 
 def butter_data(data_array, order, nyquist):
