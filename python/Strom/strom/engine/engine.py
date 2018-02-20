@@ -55,14 +55,8 @@ class Processor(Process):
                     # self.is_running = False
                     break
             else:
-                try:
-                    data = queued.tolist()
-                    if len(data) > 0:
-                        coordinator.process_data(data, data[0]["stream_token"])
-                    else:
-                        logger.warn("Empty data list received from queue- nothing will process")
-                except:
-                    raise TypeError("Data cannot be converted to list")
+                data = queued.tolist()
+                coordinator.process_data(data, data[0]["stream_token"])
                 # data_list = [datum for datum in queued]
                 # for data in data_list:
                 #     coordinator.process_data_async(data, data[0]["stream_token"])
@@ -176,11 +170,11 @@ class EngineThread(Process):
                     else:
                         raise TypeError("Queued item is not valid dictionary.")
             # buffer time max reached, engine still running
-            print("im here @$$h0le")
+            logger.info("Buffer batch timeout exceeded")
             if self.run_engine is True:
                 # engine running, batch timeout with new buffer data (partial row)
                 if cur_col >= abs(self.buffer_roll) and batch_tracker['leftos_collected'] is False:
-                    logger.info("Putting leftovers in queue")
+                    logger.info("Collecting leftovers- pushing partial batch to queue after batch timeout")
                     self.message_q.put(self.buffer[cur_row, :cur_col].copy())
                     batch_tracker['start_time'] = time()
                     batch_tracker['leftos_collected'] = True
