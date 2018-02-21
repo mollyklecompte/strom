@@ -12,6 +12,8 @@ loads json from data messages to python, runs data transformation + storage proc
 
 import numpy as np
 from multiprocessing import Process, JoinableQueue
+from threading import Thread
+from queue import Queue
 from time import time
 from strom.coordinator.coordinator import Coordinator
 from strom.utils.logger.logger import logger
@@ -86,9 +88,9 @@ class EngineThread(Process):
         self.run_engine = False
         self.buffer_record_limit = int(buffer_max_batch)
         self.buffer_time_limit_s = float(buffer_max_seconds)
-        self.buffer = np.array([{0: 0}] * (
-            self.buffer_record_limit * self.number_of_processors)).reshape(
-            self.number_of_processors, self.buffer_record_limit)
+        self.buffers = {}
+        self.partition_qs = {}
+        self.buffer_workers = {}
         self.buffer_roll = -buffer_roll
         if buffer_roll > 0:
             self.buffer_roll_index = -buffer_roll
@@ -110,78 +112,105 @@ class EngineThread(Process):
         self._init_processors()
         self.run_engine = True
 
+        # batch_tracker = {}
+
+
+        while self.run_engine:
+            if self.pipe_conn.poll():
+                item = self.pipe_conn.recv()
+                # branch 2 - stop engine
+                if item == "stop_poison_pill":
+                    for q in self.partition_qs.keys():
+                        self.partition_qs[q].put("stop_buffer_worker")
+                    self.run_engine = False
+                    break
+                # branch 1 - engine running, good data
+                elif type(item) is dict:
+                    partition_key = item['stream_token']
+
+                    if partition_key not in self.buffers:
+                        self.buffers[partition_key] = np.array([{0: 0}] * (self.buffer_record_limit * self.number_of_processors)).reshape(self.number_of_processors, self.buffer_record_limit)
+                    if partition_key not in self.partition_qs:
+                        self.partition_qs[partition_key] = Queue()
+                    if partition_key not in self.buffer_workers:
+                        self.buffer_workers[partition_key] = Thread(target=self.do_stuff, args=[partition_key])
+                        self.buffer_workers[partition_key].start()
+                    self.partition_qs[partition_key].put(item)
+                else:
+                    raise TypeError("Queued item is not valid dictionary.")
+        logger.info("Terminating Engine Thread")
+        self.stop_engine()
+
+    def do_stuff(self, partition_key):
         last_col = self.buffer_record_limit - 1
         last_row = self.number_of_processors - 1
         cur_row = 0
         cur_col = 0
         batch_tracker = {'start_time': time(), 'leftos_collected': False}
 
-        def put_in_buffer(datum):
-            self.buffer[cur_row, cur_col] = datum
-
         while self.run_engine:
-            while time() - batch_tracker['start_time'] < self.buffer_time_limit_s:
-                if self.pipe_conn.poll():
-                    item = self.pipe_conn.recv()
-                    # branch 2 - stop engine
-                    if item == "stop_poison_pill":
-                        self.run_engine = False
-                        break
-                    # branch 1 - engine running, good data
-                    elif type(item) is dict:
-                        # branch 1.1 - not last row
-                        if cur_row < last_row:
-                            # branch 1.1a - not last column, continue row
-                            if cur_col < last_col:
-                                logger.info("Buffering- row {}".format(cur_row))
-                                put_in_buffer(item)
-                                cur_col += 1
-                            # branch 1.1b - last column, start new row
-                            else:
-                                put_in_buffer(item)
-                                self.message_q.put(self.buffer[cur_row].copy())
-                                logger.info("New batch queued")
-                                roll_window = self.buffer[cur_row, self.buffer_roll_index:]
-                                cur_row += 1
-                                for n in roll_window:
-                                    for i in range(abs(self.buffer_roll)):
-                                        self.buffer[cur_row, i] = n
-                                cur_col -= cur_col + self.buffer_roll
-                                batch_tracker['start_time'] = time()
-                        # branch 1.2 - last row
+            try:
+                item = self.partition_qs[partition_key].get(timeout=self.buffer_time_limit_s)
+                # branch 2 - stop engine
+                if item == "stop_buffer_worker":
+                    break
+                # branch 1 - engine running, good data
+                elif type(item) is dict:
+                    # branch 1.1 - not last row
+                    if cur_row < last_row:
+                        # branch 1.1a - not last column, continue row
+                        if cur_col < last_col:
+                            logger.info("Buffering- row {}".format(cur_row))
+                            self.buffers[partition_key][cur_row, cur_col] = item
+                            cur_col += 1
+                        # branch 1.1b - last column, start new row
                         else:
-                            # branch 1.2a - not last column, continue row
-                            if cur_col < last_col:
-                                put_in_buffer(item)
-                                cur_col += 1
-                            # branch 1.2b - last column, start return to first row in new cycle
-                            else:
-                                put_in_buffer(item)
-                                self.message_q.put(self.buffer[cur_row].copy())
-                                roll_window = self.buffer[cur_row, self.buffer_roll_index:]
-                                cur_row -= cur_row
-                                for n in roll_window:
-                                    for i in range(abs(self.buffer_roll)):
-                                        self.buffer[cur_row, i] = n
-                                cur_col -= cur_col + self.buffer_roll
-                                batch_tracker['start_time'] = time()
-                        batch_tracker['leftos_collected'] = False
-                    # branch 3 bad data
+                            self.buffers[partition_key][cur_row, cur_col] = item
+                            self.message_q.put(self.buffers[partition_key][cur_row].copy())
+                            logger.info("New batch queued")
+                            roll_window = self.buffers[partition_key][cur_row, self.buffer_roll_index:]
+                            cur_row += 1
+                            for n in roll_window:
+                                for i in range(abs(self.buffer_roll)):
+                                    self.buffers[partition_key][cur_row, i] = n
+                            cur_col -= cur_col + self.buffer_roll
+                            batch_tracker['start_time'] = time()
+                    # branch 1.2 - last row
                     else:
-                        raise TypeError("Queued item is not valid dictionary.")
-            # buffer time max reached, engine still running
-            logger.info("Buffer batch timeout exceeded")
-            if self.run_engine is True:
-                # engine running, batch timeout with new buffer data (partial row)
-                if cur_col >= abs(self.buffer_roll) and batch_tracker['leftos_collected'] is False:
-                    logger.info("Collecting leftovers- pushing partial batch to queue after batch timeout")
-                    self.message_q.put(self.buffer[cur_row, :cur_col].copy())
-                    batch_tracker['start_time'] = time()
-                    batch_tracker['leftos_collected'] = True
-                # leftovers already collected
+                        # branch 1.2a - not last column, continue row
+                        if cur_col < last_col:
+                            self.buffers[partition_key][cur_row, cur_col] = item
+                            cur_col += 1
+                        # branch 1.2b - last column, start return to first row in new cycle
+                        else:
+                            self.buffers[partition_key][cur_row, cur_col] = item
+                            self.message_q.put(self.buffers[partition_key][cur_row].copy())
+                            roll_window = self.buffers[partition_key][cur_row, self.buffer_roll_index:]
+                            cur_row -= cur_row
+                            for n in roll_window:
+                                for i in range(abs(self.buffer_roll)):
+                                    self.buffers[partition_key][cur_row, i] = n
+                            cur_col -= cur_col + self.buffer_roll
+                            batch_tracker['start_time'] = time()
+                    batch_tracker['leftos_collected'] = False
+                # branch 3 bad data
                 else:
-                    logger.info("No new data- resetting batch timer")
-                    batch_tracker['start_time'] = time()
+                    raise TypeError("Queued item is not valid dictionary.")
+            except:
+            # buffer time max reached, engine still running
+                logger.info("Buffer batch timeout exceeded")
+                if self.run_engine is True:
+                    # engine running, batch timeout with new buffer data (partial row)
+                    if cur_col >= abs(self.buffer_roll) and batch_tracker['leftos_collected'] is False:
+                        logger.info(
+                            "Collecting leftovers- pushing partial batch to queue after batch timeout")
+                        self.message_q.put(self.buffers[partition_key][cur_row, :cur_col].copy())
+                        batch_tracker['start_time'] = time()
+                        batch_tracker['leftos_collected'] = True
+                    # leftovers already collected
+                    else:
+                        logger.info("No new data- resetting batch timer")
+                        batch_tracker['start_time'] = time()
 
         logger.info("Terminating Engine Thread")
         self.stop_engine()
