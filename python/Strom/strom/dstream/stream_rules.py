@@ -40,10 +40,10 @@ class FilterRules(RuleDict):
         transform_type: str, "filter_data" is the expected value
         transform_name: str, name of function in filter_data module
         param_dict: dict, parameters for the filter to use
-        logical_comparision: str, supported values: "AND" and "OR". Dictates how partition_list is combined.
+        logical_comparison: str, supported values: "AND" and "OR". Dictates how partition_list is combined.
         """
         self.update(*args, **kwargs)
-        expected_keys = ['transform_id', 'partition_list', 'measure_list', 'transform_type', 'transform_name', 'param_dict', 'logical_comparision', ]
+        expected_keys = ['transform_id', 'partition_list', 'measure_list', 'transform_type', 'transform_name', 'param_dict', 'logical_comparison', ]
         super().__init__(expected_keys=expected_keys)
 
 
@@ -56,11 +56,11 @@ class DParamRules(RuleDict):
         transform_type: str, "filter_data" is the expected value
         transform_name: str, name of function in filter_data module
         param_dict: dict, parameters for the filter to use
-        logical_comparision: str, supported values: "AND" and "OR". Dictates how partition_list is combined.
+        logical_comparison: str, supported values: "AND" and "OR". Dictates how partition_list is combined.
         """
         self.update(*args, **kwargs)
 
-        expected_keys = ['transform_id', 'partition_list', 'measure_list', 'transform_type', 'transform_name', 'param_dict', 'logical_comparision', ]
+        expected_keys = ['transform_id', 'partition_list', 'measure_list', 'transform_type', 'transform_name', 'param_dict', 'logical_comparison', ]
         super().__init__(expected_keys=expected_keys)
 
 class EventRules(RuleDict):
@@ -72,11 +72,12 @@ class EventRules(RuleDict):
         transform_type: str, "filter_data" is the expected value
         transform_name: str, name of function in filter_data module
         param_dict: dict, parameters for the filter to use
-        logical_comparision: str, supported values: "AND" and "OR". Dictates how partition_list is combined.
+        logical_comparison: str, supported values: "AND" and "OR". Dictates how partition_list is combined.
         callback_rules: CallbackRules()
          """
         self.update(*args, **kwargs)
-        expected_keys = ['event_id', 'partition_list', 'measure_list', 'transform_type', 'transform_name', 'param_dict', 'logical_comparision', "callback_rules", ]
+        expected_keys = ['event_id', 'partition_list', 'measure_list', 'transform_type', 'transform_name', 'param_dict', 'logical_comparison', ]
+        # REMOVED callback_rules for now since not yet used -molly 2/22/17
         super().__init__(expected_keys=expected_keys)
 
 class CallbackRules(RuleDict):

@@ -2,7 +2,33 @@ from copy import deepcopy
 from strom.fun_factory_children import *
 from strom.dstream.dstream import DStream
 from strom.fun_update_guide import update_guide
+from strom.rules_dict_builder import event_builder
 
+
+__version__  = "0.1"
+__author__ = "Molly <molly@tura.io>"
+
+
+def build_rules_dicts(event: str, base_measure: tuple, **kwargs):
+    # event: str, event type (key in event_builder)
+    # base_measure: tuple, name + type i.e. ('location', 'geo')
+    base_event = event_builder[event]
+    if base_measure[1] != base_event['base_measure_type']:
+        raise ValueError (f"Event {base_event} requires base measure type {base_event['base_measure_type']} Provided base measure type {base_measure[1]}")
+    missing_inputs = []
+    for i in base_event['required_input_settings'] + base_event['required_event_inputs']:
+        if i not in kwargs.items():
+            missing_inputs.append(i)
+    if len(missing_inputs):
+        raise ValueError (f"Missing required inputs {missing_inputs}")
+    else:
+        inputs = kwargs
+        partition_list = inputs.pop('partition_list')
+        stream_id = inputs.pop('stream_id')
+        fn = base_event['callback']
+        rules = fn(base_measure[0], partition_list, stream_id, inputs)
+
+        return rules
 
 
 def create_template(strm_nm, src_key, measures: list, uids: list, events: list, dparam_rules: list, usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, filters=None, tags=None, fields=None):
