@@ -49,6 +49,6 @@ def create_turn_rules(spatial_measure, partition_list, stream_id, turn_value=Non
     rules_dict = {}
     rules_dict["filter_rules"] = []
     rules_dict["dparam_rules"] = [heading_rules, change_rules]
-    rules_dict["event_rules"] = {event_name:event_rules}
+    rules_dict["event_rules"] = (event_name, event_rules)
 
     return rules_dict

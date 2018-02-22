@@ -98,7 +98,7 @@ class DStream(dict):
             self.add_derived_param(dparam)
 
     def add_events(self, event_list):
-        for event_name, event_rules in event_list:
+        for event_name, event_rules in event_list: # list of (name, rules dict) tuples
             self.add_event(event_name, event_rules)
 
     def add_user_ids(self, ids_list):

@@ -32,6 +32,7 @@ def build_rules_dicts(event: str, base_measure: tuple, **kwargs):
 
 
 def create_template(strm_nm, src_key, measures: list, uids: list, events: list, dparam_rules: list, usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, filters=None, tags=None, fields=None):
+    # measures: list of tuples (measure_name, dtype)
 
     template = DStream()
     template['stream_name'] = strm_nm
@@ -70,13 +71,31 @@ def create_template(strm_nm, src_key, measures: list, uids: list, events: list, 
     return template
 
 
-class Update(dict):
-    def __init__(self, field, type, *args, **kwargs):
-        super().__init__()
-        self['field']: field
-        self['type']: type
-        self['args']: args
-        self['kwargs']: kwargs
+def build_template(strm_nm, src_key, measure_rules: list, uids: list,  usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, tags=None, fields=None):
+    # measure_rules is list of tuples of form
+    # (measure name, measure type, [filtered measures], [event_tups]
+    # event_tups are tuples of form (event name, {kwargs})
+    # for example:
+    # ('location', 'geo', ['buttery_location'], [('turn', {kwargs})])
+
+    measure_list = []
+    event_list = []
+    dparam_list = []
+
+    for m in measure_rules:
+        if type(m) is tuple and len(m) == 4:
+            measure_list.append((m[0], m[1]))
+            all_rules = [build_rules_dicts(
+                e[0], (m[0], m[1]), **e[1]) for e in m[3]]
+            event_list.append(rules['event_rules'] for rules in all_rules)
+            dparam_list.extend([rules['dparam_rules'] for rules in all_rules])
+        else:
+            raise TypeError('Measure rules must be len 4 tuple')
+
+    template = create_template(strm_nm, src_key, measure_list, uids, event_list, dparam_list, usr_dsc, storage_rules, ingest_rules, engine_rules, foreign_keys, tags, fields)
+
+    return template
+
 
 # update wrapper
 def update_template(template_json, updates_list: list):
