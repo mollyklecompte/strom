@@ -9,7 +9,8 @@ manages buffer, moves data from buffer to processing queue
 - class Processor:
 loads json from data messages to python, runs data transformation + storage process
 """
-
+import os
+import json
 import numpy as np
 from multiprocessing import Process, JoinableQueue
 from threading import Thread
@@ -30,7 +31,7 @@ class Processor(Process):
     Process is started to aggregate + transform data.
     """
 
-    def __init__(self, queue):
+    def __init__(self, queue, engine_test_mode):
         """
         Initializes Processor with queue from EngineThread.
         :param queue: Queue instance where data will come from.
@@ -40,6 +41,18 @@ class Processor(Process):
         self.daemon = True
         self.q = queue
         self.is_running = None
+        self.test_run = engine_test_mode
+
+    def _write_test_data(self, data, outfile='engine_test_output.txt'):
+
+        if os.path.exists(outfile):
+            append_write = 'a'  # append if already exists
+        else:
+            append_write = 'w'  # make a new file if not
+
+        test_output = open(outfile, append_write)
+        test_output.write(data)
+        test_output.close()
 
     def run(self):
         """
@@ -49,7 +62,6 @@ class Processor(Process):
         """
         coordinator = Coordinator()
         self.is_running = True
-        logger.debug("running json loader")
         while self.is_running:
             queued = self.q.get()
             if type(queued) is str:
@@ -58,13 +70,16 @@ class Processor(Process):
                     break
             else:
                 data = queued.tolist()
-                coordinator.process_data(data, data[0]["stream_token"])
-                # data_list = [datum for datum in queued]
-                # for data in data_list:
-                #     coordinator.process_data_async(data, data[0]["stream_token"])
+                if self.test_run:
+                    self._write_test_data(f"{json.dumps(data)}\n")
+                else:
+                    coordinator.process_data(data, data[0]["stream_token"])
+
             self.q.task_done()
 
-class EngineThread(Process):
+
+
+class Engine(Process):
     """
     Based off `threading.Thread`
     Instantiated in server
@@ -72,7 +87,7 @@ class EngineThread(Process):
     Contains buffer, queue for processors, processors, ConsumerThread.
     """
 
-    def __init__(self, engine_conn, processors=4, buffer_roll=0, buffer_max_batch=50, buffer_max_seconds=1):
+    def __init__(self, engine_conn, processors=4, buffer_roll=0, buffer_max_batch=50, buffer_max_seconds=1, test_mode=False):
         """
         Initializes with empty buffer & queue,
          set # of processors...
@@ -81,6 +96,7 @@ class EngineThread(Process):
         """
         logger.info("Initializing EngineThread")
         super().__init__()
+        self.test_run = test_mode
         self.pipe_conn = engine_conn
         self.message_q = JoinableQueue()
         self.number_of_processors = processors
@@ -100,7 +116,7 @@ class EngineThread(Process):
     def _init_processors(self):
         """Initializes + starts set number of processors"""
         for n in range(self.number_of_processors):
-            processor = Processor(self.message_q)
+            processor = Processor(self.message_q, self.test_run)
             processor.start()
             self.processors.append(processor)
 
@@ -111,9 +127,6 @@ class EngineThread(Process):
         """
         self._init_processors()
         self.run_engine = True
-
-        # batch_tracker = {}
-
 
         while self.run_engine:
             if self.pipe_conn.poll():
@@ -133,7 +146,7 @@ class EngineThread(Process):
                     if partition_key not in self.partition_qs:
                         self.partition_qs[partition_key] = Queue()
                     if partition_key not in self.buffer_workers:
-                        self.buffer_workers[partition_key] = Thread(target=self.do_stuff, args=[partition_key])
+                        self.buffer_workers[partition_key] = Thread(target=self.run_buffer, args=[partition_key])
                         self.buffer_workers[partition_key].start()
                     self.partition_qs[partition_key].put(item)
                 else:
@@ -141,7 +154,8 @@ class EngineThread(Process):
         logger.info("Terminating Engine Thread")
         self.stop_engine()
 
-    def do_stuff(self, partition_key):
+
+    def run_buffer(self, partition_key):
         last_col = self.buffer_record_limit - 1
         last_row = self.number_of_processors - 1
         cur_row = 0
@@ -174,6 +188,7 @@ class EngineThread(Process):
                                 for i in range(abs(self.buffer_roll)):
                                     self.buffers[partition_key][cur_row, i] = n
                             cur_col -= cur_col + self.buffer_roll
+                            # REMOVE
                             batch_tracker['start_time'] = time()
                     # branch 1.2 - last row
                     else:
@@ -185,6 +200,7 @@ class EngineThread(Process):
                         else:
                             self.buffers[partition_key][cur_row, cur_col] = item
                             self.message_q.put(self.buffers[partition_key][cur_row].copy())
+
                             roll_window = self.buffers[partition_key][cur_row, self.buffer_roll_index:]
                             cur_row -= cur_row
                             for n in roll_window:
@@ -201,10 +217,16 @@ class EngineThread(Process):
                 logger.info("Buffer batch timeout exceeded")
                 if self.run_engine is True:
                     # engine running, batch timeout with new buffer data (partial row)
-                    if cur_col >= abs(self.buffer_roll) and batch_tracker['leftos_collected'] is False:
+                    if cur_col > abs(self.buffer_roll) and batch_tracker['leftos_collected'] is False:
                         logger.info(
                             "Collecting leftovers- pushing partial batch to queue after batch timeout")
                         self.message_q.put(self.buffers[partition_key][cur_row, :cur_col].copy())
+                        if cur_row < last_row:
+                            cur_row += 1
+                        else:
+                            cur_row -= cur_row
+
+                        cur_col -= cur_col
                         batch_tracker['start_time'] = time()
                         batch_tracker['leftos_collected'] = True
                     # leftovers already collected
@@ -219,7 +241,6 @@ class EngineThread(Process):
         self.pipe_conn.close()
         if self.run_engine is True:
             self.run_engine = False
-        print("JOINING Q")
         logger.info(self.message_q.qsize())
         self.message_q.join()
         logger.info("Queue joined")
