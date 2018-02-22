@@ -21,13 +21,12 @@ class RuleDict(dict):
         for key in self.keys():
             if not key in self.expected_keys:
                 bad_keys.append(key)
-                logger.debug("non expected key found: %s" % (key))
+                logger.warn("non expected key found: %s" % (key))
         for key in bad_keys:
             del self[key]
         for key in self.expected_keys:
             if key not in self:
-                logger.debug("No value supplied for %s, setting to None" % (key))
-                self[key] = None
+                raise ValueError("No value supplied for %s, setting to None" % (key))
 
     def get_expected_keys(self):
         return self.expected_keys
