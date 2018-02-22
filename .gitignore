@@ -12,6 +12,7 @@
 .idea/**/tasks.xml
 .idea/dictionaries
 **/__pycache__/
+strom_storage.db
 
 #ignoring tmp files created by data pushing script
 cli/data_poster/*tmp
