@@ -234,8 +234,7 @@ class Engine(Process):
                         logger.info("No new data- resetting batch timer")
                         batch_tracker['start_time'] = time()
 
-        logger.info("Terminating Engine Thread")
-        self.stop_engine()
+
 
     def stop_engine(self):
         self.pipe_conn.close()

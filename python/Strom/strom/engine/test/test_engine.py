@@ -78,7 +78,7 @@ class TestEngineThread(unittest.TestCase):
         if os.path.exists(outfile):
             remove_outfile()
         self.engine2.start()
-        sleep(2)
+        sleep(3)
         for i in self.test_batch_mix:
             self.con2.send(i)
         sleep(2)
@@ -121,7 +121,7 @@ class TestEngineThread(unittest.TestCase):
         if os.path.exists(outfile):
             remove_outfile()
         self.engine4.start()
-        sleep(2)
+        sleep(3)
 
         for i in self.test_batch1 + self.test_batch3:
             self.con4.send(i)
