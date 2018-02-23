@@ -1,6 +1,7 @@
 """ get/post wrapper functions for hitting server retrieval routes"""
 import requests
-
+host = "172.0.0.1"
+port = 5000
 url = 'http://localhost:5000/api'
 
 def temp():
@@ -16,5 +17,8 @@ def post_template(template):
 # ENGINE
 def engine_status():
     r = requests.get(f"{url}/engine_status")
+    payload = r.json()
+    payload['host'] = host
+    payload['port'] = port
 
-    return f"Engine running: {r.text}"
+    return payload
