@@ -32,10 +32,10 @@ class SourceReader(object, metaclass=ABCMeta):
 
 
 class DirectoryReader(SourceReader):
-    def __init__(self, directory_path, file_type, mapping_dict, dstream_template, header_lines=0, delimiter=None):
+    def __init__(self, directory_path, file_type, mapping_list, dstream_template, header_lines=0, delimiter=None):
         self.dir = directory_path
         self.file_type = file_type
-        self.context = DirectoryContext(directory_path, file_type, mapping_dict, dstream_template)
+        self.context = DirectoryContext(directory_path, file_type, mapping_list, dstream_template)
         self.context.set_header_len(header_lines)
         if delimiter is not None:
             self.context.set_delimiter(delimiter)
@@ -57,7 +57,7 @@ class DirectoryReader(SourceReader):
 
 
     def read_csv(self, csv_path):
-        self.data_formatter = CSVFormatter(self.context["mapping_dict"], self.context["template"])
+        self.data_formatter = CSVFormatter(self.context["mapping_list"], self.context["template"])
         print(csv_path)
         with open(csv_path, 'r') as csv_reading:
             for ind in range(self.context["header_lines"]):
@@ -66,7 +66,6 @@ class DirectoryReader(SourceReader):
             for line in csv_reading.readlines():
                 line = line.rstrip().split(self.delimiter)
                 cur_dstream = self.data_formatter.format_record(line)
-                print(cur_dstream)
                 for key, val in cur_dstream.items():
                     if type(val) == uuid.UUID:
                         cur_dstream[key] = str(val)

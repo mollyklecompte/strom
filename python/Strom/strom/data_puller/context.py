@@ -17,12 +17,12 @@ class Context(dict, metaclass=ABCMeta):
 
 
 class DirectoryContext(Context):
-    def __init__(self, path, file_type, mapping_dict, template, *args, **kwargs):
+    def __init__(self, path, file_type, mapping_list, template, *args, **kwargs):
         self.update(*args, **kwargs)
         super().__init__()
         self["dir"] = path
         self["file_type"] = file_type
-        self["mapping_dict"] = mapping_dict
+        self["mapping_list"] = mapping_list
         self["template"] = template
         self["unread_files"] = []
         self["read_files"] = []

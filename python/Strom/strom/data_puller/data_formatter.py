@@ -15,12 +15,12 @@ def set_in_dict(data_dict, mapList, value):
     get_from_dict(data_dict, mapList[:-1])[mapList[-1]] = value
 
 class DataFromatter(object, metaclass=ABCMeta):
-    def __init__(self, mapping_dict, template):
+    def __init__(self, mapping_list, template):
         """
 
         """
         super().__init__()
-        self.mapping = mapping_dict
+        self.mapping = mapping_list
         self.template = template
 
 
@@ -30,11 +30,11 @@ class DataFromatter(object, metaclass=ABCMeta):
         raise NotImplementedError("subclass must implement this abstract method.")
 
 class CSVFormatter(DataFromatter):
-    def __init__(self, mapping_dict, template):
+    def __init__(self, mapping_list, template):
         """
 
         """
-        super().__init__(mapping_dict, template)
+        super().__init__(mapping_list, template)
 
     def format_record(self, raw_record):
         tmp_ds = deepcopy(self.template)
