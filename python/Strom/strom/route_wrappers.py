@@ -9,6 +9,12 @@ def temp():
 
 def post_template(template):
     payload = {"template": template}
-    post = requests.post(f"{url}/define", json=payload)
+    r = requests.post(f"{url}/define", json=payload)
 
-    return post
+    return r.text
+
+# ENGINE
+def engine_status():
+    r = requests.get(f"{url}/engine_status")
+
+    return f"Engine running: {r.text}"
