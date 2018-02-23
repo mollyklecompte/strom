@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+from strom.data_map_builder import build_mapping
 from strom.dstream.dstream import DStream
 from strom.fun_update_guide import update_guide
 from strom.rules_dict_builder import event_builder
@@ -70,7 +71,7 @@ def create_template(strm_nm, src_key, measures: list, uids: list, events: list, 
     return template
 
 
-def build_template(strm_nm, src_key, measure_rules: list, uids: list,  usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, tags=None, fields=None):
+def build_template(strm_nm, src_key, measure_rules: list, uids: list,  usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, tags=None, fields=None, source_mapping_list=None, dstream_mapping_list = None):
     # measure_rules is list of tuples of form
     # (measure name, measure type, [filtered measures], [event_tups]
     # event_tups are tuples of form (event name, {kwargs})
@@ -92,7 +93,8 @@ def build_template(strm_nm, src_key, measure_rules: list, uids: list,  usr_dsc="
             raise TypeError('Measure rules must be len 4 tuple')
 
     template = create_template(strm_nm, src_key, measure_list, uids, event_list, dparam_list, usr_dsc, storage_rules, ingest_rules, engine_rules, foreign_keys, tags, fields)
-
+    map_list = build_mapping(source_mapping_list, dstream_mapping_list)
+    template.add_mapping(map_list)
     return template
 
 

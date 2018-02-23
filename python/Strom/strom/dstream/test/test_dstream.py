@@ -11,7 +11,7 @@ class TestDStream(unittest.TestCase):
     def test_init(self):
         init_keys = ['stream_name', 'version', 'stream_token', 'source_key', 'storage_rules',
                      'ingest_rules', 'engine_rules', 'timestamp', 'measures', 'fields',
-                     'user_ids', 'tags', 'foreign_keys', 'filters', 'dparam_rules', 'event_rules', 'user_description', 'template_id']
+                     'user_ids', 'tags', 'foreign_keys', 'filters', 'dparam_rules', 'event_rules', 'user_description', 'template_id', 'data_mapping']
         for key in init_keys:
             self.assertIn(key, self.dstream.keys())
 
@@ -60,6 +60,10 @@ class TestDStream(unittest.TestCase):
         old_version = self.dstream["version"]
         self.dstream._publish_version()
         self.assertEqual(old_version+1, self.dstream["version"])
+
+        fake_mapping = ["fake","mapping","list"]
+        self.dstream.add_mapping(fake_mapping)
+        self.assertIsInstance(fake_mapping, self.dstream["data_mapping"])
 
     def test_load_from_json(self):
         test_dict = {"stream_token":"foo", "version":900}
