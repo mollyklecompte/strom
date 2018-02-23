@@ -22,3 +22,6 @@ def engine_status():
     payload['port'] = port
 
     return payload
+
+def stop_engine():
+    r = requests.get(f"{url}/stop_engine")
