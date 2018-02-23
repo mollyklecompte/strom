@@ -17,7 +17,7 @@ def build_rules_dicts(event: str, base_measure: tuple, **kwargs):
         raise ValueError (f"Event {base_event} requires base measure type {base_event['base_measure_type']} Provided base measure type {base_measure[1]}")
     missing_inputs = []
     for i in base_event['required_input_settings'] + base_event['required_event_inputs']:
-        if i not in kwargs.items():
+        if i not in kwargs.keys():
             missing_inputs.append(i)
     if len(missing_inputs):
         raise ValueError (f"Missing required inputs {missing_inputs}")
@@ -26,12 +26,12 @@ def build_rules_dicts(event: str, base_measure: tuple, **kwargs):
         partition_list = inputs.pop('partition_list')
         stream_id = inputs.pop('stream_id')
         fn = base_event['callback']
-        rules = fn(base_measure[0], partition_list, stream_id, inputs)
+        rules = fn(base_measure[0], partition_list, stream_id, **inputs)
 
         return rules
 
 
-def create_template(strm_nm, src_key, measures: list, uids: list, events: list, dparam_rules: list, usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, filters=None, tags=None, fields=None):
+def create_template_dstream(strm_nm, src_key, measures: list, uids: list, events: list, dparam_rules: list, usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, filters=None, tags=None, fields=None):
     # measures: list of tuples (measure_name, dtype)
 
     template = DStream()
@@ -87,12 +87,13 @@ def build_template(strm_nm, src_key, measure_rules: list, uids: list,  usr_dsc="
             measure_list.append((m[0], m[1]))
             all_rules = [build_rules_dicts(
                 e[0], (m[0], m[1]), **e[1]) for e in m[3]]
-            event_list.append(rules['event_rules'] for rules in all_rules)
-            dparam_list.extend([rules['dparam_rules'] for rules in all_rules])
+            for rules in all_rules:
+                event_list.append(rules['event_rules'])
+                dparam_list.extend(rules['dparam_rules'])
         else:
             raise TypeError('Measure rules must be len 4 tuple')
 
-    template = create_template(strm_nm, src_key, measure_list, uids, event_list, dparam_list, usr_dsc, storage_rules, ingest_rules, engine_rules, foreign_keys, tags, fields)
+    template = create_template_dstream(strm_nm, src_key, measure_list, uids, event_list, dparam_list, usr_dsc, storage_rules, ingest_rules, engine_rules, foreign_keys, tags, fields)
 
     return template
 

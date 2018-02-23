@@ -26,4 +26,4 @@ def engine_status():
 def stop_engine():
     r = requests.get(f"{url}/stop_engine")
 
-    return r.text
+    return r.json()

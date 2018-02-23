@@ -148,7 +148,7 @@ class TestFunFactory(unittest.TestCase):
     ]
 
     def test_create_template(self):
-        t1 = create_template('tester', 'driver_id',[('location', 'geo')], ['driver-id', 'idd'], [('test_event', self.test_event_rules)], self.test_dparam_rules_list)
+        t1 = create_template_dstream('tester', 'driver_id',[('location', 'geo')], ['driver-id', 'idd'], [('test_event', self.test_event_rules)], self.test_dparam_rules_list)
 
         self.assertEqual(t1['stream_name'], 'tester')
         self.assertEqual(t1['source_key'], 'driver_id')
@@ -158,6 +158,69 @@ class TestFunFactory(unittest.TestCase):
         self.assertIn('idd', t1['user_ids'])
         self.assertDictEqual(t1['storage_rules'], {"store_raw":True, "store_filtered":True, "store_derived":True})
         self.assertIn('test_event', t1['event_rules'].keys())
+
+    def test_build_rules_dicts(self):
+        k1 = {'partition_list': [], 'turn_value': 45, 'stream_id': 'abc123'}
+
+        r1 = build_rules_dicts('turn', ('location', 'geo'), **k1)
+        for i in ['event_rules', 'dparam_rules', 'filter_rules']:
+            self.assertIn(i, r1)
+        self.assertEqual(r1['event_rules'][0], 'turn_45.000000_location')
+        self.assertEqual(len(r1['dparam_rules']), 2)
+
+        with self.assertRaises(ValueError):
+            build_rules_dicts('turn', ('smokeation', 'smokey'), **k1)
+
+        k2 = {'partition_list': [], 'urn_value': 45, 'stream_id': 'abc123'}
+        with self.assertRaises(ValueError):
+            build_rules_dicts('turn', ('location', 'geo'), **k2)
+
+        k3 = {'partition_list': [], 'turn_value': 45}
+        with self.assertRaises(ValueError):
+            build_rules_dicts('turn', ('location', 'geo'), **k3)
+
+        k4 = {'turn_value': 45, 'stream_id': 'abc123'}
+        with self.assertRaises(ValueError):
+            build_rules_dicts('turn', ('location', 'geo'), **k4)
+
+    def test_build_template(self):
+        skey = 'driver_id'
+        uids = ['driver-id', 'idd']
+        k1 = {'partition_list': [], 'turn_value': 45, 'stream_id': 'abc123'}
+        k2 = {'partition_list': [], 'turn_value': 66, 'stream_id': 'abc123'}
+        k3 = {'partition_list': [], 'turn_value': 30, 'stream_id': 'abc123'}
+        k4 = {'partition_list': [], 'turn_value': 57, 'stream_id': 'abc123'}
+        m = [('location', 'geo', [], [('turn', k1), ('turn', k2)])]
+        m2 = [('location', 'geo', [], [('turn', k1), ]), ('smokeation', 'geo', [], [('turn', k2)])]
+        m3 = [('location', 'geo', [], [('turn', k1), ('turn', k2)]), ('smokeation', 'geo', [], [('turn', k3), ('turn', k4)])]
+
+        t = build_template('test', skey, m, uids)
+        self.assertEqual(len(t['event_rules']), 2)
+        self.assertEqual(len(t['measures']), 1)
+        self.assertEqual(len(t['dparam_rules']), 4)
+        for i in ['turn_45.000000_location', 'turn_66.000000_location']:
+            self.assertIn(i, t['event_rules'])
+
+        t2 = build_template('test', skey, m2, uids)
+        self.assertEqual(len(t2['event_rules']), 2)
+        self.assertEqual(len(t2['measures']), 2)
+        self.assertEqual(len(t2['dparam_rules']), 4)
+        for i in ['turn_45.000000_location', 'turn_66.000000_smokeation']:
+            self.assertIn(i, t2['event_rules'])
+
+
+        t3 = build_template('test', skey, m3, uids)
+        self.assertEqual(len(t3['event_rules']), 4)
+        self.assertEqual(len(t3['measures']), 2)
+        self.assertEqual(len(t3['dparam_rules']), 8)
+        for i in ['turn_45.000000_location', 'turn_66.000000_location', 'turn_30.000000_smokeation', 'turn_57.000000_smokeation']:
+            self.assertIn(i, t3['event_rules'])
+
+        with self.assertRaises(TypeError):
+            build_template('test', skey, [1,2,3,4], uids)
+
+        with self.assertRaises(TypeError):
+            build_template('test', skey,(1,2,3), uids)
 
     def test_update(self):
         name_update = {'field': 'stream_name', 'type': 'new', 'args': ['shit'], 'kwargs': {}}
