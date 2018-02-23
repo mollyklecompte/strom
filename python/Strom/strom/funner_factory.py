@@ -1,3 +1,5 @@
+import uuid
+
 import numpy as np
 
 from strom.dstream.stream_rules import DParamRules, EventRules

@@ -1,10 +1,10 @@
+from strom.utils.logger.logger import logger
 
 
 class MappingList(list):
     """This class is a list of tuples mapping source data location into dstream keys"""
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         logger.debug("Initialize map list")
-        self.update(*args, **kwargs)
 
     def add_mapping(self, source_loc, dstream_key):
         """add a mapping pair to a list of map rules
