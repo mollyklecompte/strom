@@ -1,9 +1,11 @@
 import json
 import os
 import unittest
-from time import sleep, time
 from multiprocessing import Pipe
+from time import sleep
+
 from strom.engine.engine import Engine
+
 demo_data_dir = "demo_data/"
 # dstreams_str = open(demo_data_dir + "demo_trip26.txt").readline().rstrip()
 dstreams = json.load(open(demo_data_dir + "fifty_custom.txt"))

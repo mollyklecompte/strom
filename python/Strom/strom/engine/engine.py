@@ -9,13 +9,15 @@ manages buffer, moves data from buffer to processing queue
 - class Processor:
 loads json from data messages to python, runs data transformation + storage process
 """
-import os
 import json
-import numpy as np
+import os
 from multiprocessing import Process, JoinableQueue
-from threading import Thread
 from queue import Queue
+from threading import Thread
 from time import time
+
+import numpy as np
+
 from strom.coordinator.coordinator import Coordinator
 from strom.utils.logger.logger import logger
 
