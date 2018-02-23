@@ -12,6 +12,7 @@
 .idea/**/tasks.xml
 .idea/dictionaries
 **/__pycache__/
+strom_storage.db
 
 #ignoring tmp files created by data pushing script
 cli/data_poster/*tmp
@@ -123,9 +124,3 @@ $RECYCLE.BIN/
 
 # Logger output file
 **/strom.log
-
-# Engine test output file
-**/engine_test_output.txt
-
-# DB file with test data
-**/strom_storage.db

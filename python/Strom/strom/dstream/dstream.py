@@ -37,6 +37,7 @@ class DStream(dict):
         self["filters"] = []
         self["dparam_rules"] = []
         self["event_rules"] = {}
+        self["data_mapping"] = None
         logger.debug("DStream initialize")
 
     def add_measure(self, measure_name, dtype):
@@ -116,6 +117,9 @@ class DStream(dict):
     def add_foreign_keys(self, fks):
         for fk in fks:
             self.add_fk(fk)
+
+    def add_mapping(self, mapping_list):
+        self["data_mapping"] = mapping_list
 
     def load_from_json(self, json_file):
         """

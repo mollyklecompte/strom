@@ -1,7 +1,7 @@
 import unittest
-from strom.rules_dict_builder import Event
-from strom.funner_factory import create_turn_rules
 
+from strom.funner_factory import create_turn_rules
+from strom.rules_dict_builder import Event
 
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"
