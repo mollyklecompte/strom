@@ -1,9 +1,12 @@
 import numpy as np
+import uuid
 
 from strom.dstream.stream_rules import DParamRules, EventRules
 
 
-def create_turn_rules(spatial_measure, partition_list, turn_value, stream_id, units="deg", heading_type="bearing",swap_lon_lat=True, window_len=1, logical_comparision="AND"):
+def create_turn_rules(spatial_measure, partition_list, stream_id, turn_value=None,units="deg", heading_type="bearing",swap_lon_lat=True, window_len=1, logical_comparison="AND"):
+    if turn_value is None:
+        raise ValueError("turn_value must be provided")
     heading_name = "head_" + spatial_measure
     heading_rules = DParamRules({"partition_list":partition_list,
                                 "measure_list":[spatial_measure,],
@@ -13,7 +16,7 @@ def create_turn_rules(spatial_measure, partition_list, turn_value, stream_id, un
                                     "func_params":{"window_len":window_len , "units":units,"heading_type":heading_type, "swap_lon_lat":swap_lon_lat,},
                                     "measure_rules":{"spatial_measure":spatial_measure,"output_name":heading_name}
                                     },
-                                "logical_comparison":logical_comparision})
+                                "logical_comparison":logical_comparison})
 
     change_name = "change_"+spatial_measure
     change_rules = DParamRules({"partition_list":[(heading_name, "!=", np.nan)],
@@ -44,10 +47,8 @@ def create_turn_rules(spatial_measure, partition_list, turn_value, stream_id, un
                                 "logical_comparison":"AND"})
 
     rules_dict = {}
-    rules_dict["fiter_rules"] = []
+    rules_dict["filter_rules"] = []
     rules_dict["dparam_rules"] = [heading_rules, change_rules]
-    rules_dict["event_rules"] = {event_name:event_rules}
+    rules_dict["event_rules"] = (event_name, event_rules)
 
     return rules_dict
-
-print(create_turn_rules("where_I_am", [("foo",1,"==")], 45, "abc123",))

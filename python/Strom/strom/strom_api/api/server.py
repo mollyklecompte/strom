@@ -3,6 +3,7 @@ import json
 import pickle
 from multiprocessing import Pipe
 from queue import Queue
+import datetime
 
 from flask import Flask, request, Response, jsonify
 from flask_restful import reqparse
@@ -10,11 +11,13 @@ from flask_socketio import SocketIO
 
 from strom.coordinator.coordinator import Coordinator
 from strom.dstream.dstream import DStream
-from strom.engine.engine import EngineThread
+from strom.engine.engine import Engine
 from strom.storage.storage_worker import StorageWorker, storage_config
 from strom.utils.configer import configer as config
 from strom.utils.logger.logger import logger
 from strom.utils.stopwatch import stopwatch as tk
+
+from strom.storage.sqlite_interface import SqliteInterface
 
 __version__ = '0.1.0'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
@@ -34,13 +37,17 @@ class Server():
 
         # ENGINE
         self.server_conn, self.engine_conn = Pipe()
-        self.engine = EngineThread(self.engine_conn, buffer_max_batch=10, buffer_max_seconds=1)
+        self.engine = Engine(self.engine_conn, buffer_max_batch=10, buffer_max_seconds=1)
         self.engine.start()# NOTE  POSSIBLE ISSUE WHEN MODIFYING BUFFER PROPS FROM TEST
-
-        # STORAGE QUEUE AND WORKER
+        self.engine_start = datetime.datetime.now()
+        self.engine_stopped = None
+        # STORAGE QUEUE, WORKER AND INTERFACE
         self.storage_queue = Queue()
         self.storage_worker = StorageWorker(self.storage_queue, storage_config, config['storage_type'])
         self.storage_worker.start()
+
+        # NOTE TODO make more flexible
+        self.storage_interface = SqliteInterface(storage_config['local']['args'][0])
 
     def _dstream_new(self):
         tk['Server._dstream_new'].start()
@@ -102,7 +109,6 @@ def load():
     try:
         unjson_data = json.loads(data)
         logger.debug("load: json.loads done")
-        token = unjson_data[0]['stream_token']
         logger.debug("load: got token")
         if type(unjson_data) is dict:
             srv.server_conn.send(unjson_data)# NOTE CHECK DATA FORMATS COMPARED TO LOAD_KAFKA
@@ -190,6 +196,45 @@ def template_storage():
 
     return 'ok'
 
+def retrieve_templates(amount):
+    template_id = request.args.get("template_id", "")
+    stream_token = request.args.get("stream_token", "")
+    if str(amount).lower() == "all":
+        if template_id:
+            return srv.storage_interface.retrieve_template_by_id(template_id)
+        elif stream_token:
+            return srv.storage_interface.retrieve_all_by_token(stream_token)
+        else:
+            return srv.storage_interface.retrieve_all_templates()
+    elif str(amount).lower() == "latest" or str(amount).lower() == "current":
+        if template_id:
+            return srv.storage_interface.retrieve_current_by_id(template_id)
+        elif stream_token:
+            return srv.storage_interface.retrieve_current_template(stream_token)
+    else:
+        return "Value Error", 403
+
+def engine_status():
+    status = srv.engine.is_alive()
+    if status is True:
+        started = srv.engine_start
+        stopped = None
+        delta_t = datetime.datetime.now() - srv.engine_start
+        delta_text = "time_running"
+    else:
+        started = None
+        stopped = srv.engine_stopped
+        delta_t = datetime.datetime.now() - srv.engine_stopped
+        delta_text = "time_stopped"
+    return jsonify({"running": status, "started": started, "stopped": stopped, delta_text: {"days": delta_t.days, "seconds": delta_t.seconds}})
+
+def stop_engine():
+    srv.server_conn.send("stop_poison_pill")
+    while srv.engine.is_alive():
+        pass
+    srv.engine_stopped = datetime.datetime.now()
+    return f"engine stopped {srv.engine_stopped}"
+
 # POST
 app.add_url_rule('/api/define', 'define', define, methods=['POST'])
 app.add_url_rule('/api/load', 'load', load, methods=['POST'])
@@ -199,7 +244,10 @@ app.add_url_rule('/template_storage', 'template_storage', template_storage, meth
 
 # GET
 app.add_url_rule('/', 'index', index, methods=['GET'])
+app.add_url_rule('/api/engine_status', 'engine_status', engine_status, methods=['GET'])
+app.add_url_rule('/api/stop_engine', 'stop_engine', stop_engine, methods=['GET'])
 app.add_url_rule('/api/get/<this>', 'get', get, methods=['GET'])
+app.add_url_rule('/api/retrieve/<amount>', 'retrieve_templates', retrieve_templates, methods=['GET'])
 
 
 def start():
