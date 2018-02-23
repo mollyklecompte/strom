@@ -123,3 +123,9 @@ $RECYCLE.BIN/
 
 # Logger output file
 **/strom.log
+
+# Engine test output file
+**/engine_test_output.txt
+
+# DB file with test data
+**/strom_storage.db
