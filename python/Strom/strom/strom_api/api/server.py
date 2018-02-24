@@ -16,6 +16,8 @@ from strom.utils.configer import configer as config
 from strom.utils.logger.logger import logger
 from strom.utils.stopwatch import stopwatch as tk
 
+from strom.storage.sqlite_interface import SqliteInterface
+
 __version__ = '0.1.0'
 __author__ = 'Adrian Agnic <adrian@tura.io>'
 
@@ -37,10 +39,17 @@ class Server():
         self.engine = EngineThread(self.engine_conn, buffer_max_batch=10, buffer_max_seconds=1)
         self.engine.start()# NOTE  POSSIBLE ISSUE WHEN MODIFYING BUFFER PROPS FROM TEST
 
-        # STORAGE QUEUE AND WORKER
+        # STORAGE QUEUE, WORKER AND INTERFACE
         self.storage_queue = Queue()
         self.storage_worker = StorageWorker(self.storage_queue, storage_config, config['storage_type'])
         self.storage_worker.start()
+
+        # NOTE TODO MAKE MORE FLEXIBLE?
+        self.storage_interface = SqliteInterface(storage_config['local']['args'][0])
+        try:
+            self.storage_interface.seed_template_table()
+        except:
+            pass
 
     def _dstream_new(self):
         tk['Server._dstream_new'].start()
@@ -102,7 +111,6 @@ def load():
     try:
         unjson_data = json.loads(data)
         logger.debug("load: json.loads done")
-        token = unjson_data[0]['stream_token']
         logger.debug("load: got token")
         if type(unjson_data) is dict:
             srv.server_conn.send(unjson_data)# NOTE CHECK DATA FORMATS COMPARED TO LOAD_KAFKA
@@ -123,26 +131,18 @@ def index():
     resp.headers['Access-Control-Allow-Origin']='*'
     return resp
 
+
 def get(this):
-    """ Returns data, specified by endpoint & URL params.
-    Expects multiple url arguments: range or time, and token.
-    """
-    tk['get'].start()
-    time_range = request.args.get('range', '')
-    time = request.args.get('time', '')
-    token = request.args.get('token', '')
-    if time_range:
-        logger.debug("get: got time_range")
-        if time_range == 'ALL':
-            logger.debug("get: time_range is ALL")
-            tk['get : coordinator.get_events'].start()
-            result = srv.coordinator.get_events(token)
-            tk['get : coordinator.get_events'].stop()
-            logger.debug("get: coordinator.get_events done")
-            tk['get'].stop()
-            return ("\n" + str(result) + "\n"), 200
-        else:
-            return '', 403
+    token = request.args.get("token", "")
+    time = None
+    time_range = None
+    if this == "all":
+        res = srv.storage_interface.retrieve_data(token, "*")
+        return res.to_json()#TODO better format w/ params?
+    else:
+        res = srv.storage_interface.retrieve_data(token, this)
+        return res.to_json()
+
 
 def handle_event_detection():
     tk['handle_event_detection'].start()
@@ -173,7 +173,7 @@ def data_storage():
 
     logger.debug("putting DataFrame in queue")
     # error handling
-    srv.storage_queue.put('bstream', parsed[0], parsed[1])
+    srv.storage_queue.put(('bstream', parsed[0], parsed[1]))
     logger.debug("Finished queuing")
 
     return 'ok'
@@ -190,6 +190,25 @@ def template_storage():
 
     return 'ok'
 
+def retrieve_templates(which):
+    template_id = request.args.get("template_id", "")
+    stream_token = request.args.get("stream_token", "")
+    which = str(which).lower()
+    if which == "all":
+        if template_id:
+            return srv.storage_interface.retrieve_template_by_id(template_id)
+        elif stream_token:
+            return srv.storage_interface.retrieve_all_by_token(stream_token)
+        else:
+            return srv.storage_interface.retrieve_all_templates()
+    elif which == "latest" or which == "current":
+        if template_id:
+            return srv.storage_interface.retrieve_current_by_id(template_id)
+        elif stream_token:
+            return srv.storage_interface.retrieve_current_template(stream_token)
+    else:
+        return "Value Error", 403
+
 # POST
 app.add_url_rule('/api/define', 'define', define, methods=['POST'])
 app.add_url_rule('/api/load', 'load', load, methods=['POST'])
@@ -200,6 +219,7 @@ app.add_url_rule('/template_storage', 'template_storage', template_storage, meth
 # GET
 app.add_url_rule('/', 'index', index, methods=['GET'])
 app.add_url_rule('/api/get/<this>', 'get', get, methods=['GET'])
+app.add_url_rule('/api/retrieve/<which>', 'retrieve_templates', retrieve_templates, methods=['GET'])
 
 
 def start():
