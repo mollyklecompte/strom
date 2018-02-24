@@ -43,7 +43,7 @@ class Processor(Process):
         self.is_running = None
         self.test_run = engine_test_mode
 
-    def _write_test_data(self, data, outfile='engine_test_output.txt'):
+    def _write_test_data(self, data, outfile):
 
         if os.path.exists(outfile):
             append_write = 'a'  # append if already exists
@@ -69,10 +69,12 @@ class Processor(Process):
                     # self.is_running = False
                     break
             else:
-                data = queued.tolist()
+
                 if self.test_run:
-                    self._write_test_data(f"{json.dumps(data)}\n")
+                    data = queued[0].tolist()
+                    self._write_test_data(f"{json.dumps(data)}\n", outfile=queued[1])
                 else:
+                    data = queued.tolist()
                     coordinator.process_data(data, data[0]["stream_token"])
 
             self.q.task_done()
@@ -87,7 +89,7 @@ class Engine(Process):
     Contains buffer, queue for processors, processors, ConsumerThread.
     """
 
-    def __init__(self, engine_conn, processors=4, buffer_roll=0, buffer_max_batch=50, buffer_max_seconds=1, test_mode=False):
+    def __init__(self, engine_conn, processors=4, buffer_roll=0, buffer_max_batch=50, buffer_max_seconds=1, test_mode=False, test_outfile='engine_test_output/engine_test_output'):
         """
         Initializes with empty buffer & queue,
          set # of processors...
@@ -97,6 +99,8 @@ class Engine(Process):
         logger.info("Initializing EngineThread")
         super().__init__()
         self.test_run = test_mode
+        self.test_outfile = test_outfile
+        self.test_batches = {}
         self.pipe_conn = engine_conn
         self.message_q = JoinableQueue()
         self.number_of_processors = processors
@@ -143,6 +147,8 @@ class Engine(Process):
 
                     if partition_key not in self.buffers:
                         self.buffers[partition_key] = np.array([{0: 0}] * (self.buffer_record_limit * self.number_of_processors)).reshape(self.number_of_processors, self.buffer_record_limit)
+                        if self.test_run:
+                            self.test_batches[partition_key] = 1
                     if partition_key not in self.partition_qs:
                         self.partition_qs[partition_key] = Queue()
                     if partition_key not in self.buffer_workers:
@@ -180,7 +186,11 @@ class Engine(Process):
                         # branch 1.1b - last column, start new row
                         else:
                             self.buffers[partition_key][cur_row, cur_col] = item
-                            self.message_q.put(self.buffers[partition_key][cur_row].copy())
+                            if self.test_run:
+                                self.message_q.put((self.buffers[partition_key][cur_row].copy(), f"{self.test_outfile}_{partition_key}_{self.test_batches[partition_key]}.txt"))
+                                self.test_batches[partition_key] += 1
+                            else:
+                                self.message_q.put(self.buffers[partition_key][cur_row].copy())
                             logger.info("New batch queued")
                             roll_window = self.buffers[partition_key][cur_row, self.buffer_roll_index:]
                             cur_row += 1
@@ -199,7 +209,11 @@ class Engine(Process):
                         # branch 1.2b - last column, start return to first row in new cycle
                         else:
                             self.buffers[partition_key][cur_row, cur_col] = item
-                            self.message_q.put(self.buffers[partition_key][cur_row].copy())
+                            if self.test_run:
+                                self.message_q.put((self.buffers[partition_key][cur_row].copy(), f"{self.test_outfile}_{partition_key}_{self.test_batches[partition_key]}.txt"))
+                                self.test_batches[partition_key] += 1
+                            else:
+                                self.message_q.put(self.buffers[partition_key][cur_row].copy())
 
                             roll_window = self.buffers[partition_key][cur_row, self.buffer_roll_index:]
                             cur_row -= cur_row
@@ -220,7 +234,11 @@ class Engine(Process):
                     if cur_col > abs(self.buffer_roll) and batch_tracker['leftos_collected'] is False:
                         logger.info(
                             "Collecting leftovers- pushing partial batch to queue after batch timeout")
-                        self.message_q.put(self.buffers[partition_key][cur_row, :cur_col].copy())
+                        if self.test_run:
+                            self.message_q.put((self.buffers[partition_key][cur_row, :cur_col].copy(), f"{self.test_outfile}_{partition_key}_{self.test_batches[partition_key]}.txt"))
+                            self.test_batches[partition_key] += 1
+                        else:
+                            self.message_q.put(self.buffers[partition_key][cur_row, :cur_col].copy())
                         if cur_row < last_row:
                             cur_row += 1
                         else:
@@ -234,7 +252,8 @@ class Engine(Process):
                         logger.info("No new data- resetting batch timer")
                         batch_tracker['start_time'] = time()
 
-
+        logger.info("Terminating Engine Thread")
+        self.stop_engine()
 
     def stop_engine(self):
         self.pipe_conn.close()
