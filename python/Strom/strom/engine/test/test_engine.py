@@ -1,10 +1,11 @@
 import json
 import os
 import unittest
-from time import sleep, time
 from multiprocessing import Pipe
-from threading import Thread
+from time import sleep
+
 from strom.engine.engine import Engine
+
 demo_data_dir = "demo_data/"
 # dstreams_str = open(demo_data_dir + "demo_trip26.txt").readline().rstrip()
 dstreams = json.load(open(demo_data_dir + "fifty_custom.txt"))
@@ -55,6 +56,17 @@ class TestEngineThread(unittest.TestCase):
         self.test_batch_1to4 = self.test_batch1 + self.test_batch2 + self.test_batch3 + self.test_batch4
         self.outfiles = []
 
+    def tearDown(self):
+        print("Tear it all down")
+        sleep(1)
+        for o in self.outfiles:
+            print(o)
+            try:
+                remove_outfile(o)
+            except OSError as oserr:
+                print(oserr)
+        self.outfiles = []
+
     def test_buffer1(self):
         outfiles = ['engine_test_output/engine_test1_abc123_1.txt', 'engine_test_output/engine_test1_abc123_2.txt','engine_test_output/engine_test1_abc1234_1.txt','engine_test_output/engine_test1_abc1234_2.txt',]
         self.engine.start()
@@ -75,7 +87,6 @@ class TestEngineThread(unittest.TestCase):
 
         self.outfiles.extend(outfiles)
         self.con1.send("stop_poison_pill")
-        self.tearDown()
 
     def test_buffer2(self):
         # test all sent to processor in batches of 4 - GROUPED BY TOKEN (2 buffs)
@@ -95,7 +106,6 @@ class TestEngineThread(unittest.TestCase):
 
         self.outfiles.extend(outfiles)
         self.con2.send("stop_poison_pill")
-        self.tearDown()
 
     def test_buffer3(self):
         # leftovers
@@ -116,7 +126,6 @@ class TestEngineThread(unittest.TestCase):
 
         self.outfiles.extend(outfiles)
         self.con3.send("stop_poison_pill")
-        self.tearDown()
 
     def test_buffer4(self):
         # w rolling window
@@ -140,7 +149,6 @@ class TestEngineThread(unittest.TestCase):
 
         self.outfiles.extend(outfiles)
         self.con4.send("stop_poison_pill")
-        self.tearDown()
 
     def test_buffer5(self):
         # no leftovers that are just buffer roll
@@ -158,7 +166,6 @@ class TestEngineThread(unittest.TestCase):
 
         self.outfiles.extend(outfiles)
         self.con5.send("stop_poison_pill")
-        self.tearDown()
 
     def test_buffer6(self):
         # row resets correctly after leftovers
@@ -193,12 +200,8 @@ class TestEngineThread(unittest.TestCase):
 
         self.outfiles.extend(outfiles)
         self.con6.send("stop_poison_pill")
-        self.tearDown()
 
-        def tearDown(self):
-            for o in self.outfiles:
-                remove_outfile(o)
-            self.outfiles = []
+
 
 
 
