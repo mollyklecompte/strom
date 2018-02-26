@@ -89,7 +89,7 @@ class BStream(DStream):
 
     def partition_rows(self, parition_key, partition_value, comparison_operator="=="):
         """This function takes a column name (partition_key), the value to compare with (parition_value)
-        and the operator for comparision (comparison_operator)
+        and the operator for comparison (comparison_operator)
         It returns the boolean index for the rows that meet the patition condition"""
         logger.debug("Finding the row indices that meet the partition condition")
         comparisons= {"==":np.equal, "!=":np.not_equal, ">=":np.greater_equal, "<=":np.less_equal, ">":np.greater, "<":np.less}
@@ -105,7 +105,7 @@ class BStream(DStream):
         elif logical_comparison == "OR":
             start_bools = np.zeros((self["measures"].shape[0],), dtype=bool)
         else:
-            raise ValueError("{} is not a supported logical comparision".format(logical_comparison))
+            raise ValueError("{} is not a supported logical comparison".format(logical_comparison))
 
         for partition in list_of_partitions:
             new_inds = self.partition_rows(partition[0], partition[1], partition[2])
@@ -114,7 +114,7 @@ class BStream(DStream):
             elif logical_comparison == "OR":
                 start_bools = np.logical_or(start_bools, new_inds)
             else:
-                raise ValueError("{} is not a supported logical comparision".format(logical_comparison))
+                raise ValueError("{} is not a supported logical comparison".format(logical_comparison))
 
         return self["measures"][start_bools]
 
