@@ -24,10 +24,26 @@ class DirectoryContext(Context):
         self["file_type"] = file_type
         self["mapping_list"] = mapping_list
         self["template"] = template
-        self["unread_files"] = []
-        self["read_files"] = []
-        self["header_lines"] = 0
-        self["delimiter"] = None
+        if "unread_files" in kwargs:
+            self["unread_files"] = kwargs["unread_files"]
+        else:
+            self["unread_files"] = []
+        if "read_files" in kwargs:
+            self["read_files"] = kwargs["read_files"]
+        else:
+            self["read_files"] = []
+        if "header_lines" in kwargs:
+            self["header_lines"] =kwargs["header_lines"]
+        else:
+            self["header_lines"] = 0
+        if "delimiter" in kwargs:
+            self["delimiter"] = kwargs["delimiter"]
+        else:
+            self["delimiter"] = None
+        if "endpoint" in kwargs:
+            self["endpoint"] = kwargs["endpoint"]
+        else:
+            self["endpoint"] = None
 
     def add_file(self, file_name):
         self["unread_files"].append(file_name)
@@ -37,6 +53,9 @@ class DirectoryContext(Context):
 
     def set_delimiter(self, delimiter):
         self["delimiter"] = delimiter
+
+    def set_endpoint(self, endpoint):
+        self["endpoint"] = endpoint
 
     def read_one(self):
         next_file = self["unread_files"].pop()

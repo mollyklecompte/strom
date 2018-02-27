@@ -5,8 +5,6 @@ from abc import ABCMeta, abstractmethod
 
 import requests
 
-from strom.utils.configer import configer as config
-from .context import DirectoryContext
 from .data_formatter import CSVFormatter
 
 __version__ = '0.0.1'
@@ -32,25 +30,21 @@ class SourceReader(object, metaclass=ABCMeta):
 
 
 class DirectoryReader(SourceReader):
-    def __init__(self, directory_path, file_type, mapping_list, dstream_template, header_lines=0, delimiter=None):
-        self.dir = directory_path
-        self.file_type = file_type
-        self.context = DirectoryContext(directory_path, file_type, mapping_list, dstream_template)
-        self.context.set_header_len(header_lines)
-        if delimiter is not None:
-            self.context.set_delimiter(delimiter)
-            self.delimiter = delimiter
-        for file in os.listdir(directory_path):
-            if file.endswith(file_type):
-                self.context.add_file(os.path.abspath(directory_path)+"/"+file)
-        self.endpoint = 'http://{}:{}/api/load'.format(config['server_host'],
-                                                   config['server_port'])
+    def __init__(self, context, queue=None):
+        self.context = context
+        if len(self.context["unread_files"]) ==  0:
+            for file in os.listdir(self.context['dir']):
+                if file.endswith(self.context["file_type"]):
+                    self.context.add_file(os.path.abspath(self.context["dir"])+"/"+file)
+        if queue is not None:
+            self.queue = queue
+
 
     def return_context(self):
         return self.context
 
     def read_input(self):
-        if self.file_type == "csv":
+        if self.context["file_type"] == "csv":
             reader = self.read_csv
         while len(self.context["unread_files"]):
             reader(self.context.read_one())
@@ -64,11 +58,14 @@ class DirectoryReader(SourceReader):
                 csv_reading.readline()
 
             for line in csv_reading.readlines():
-                line = line.rstrip().split(self.delimiter)
+                line = line.rstrip().split(self.context["delimiter"])
                 cur_dstream = self.data_formatter.format_record(line)
                 for key, val in cur_dstream.items():
                     if type(val) == uuid.UUID:
                         cur_dstream[key] = str(val)
-                r = requests.post(self.endpoint, data=json.dumps(cur_dstream))
+                if self.context["endpoint"] is not None:
+                    r = requests.post(self.context["endpoint"], data=json.dumps(cur_dstream))
+                elif self.queue is not None:
+                    queue.put(cur_dstream)
 
 

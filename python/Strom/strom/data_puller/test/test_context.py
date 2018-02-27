@@ -33,6 +33,11 @@ class TestDirectoryContext(unittest.TestCase):
         self.dc.set_delimiter(delim)
         self.assertEqual(delim, self.dc["delimiter"])
 
+    def test_set_endpoint(self):
+        endpoint = "This is the end, my only friend, the end"
+        self.dc.set_endpoint(endpoint)
+        self.assertEqual(endpoint, self.dc["endpoint"])
+
     def test_read_one(self):
         fake_file = "nail_file"
         faker_file = "toenail_file"
