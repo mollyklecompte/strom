@@ -3,6 +3,7 @@ Context Module
 
 This module will define a Context class based off a dict. These dicts will be used to store the state for our data pullers
 """
+import os
 from abc import ABCMeta
 
 from strom.utils.logger.logger import logger
@@ -44,6 +45,9 @@ class DirectoryContext(Context):
             self["endpoint"] = kwargs["endpoint"]
         else:
             self["endpoint"] = None
+        for file in os.listdir(self['dir']):
+            if file.endswith(self["file_type"]):
+                self["unread_files"].append(os.path.abspath(self["dir"]) + "/" + file)
 
     def add_file(self, file_name):
         self["unread_files"].append(file_name)
