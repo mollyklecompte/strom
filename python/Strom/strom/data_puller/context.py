@@ -66,5 +66,22 @@ class DirectoryContext(Context):
         self["read_files"].append(next_file)
         return  next_file
 
+class KafkaContext(Context):
+    def __init__(self, topic, offset, zookeeper, data_format, mapping_list, template, *args, **kwargs):
+        self.update(*args, **kwargs)
+        super().__init__()
+        self["topic"] = topic
+        self["offset"] = offset
+        self["zookeeper"] = zookeeper
+        self["mapping_list"] = mapping_list
+        self["template"] = template
+        self["format"] = data_format
+        if "endpoint" in kwargs:
+            self["endpoint"] = kwargs["endpoint"]
+        else:
+            self["endpoint"] = None
+
+
+
 
 
