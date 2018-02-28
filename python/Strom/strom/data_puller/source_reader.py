@@ -68,22 +68,27 @@ class KafkaReader(SourceReader):
     def __init__(self, context, queue=None):
         super().__init__(context, queue)
         self.consumer = Consumer(self.context["url"], self.context["topic"], self.context["timeout"])
+        print({val: self.context["offset"] for key, val in self.consumer.consumer.partitions.items()})
+
 
     def read_input(self):
-        if self.context["format"] == "csv"
-            formatter = CSVFormatter
-        elif self.context["format"] == "list"
-            formatter = CSVFormatter
+        if self.context["format"] == "csv":
+            formatter = CSVFormatter(self.context["mapping_list"], self.context["template"])
+        elif self.context["format"] == "list":
+            formatter = CSVFormatter(self.context["mapping_list"], self.context["template"])
         else:
             raise ValueError("Unsupported format")
-        self.consumer.consume()
-        for msg in self.consumer:
+        self.consumer.consumer.start()
+        for msg in self.consumer.consumer:
+            self.context["offest"] = msg.offset
             if msg is not None:
-                cur_dstream = formatter.format_record(msg)
-                for key, val in cur_dstream.items():
-                    if type(val) == uuid.UUID:
-                        cur_dstream[key] = str(val)
-                if self.context["endpoint"] is not None:
-                    r = requests.post(self.context["endpoint"], data=json.dumps(cur_dstream))
-                elif self.queue is not None:
-                    self.queue.put(cur_dstream)
+                message = msg.value.decode("utf-8")
+                print(message, msg.offset)
+                # cur_dstream = formatter.format_record(message)
+                # for key, val in cur_dstream.items():
+                #     if type(val) == uuid.UUID:
+                #         cur_dstream[key] = str(val)
+                # if self.context["endpoint"] is not None:
+                #     r = requests.post(self.context["endpoint"], data=json.dumps(cur_dstream))
+                # elif self.queue is not None:
+                #     self.queue.put(cur_dstream)
