@@ -16,6 +16,9 @@ class Context(dict, metaclass=ABCMeta):
         logger.debug("Initialize Context")
         self.update(*args, **kwargs)
 
+    def set_value(self, key, value):
+        self[key] = value
+
 
 class DirectoryContext(Context):
     def __init__(self, path, file_type, mapping_list, template, *args, **kwargs):
@@ -45,21 +48,22 @@ class DirectoryContext(Context):
             self["endpoint"] = kwargs["endpoint"]
         else:
             self["endpoint"] = None
-        for file in os.listdir(self['dir']):
-            if file.endswith(self["file_type"]):
-                self["unread_files"].append(os.path.abspath(self["dir"]) + "/" + file)
+        if len(self["unread_files"]) == 0:
+            for file in os.listdir(self['dir']):
+                if file.endswith(self["file_type"]):
+                    self["unread_files"].append(os.path.abspath(self["dir"]) + "/" + file)
 
     def add_file(self, file_name):
         self["unread_files"].append(file_name)
 
     def set_header_len(self, num_header_lines):
-        self["header_lines"] = num_header_lines
+        self.set_value("header_lines", num_header_lines)
 
     def set_delimiter(self, delimiter):
-        self["delimiter"] = delimiter
+        self.set_value("delimiter", delimiter)
 
     def set_endpoint(self, endpoint):
-        self["endpoint"] = endpoint
+        self.set_value("endpoint", endpoint)
 
     def read_one(self):
         next_file = self["unread_files"].pop()
@@ -76,10 +80,22 @@ class KafkaContext(Context):
         self["mapping_list"] = mapping_list
         self["template"] = template
         self["format"] = data_format
+
+        if "timeout" in kwargs:
+            self["timeout"] = kwargs["timeout"]
+        else:
+            self["timeout"] = 1
+
         if "endpoint" in kwargs:
             self["endpoint"] = kwargs["endpoint"]
         else:
             self["endpoint"] = None
+
+    def set_timeout(self, timeout):
+        self.set_value("timeout", timeout)
+
+    def set_endpoint(self, endpoint):
+        self.set_value("endpoint", endpoint)
 
 
 
