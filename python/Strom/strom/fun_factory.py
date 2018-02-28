@@ -70,6 +70,10 @@ def create_template_dstream(strm_nm, src_key, measures: list, uids: list, events
 
     return template
 
+def build_data_rules(mapping_list, puller=None, pull_args=None, pull_kwargs=None):
+    # PUT STUFF HERE
+    pass
+
 
 def build_template(strm_nm, src_key, measure_rules: list, uids: list,  usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, tags=None, fields=None, source_mapping_list=None, dstream_mapping_list = None):
     # measure_rules is list of tuples of form
@@ -95,7 +99,8 @@ def build_template(strm_nm, src_key, measure_rules: list, uids: list,  usr_dsc="
 
     template = create_template_dstream(strm_nm, src_key, measure_list, uids, event_list, dparam_list, usr_dsc, storage_rules, ingest_rules, engine_rules, foreign_keys, tags, fields)
     map_list = build_mapping(source_mapping_list, dstream_mapping_list)
-    template.add_mapping(map_list)
+    # NEED STUFF HERE
+    # template.add_data_rules(map_list)
     return template
 
 

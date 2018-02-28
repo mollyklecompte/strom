@@ -59,7 +59,7 @@ class TestDStream(unittest.TestCase):
         self.assertEqual(old_version+1, self.dstream["version"])
 
         fake_mapping = ["fake","mapping","list"]
-        self.dstream.add_mapping(fake_mapping)
+        self.dstream.add_data_rules(fake_mapping)
         self.assertEqual(fake_mapping, self.dstream["data_mapping"])
 
     def test_load_from_json(self):
