@@ -1,5 +1,6 @@
 import unittest
 
+from strom.data_puller.context import *
 from strom.data_puller.source_reader import *
 from strom.dstream.dstream import DStream
 
@@ -18,12 +19,14 @@ class TestDirectoryReader(unittest.TestCase):
         self.template = template_dstream
         self.mapping_list = [(0,["user_ids","sex"]), (1,["measures","length", "val"]), (2,["measures","diameter", "val"]), (4,["measures","whole_weight", "val"]), (6,["measures","viscera_weight", "val"]), (8,["fields","rings"]), (3,["timestamp"])]
         self.delimiter = ","
-        self.source_reader = DirectoryReader(self.dir, self.file_type, self.mapping_list, self.template, delimiter=self.delimiter)
+        self.endpoint = "http://localhost:5000/api/load"
+        self.dc = DirectoryContext(self.dir, self.file_type, self.mapping_list, self.template, delimiter=self.delimiter, endpoint=self.endpoint)
+        self.source_reader = DirectoryReader(self.dc)
 
     def test_init(self):
-        self.assertEqual(self.source_reader.dir, self.dir)
-        self.assertEqual(self.source_reader.file_type, self.file_type)
-        self.assertEqual(self.source_reader.delimiter, self.delimiter)
+        self.assertEqual(self.source_reader.context["dir"], self.dir)
+        self.assertEqual(self.source_reader.context["file_type"], self.file_type)
+        self.assertEqual(self.source_reader.context["delimiter"], self.delimiter)
 
     def test_return_context(self):
         context = self.source_reader.return_context()
@@ -33,6 +36,7 @@ class TestDirectoryReader(unittest.TestCase):
         self.assertEqual(context["mapping_list"], self.mapping_list)
         self.assertEqual(context["template"], self.template)
         self.assertEqual(context["delimiter"], self.delimiter)
+        self.assertEqual(context["endpoint"], self.endpoint)
 
     def test_read_input(self):
         self.source_reader.read_input()
