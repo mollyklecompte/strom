@@ -71,12 +71,12 @@ class DirectoryContext(Context):
         return  next_file
 
 class KafkaContext(Context):
-    def __init__(self, topic, offset, zookeeper, data_format, mapping_list, template, *args, **kwargs):
+    def __init__(self, topic, offset, url, data_format, mapping_list, template, *args, **kwargs):
         self.update(*args, **kwargs)
         super().__init__()
         self["topic"] = topic
         self["offset"] = offset
-        self["zookeeper"] = zookeeper
+        self["url"] = url
         self["mapping_list"] = mapping_list
         self["template"] = template
         self["format"] = data_format

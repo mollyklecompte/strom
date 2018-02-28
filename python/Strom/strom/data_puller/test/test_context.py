@@ -51,16 +51,16 @@ class TestKafkaContext(unittest.TestCase):
     def setUp(self):
         self.topic = "topical"
         self.offset = 13
-        self.zookeeper = "Harold Moon"
+        self.url = "Harold Moon"
         self.data_format = "list"
         self.mapping_list = [(0,["timestamp"])]
         self.fake_template = {"fake":"template"}
-        self.kc = KafkaContext(self.topic, self.offset, self.zookeeper, self.data_format, self.mapping_list, self.fake_template)
+        self.kc = KafkaContext(self.topic, self.offset, self.url, self.data_format, self.mapping_list, self.fake_template)
 
     def test_init(self):
         self.assertEqual(self.topic, self.kc["topic"])
         self.assertEqual(self.offset, self.kc["offset"])
-        self.assertEqual(self.zookeeper, self.kc["zookeeper"])
+        self.assertEqual(self.url, self.kc["url"])
         self.assertEqual(self.data_format, self.kc["format"])
         self.assertEqual(self.mapping_list, self.kc["mapping_list"])
         self.assertEqual(self.fake_template, self.kc["template"])

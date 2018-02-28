@@ -5,6 +5,7 @@ from abc import ABCMeta, abstractmethod
 
 import requests
 
+from strom.kafka.consumer.consumer import Consumer
 from .data_formatter import CSVFormatter
 
 __version__ = '0.0.1'
@@ -25,10 +26,8 @@ class SourceReader(object, metaclass=ABCMeta):
         """This method will read the input from the source"""
         raise NotImplementedError("subclass must implement this abstract method.")
 
-    @abstractmethod
     def return_context(self):
-        """This method will return the Reader's context for saving"""
-        raise NotImplementedError("subclass must implement this abstract method.")
+        return self.context
 
     def read_csv(self, csv_path):
         self.data_formatter = CSVFormatter(self.context["mapping_list"], self.context["template"])
@@ -46,7 +45,7 @@ class SourceReader(object, metaclass=ABCMeta):
                 if self.context["endpoint"] is not None:
                     r = requests.post(self.context["endpoint"], data=json.dumps(cur_dstream))
                 elif self.queue is not None:
-                    queue.put(cur_dstream)
+                    self.queue.put(cur_dstream)
 
 
 
@@ -58,11 +57,6 @@ class DirectoryReader(SourceReader):
                 if file.endswith(self.context["file_type"]):
                     self.context.add_file(os.path.abspath(self.context["dir"])+"/"+file)
 
-
-
-    def return_context(self):
-        return self.context
-
     def read_input(self):
         if self.context["file_type"] == "csv":
             reader = self.read_csv
@@ -70,6 +64,26 @@ class DirectoryReader(SourceReader):
             reader(self.context.read_one())
 
 
+class KafkaReader(SourceReader):
+    def __init__(self, context, queue=None):
+        super().__init__(context, queue)
+        self.consumer = Consumer(self.context["url"], self.context["topic"], self.context["timeout"])
 
-
-
+    def read_input(self):
+        if self.context["format"] == "csv"
+            formatter = CSVFormatter
+        elif self.context["format"] == "list"
+            formatter = CSVFormatter
+        else:
+            raise ValueError("Unsupported format")
+        self.consumer.consume()
+        for msg in self.consumer:
+            if msg is not None:
+                cur_dstream = formatter.format_record(msg)
+                for key, val in cur_dstream.items():
+                    if type(val) == uuid.UUID:
+                        cur_dstream[key] = str(val)
+                if self.context["endpoint"] is not None:
+                    r = requests.post(self.context["endpoint"], data=json.dumps(cur_dstream))
+                elif self.queue is not None:
+                    self.queue.put(cur_dstream)
