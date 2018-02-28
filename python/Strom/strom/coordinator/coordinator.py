@@ -134,10 +134,10 @@ class Coordinator(object):
         """
         endpoint = 'http://{}:{}/new_event'.format(config['server_host'],
                                                    config['server_port'])
-        logger.fatal(event_data)
+        logger.debug(event_data)
         r = requests.post(endpoint, json=event_data)
 
-        return 'request status: ' + str(r.status_code)
+        return {'request_status': r.status_code}
 
     @staticmethod
     def _post_template(template):
