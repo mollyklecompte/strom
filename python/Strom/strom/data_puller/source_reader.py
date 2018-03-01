@@ -14,7 +14,11 @@ __author__ = 'David Nielsen'
 class SourceReader(object, metaclass=ABCMeta):
     def __init__(self, context, queue=None):
         """
-
+        :param context: Context containing all the information necessary for the reader to find and
+        pull the data
+        :type context: Context class
+        :param queue: Optional argument specifying a queue to append the formatted data to
+        :type queue: Engine Buffer object
         """
         super().__init__()
         self.context = context
