@@ -46,7 +46,7 @@ def butter_data(data_array, order, nyquist):
     :type data_array: numpy array
     :param order: order of the filter
     :type order: int
-    :param nyquist: Wn parameter from scipy.signal.butter
+    :param nyquist:
     :type nyquist: float
     :return: filtered data
     :rtype: numpy array
@@ -61,7 +61,7 @@ def ButterLowpass(data_frame, params=None):
     """Class to apply a Butterworth lowpass filter to data"""
     logger.debug("Calculating ButterLowpass.")
     if params==None:
-        params ={"order":3, "nyquist":0.05, "filter_name":"_buttered"}
+        params ={"order":("order of the filter",2,True), "nyquist":("Wn parameter from scipy.signal.butter",0.05,True), "filter_name":("name to append to all filtered parameters","_buttered",False)}
         return params
     elif "filter_name" not in params:
         params["filter_name"] = "_buttered"
@@ -80,7 +80,7 @@ def WindowAverage(data_frame, params=None):
     """Class for using a windowed average to smooth data"""
     logger.debug("Calculating WindowAverage.")
     if params == None:
-        params = {"window_len": 2, "filter_name":"_windowed"}
+        params = {"window_len": ("length of window",2,True), "filter_name":("name to append to all filtered parameters","_windowed",False)}
         return params
     elif "filter_name" not in params:
         params["filter_name"] = "_windowed"

@@ -14,7 +14,7 @@ from strom.utils.logger.logger import logger
 from .filter_data import window_data
 
 
-def sloper(rise_array, run_array, window_len):
+def sloper(rise_array, run_array, window_len=1):
     """
     Function to calculate slope of two rates of change using the classic rise over run formula
     :param rise_array: data for numerator of rise/run
@@ -38,11 +38,11 @@ def DeriveSlope(data_frame, params=None):
 
     if params==None:
         params = {}
-        params["func_params"] = {"window_len":1}
+        params["func_params"] = {"window_len":("length of averaging window",1,False)}
         params["measure_rules"] ={
-                                    "rise_measure":"measure y values (or rise in rise/run calculation of slope)",
-                                    "run_measure":"measure containing x values (or run in rise/run calculation of slope)",
-                                    "output_name":"name of returned measure"
+                                    "rise_measure":("measure y values (or rise in rise/run calculation of slope)","measure_name",True),
+                                    "run_measure":("measure containing x values (or run in rise/run calculation of slope)","measure_name",True),
+                                    "output_name":("name of returned measure","output_name",True)
                                     }
         return params
 
@@ -55,7 +55,7 @@ def DeriveSlope(data_frame, params=None):
     return pd.DataFrame(data=sloped, columns=[params["measure_rules"]["output_name"]], index=data_frame.index)
 
 
-def diff_data(data_array, window_len, angle_diff):
+def diff_data(data_array, window_len=1, angle_diff=False):
     """
     Function to calculate the difference between samples in an array
     :param data_array: input data
@@ -79,10 +79,10 @@ def DeriveChange(data_frame, params=None):
     logger.debug("initialized DeriveChange. Use get_params() to see parameter values")
     if params==None:
         params = {}
-        params["func_params"] = {"window_len":1, "angle_change":False}
+        params["func_params"] = {"window_len":("length of averaging window",1,False), "angle_change":("if the change is between angles, we return the signed smaller angle between the two headings",False, False)}
         params["measure_rules"] ={
-                                    "target_measure":"measure_name",
-                                    "output_name":"name of returned measure"
+                                    "target_measure":("name of the target measure","measure_name",True),
+                                    "output_name":("name of returned measure","output_name",True)
                                     }
         return params
 
@@ -113,8 +113,8 @@ def DeriveCumsum(data_frame, params=None):
         params = {}
         params["func_params"] = {"offset":0}
         params["measure_rules"] = {
-                                    "target_measure":"measure_name",
-                                    "output_name":"name of returned measure"
+                                    "target_measure":("name of the target measure","measure_name",True),
+                                    "output_name":("name of returned measure","output_name",True)
                                     }
         return params
 
@@ -185,9 +185,11 @@ def DeriveDistance(data_frame, params=None):
                                  }
         params["supported_distances"] = ["euclidean", "great_circle"]
         params["measure_rules"] = {
-                                    "spatial_measure":"name of geo-spatial measure",
-                                    "output_name":"name of returned measure"
+                                    "spatial_measure":("name of geo-spatial measure","measure_name",True),
+                                    "output_name":("name of returned measure","measure_name",True)
                                     }
+        return params
+
 
     logger.debug("transforming data to %s" % (params["measure_rules"]["output_name"]))
     window_len = params["func_params"]["window_len"]
@@ -263,9 +265,11 @@ def DeriveHeading(data_frame, params=None):
         params = {}
         params["func_params"] = {"window_len":1, "units":"deg", "heading_type":"bearing", "swap_lon_lat":False}
         params["measure_rules"] = {
-                                    "spatial_measure":"name of geo-spatial measure",
-                                    "output_name":"name of returned measure"
+                                    "spatial_measure":("name of geo-spatial measure","measure_name",True),
+                                    "output_name":("name of returned measure","measure_name",True)
                                     }
+        return params
+
 
     logger.debug("transforming data to %s" % (params["measure_rules"]["output_name"]))
     window_len = params["func_params"]["window_len"]
@@ -310,7 +314,12 @@ def DeriveWindowSum(data_frame, params=None):
     if params == None:
         params = {}
         params["func_params"] = {"window_len":2}
-        params["measure_rules"] =  {"target_measure":"measure_name", "output_name":"name of returned measure"}
+        params["measure_rules"] =  {
+                                    "target_measure":("name of the target measure","measure_name",True),
+                                    "output_name":("name of returned measure","output_name",True)
+                                    }
+        return params
+
 
     logger.debug("transforming data to %s" % (params["measure_rules"]["output_name"]))
     window_len = params["func_params"]["window_len"]
@@ -334,7 +343,12 @@ def DeriveScaled(data_frame, params=None):
     if params == None:
         params = {}
         params["func_params"] = {"scalar":1}
-        params["measure_rules"] =  {"target_measure":"measure_name", "output_name":"name of returned measure"}
+        params["measure_rules"] =  {
+                                    "target_measure": ("name of the target measure", "measure_name", True),
+                                    "output_name": ("name of returned measure", "output_name", True)
+                                }
+        return params
+
 
     logger.debug("transforming data to %s" %(params["measure_rules"]["output_name"]))
     target_array = data_frame[params["measure_rules"]["target_measure"]].values
@@ -365,7 +379,12 @@ def DeriveInBox(data_frame, params=None):
     if params == None:
         params = {}
         params["func_params"] = {"upper_left_corner":(0,1), "lower_right_corner":(1,0)}
-        params["measure_rules"] = {"spatial_measure":"name of geo-spatial measure", "output_name":"name of returned measure"}
+        params["measure_rules"] = {
+                                    "spatial_measure":("name of geo-spatial measure","measure_name",True),
+                                    "output_name":("name of returned measure","measure_name",True)
+                                    }
+        return params
+
 
     logger.debug("transforming data to %s" % (params["measure_rules"]["output_name"]))
     position_array = pd.DataFrame(data_frame[params["measure_rules"]["spatial_measure"]].tolist()).values
