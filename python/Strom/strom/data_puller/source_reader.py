@@ -14,12 +14,15 @@ __author__ = 'David Nielsen'
 class SourceReader(object, metaclass=ABCMeta):
     def __init__(self, context, queue=None):
         """
-
+        :param context: Context containing all the information necessary for the reader to find and
+        pull the data
+        :type context: Context class
+        :param queue: Optional argument specifying a queue to append the formatted data to
+        :type queue: Engine Buffer object
         """
         super().__init__()
         self.context = context
-        if queue is not None:
-            self.queue = queue
+        self.queue = queue
 
     @abstractmethod
     def read_input(self):
@@ -68,7 +71,8 @@ class KafkaReader(SourceReader):
     def __init__(self, context, queue=None):
         super().__init__(context, queue)
         self.consumer = Consumer(self.context["url"], self.context["topic"], self.context["timeout"])
-        print({val: self.context["offset"] for key, val in self.consumer.consumer.partitions.items()})
+        offsets = [(val, self.context["offset"]) for val in self.consumer.consumer.partitions.values()]
+        self.consumer.consumer.reset_offsets(partition_offsets=offsets)
 
 
     def read_input(self):
@@ -80,15 +84,15 @@ class KafkaReader(SourceReader):
             raise ValueError("Unsupported format")
         self.consumer.consumer.start()
         for msg in self.consumer.consumer:
-            self.context["offest"] = msg.offset
+            self.context["offset"] = msg.offset
             if msg is not None:
                 message = msg.value.decode("utf-8")
                 print(message, msg.offset)
-                # cur_dstream = formatter.format_record(message)
-                # for key, val in cur_dstream.items():
-                #     if type(val) == uuid.UUID:
-                #         cur_dstream[key] = str(val)
-                # if self.context["endpoint"] is not None:
-                #     r = requests.post(self.context["endpoint"], data=json.dumps(cur_dstream))
-                # elif self.queue is not None:
-                #     self.queue.put(cur_dstream)
+                cur_dstream = formatter.format_record(message)
+                for key, val in cur_dstream.items():
+                    if type(val) == uuid.UUID:
+                        cur_dstream[key] = str(val)
+                if self.context["endpoint"] is not None:
+                    r = requests.post(self.context["endpoint"], data=json.dumps(cur_dstream))
+                elif self.queue is not None:
+                    self.queue.put(cur_dstream)
