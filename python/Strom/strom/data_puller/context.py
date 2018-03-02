@@ -12,22 +12,23 @@ __version__ = '0.0.1'
 __author__ = 'David Nielsen'
 
 class Context(dict, metaclass=ABCMeta):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, mapping_list, template, *args, **kwargs):
         logger.debug("Initialize Context")
         self.update(*args, **kwargs)
+        self["mapping_list"] = mapping_list
+        self["template"] = template
 
     def set_value(self, key, value):
         self[key] = value
 
 
 class DirectoryContext(Context):
-    def __init__(self, path, file_type, mapping_list, template, *args, **kwargs):
+    def __init__(self, mapping_list, template, *args, **kwargs):
         self.update(*args, **kwargs)
-        super().__init__()
-        self["dir"] = path
-        self["file_type"] = file_type
-        self["mapping_list"] = mapping_list
-        self["template"] = template
+        super().__init__(mapping_list, template, *args, **kwargs)
+        self["dir"] = kwargs["path"]
+        self["file_type"] = kwargs["file_type"]
+
         if "unread_files" in kwargs:
             self["unread_files"] = kwargs["unread_files"]
         else:
@@ -71,15 +72,13 @@ class DirectoryContext(Context):
         return  next_file
 
 class KafkaContext(Context):
-    def __init__(self, topic, offset, url, data_format, mapping_list, template, *args, **kwargs):
+    def __init__(self, mapping_list, template, *args, **kwargs):
         self.update(*args, **kwargs)
-        super().__init__()
-        self["topic"] = topic
-        self["offset"] = offset
-        self["url"] = url
-        self["mapping_list"] = mapping_list
-        self["template"] = template
-        self["format"] = data_format
+        super().__init__(mapping_list, template, *args, **kwargs)
+        self["topic"] = kwargs["topic"]
+        self["offset"] = kwargs["offset"]
+        self["url"] = kwargs["url"]
+        self["format"] = kwargs["data_format"]
 
         if "timeout" in kwargs:
             self["timeout"] = kwargs["timeout"]
