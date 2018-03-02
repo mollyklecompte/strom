@@ -28,6 +28,7 @@ class MQTTClient(mqtt.Client):
     publish(topic, payload, qos, retain)
     message_callback_add(filter, callback)
     on_log(c, ud, lvl, buf)
+    callback(cb, topics, hostname, port, client_id, keepalive)
     """
 
     def __init__(self, uid=None):
@@ -77,8 +78,10 @@ class MQTTClient(mqtt.Client):
         print(f"Received: {message.payload.decode()} on topic: {message.topic}")
 
     def on_connect(self, client, userdata, flags, rc):
-        """ also disconnect """
         print(f"Connection result: {mqtt.connack_string(rc)}")
+
+    def on_disconnect(self, *a):
+        self.looper(stop=True)
 
     def on_publish(self, *a):
         pass
