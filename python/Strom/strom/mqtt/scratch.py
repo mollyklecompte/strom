@@ -3,14 +3,22 @@ import paho.mqtt.client as mqtt
 __version__ = "0.0.1"
 __author__ = "Adrian Agnic"
 
+config = {
+    "host": "iot.eclipse.org",
+    "port": 1883,
+    "keepalive": 999,
+    "topic": "psuba",
+    "timeout": 10
+}
+
 
 class MQTTClient(mqtt.Client):
 
-    def __init__(self, uid):
+    def __init__(self, uid=None):
         super().__init__(client_id=uid,
-                        clean_session=False,
+                        clean_session=True,
                         userdata=None,
-                        protocol="MQTTv311",
+                        protocol=mqtt.MQTTv311,
                         transport="tcp")
 
     def connect(self, remhost, remport, keepalive=1, binding="", async=False):
@@ -24,18 +32,23 @@ class MQTTClient(mqtt.Client):
         elif stop:
             super().loop_stop()
         elif forever:
-            super().loop_forever()
+            super().loop_forever(retry_first_connection=False)
         else:
             super().loop(timeout=timeout)
 
     def send(self, topic, payload, qos=0, retain=False):
         super().publish(topic=topic, payload=payload, qos=qos, retain=retain)
 
-    def set_on_connect(self, func):
-        super().on_connect = func
+    def subscribe(self, topic, qos=0):
+        super().subscribe(topic, qos)
 
-    def set_on_message(self, func):
-        super().on_message = func
+    def run(self, **kw):
+        self.connect(kw["host"], kw["port"], kw["keepalive"])
+        self.subscribe(kw["topic"])
+        rc = 0
+        while rc == 0:
+            self.looper(kw["timeout"])
+        return rc
 
-    def set_on_disconnect(self, func):
-        super().on_disconnect = func
+    def on_message(self, client, userdata, message):
+        print(f"Received: {message.payload.decode()} on topic: {message.topic}")
