@@ -6,14 +6,14 @@ __author__ = "Adrian Agnic"
 
 class MQTTClient(mqtt.Client):
 
-    def __init__(self):
-        super().__init__(client_id="veryunique",
+    def __init__(self, uid):
+        super().__init__(client_id=uid,
                         clean_session=False,
                         userdata=None,
                         protocol="MQTTv311",
                         transport="tcp")
 
-    def connect(self, remhost, remport, keepalive, binding, async=False):
+    def connect(self, remhost, remport, keepalive=1, binding="", async=False):
         if async:
             super().connect_async(host=remhost, port=remport, keepalive=keepalive, bind_address=binding)
         super().connect(host=remhost, port=remport, keepalive=keepalive, bind_address=binding)
@@ -28,8 +28,8 @@ class MQTTClient(mqtt.Client):
         else:
             super().loop(timeout=timeout)
 
-    def send(self, topic, payload, qos, retain=False):
-        pass
+    def send(self, topic, payload, qos=0, retain=False):
+        super().publish(topic=topic, payload=payload, qos=qos, retain=retain)
 
     def set_on_connect(self, func):
         super().on_connect = func
