@@ -96,7 +96,9 @@ class KafkaContext(Context):
     def set_endpoint(self, endpoint):
         self.set_value("endpoint", endpoint)
 
-
-
+class MQTTContext(Context):
+    def __init__(self, mapping_list, template, *args, **kwargs):
+        self.update(*args, **kwargs)
+        super().__init__(mapping_list, template, *args, **kwargs)
 
 

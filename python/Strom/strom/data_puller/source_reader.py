@@ -96,3 +96,6 @@ class KafkaReader(SourceReader):
                     r = requests.post(self.context["endpoint"], data=json.dumps(cur_dstream))
                 elif self.queue is not None:
                     self.queue.put(cur_dstream)
+class MQTTReader(SourceReader):
+    def __init__(self, context, queue=None):
+        super().__init__(context, queue)
