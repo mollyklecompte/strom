@@ -1,4 +1,5 @@
 import paho.mqtt.client as mqtt
+import paho.mqtt.publish as publisher
 
 __version__ = "0.0.1"
 __author__ = "Adrian Agnic"
@@ -8,11 +9,15 @@ config = {
     "port": 1883,
     "keepalive": 999,
     "topic": "psuba",
-    "timeout": 10
+    "timeout": 10,
+    "payload": "test123"
 }
 
 
 class MQTTClient(mqtt.Client):
+    """ useful mqtt.Client methods inherited:
+    (un)subscribe(topic, qos)
+    """
 
     def __init__(self, uid=None):
         super().__init__(client_id=uid,
@@ -36,15 +41,14 @@ class MQTTClient(mqtt.Client):
         else:
             super().loop(timeout=timeout)
 
-    def send(self, topic, payload, qos=0, retain=False):
-        super().publish(topic=topic, payload=payload, qos=qos, retain=retain)
-
-    def subscribe(self, topic, qos=0):
-        super().subscribe(topic, qos)
+    def send(self, mult=False, **kw):
+        if mult:
+            publisher.multiple(kw["payload"], hostname=kw["host"], port=kw["port"])
+        publisher.single(topic=kw["topic"], payload=kw["payload"], hostname=kw["host"], port=kw["port"])
 
     def run(self, **kw):
         self.connect(kw["host"], kw["port"], kw["keepalive"])
-        self.subscribe(kw["topic"])
+        super().subscribe(kw["topic"], 0)
         rc = 0
         while rc == 0:
             self.looper(kw["timeout"])
@@ -52,3 +56,12 @@ class MQTTClient(mqtt.Client):
 
     def on_message(self, client, userdata, message):
         print(f"Received: {message.payload.decode()} on topic: {message.topic}")
+
+    def on_connect(self, *a):
+        """ also disconnect """
+        pass
+    def on_publish(self, *a):
+        pass
+    def on_subscribe(self, *a):
+        """ also unsubscribe """
+        pass
