@@ -83,8 +83,8 @@ class MQTTClient(mqtt.Client):
     def on_disconnect(self, *a):
         self.looper(stop=True)
 
-    def on_publish(self, *a):
-        pass
-    def on_subscribe(self, *a):
-        """ also unsubscribe """
-        pass
+    # def on_publish(self, *a):
+    #     pass
+    # def on_subscribe(self, *a):
+    #     """ also unsubscribe """
+    #     pass
