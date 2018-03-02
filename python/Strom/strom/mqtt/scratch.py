@@ -10,16 +10,28 @@ config = {
     "keepalive": 999,
     "topic": "psuba",
     "timeout": 10,
-    "payload": "test123"
+    "payload": "test123",
+    "message_list": [
+    {"topic":"psuba", "payload":"test123"},
+    {"topic":"psuba", "payload":"test123"},
+    {"topic":"psuba", "payload":"test123"}
+    ]
 }
 
 
 class MQTTClient(mqtt.Client):
     """ useful mqtt.Client methods inherited:
-    (un)subscribe(topic, qos)
+    (un)subscribe(topic)
+    reinitialise(client_id, clean_session, userdata)
+    enable_logger(logger)
+    (re/dis)connect()
+    publish(topic, payload, qos, retain)
+    message_callback_add(filter, callback)
+    on_log(c, ud, lvl, buf)
     """
 
     def __init__(self, uid=None):
+        """ uid generated if None """
         super().__init__(client_id=uid,
                         clean_session=True,
                         userdata=None,
@@ -27,11 +39,18 @@ class MQTTClient(mqtt.Client):
                         transport="tcp")
 
     def connect(self, remhost, remport, keepalive=1, binding="", async=False):
+        """
+        :async boolean: non-blocking when used w/ looper(start=True)
+        """
         if async:
             super().connect_async(host=remhost, port=remport, keepalive=keepalive, bind_address=binding)
         super().connect(host=remhost, port=remport, keepalive=keepalive, bind_address=binding)
 
     def looper(self, timeout=1, start=False, stop=False, forever=False):
+        """
+        :start, stop boolean: runs background thread for loop()
+        :forever boolean: blocking, returns on disconnect
+        """
         if start:
             super().loop_start()
         elif stop:
@@ -43,12 +62,12 @@ class MQTTClient(mqtt.Client):
 
     def send(self, mult=False, **kw):
         if mult:
-            publisher.multiple(kw["payload"], hostname=kw["host"], port=kw["port"])
+            publisher.multiple(kw["message_list"], hostname=kw["host"], port=kw["port"])
         publisher.single(topic=kw["topic"], payload=kw["payload"], hostname=kw["host"], port=kw["port"])
 
     def run(self, **kw):
         self.connect(kw["host"], kw["port"], kw["keepalive"])
-        super().subscribe(kw["topic"], 0)
+        super().subscribe(kw["topic"])
         rc = 0
         while rc == 0:
             self.looper(kw["timeout"])
@@ -57,9 +76,10 @@ class MQTTClient(mqtt.Client):
     def on_message(self, client, userdata, message):
         print(f"Received: {message.payload.decode()} on topic: {message.topic}")
 
-    def on_connect(self, *a):
+    def on_connect(self, client, userdata, flags, rc):
         """ also disconnect """
-        pass
+        print(f"Connection result: {mqtt.connack_string(rc)}")
+
     def on_publish(self, *a):
         pass
     def on_subscribe(self, *a):
