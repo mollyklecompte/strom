@@ -20,7 +20,7 @@ class TestDirectoryReader(unittest.TestCase):
         self.mapping_list = [(0,["user_ids","sex"]), (1,["measures","length", "val"]), (2,["measures","diameter", "val"]), (4,["measures","whole_weight", "val"]), (6,["measures","viscera_weight", "val"]), (8,["fields","rings"]), (3,["timestamp"])]
         self.delimiter = ","
         self.endpoint = "http://localhost:5000/api/load"
-        self.dc = DirectoryContext(self.dir, self.file_type, self.mapping_list, self.template, delimiter=self.delimiter, endpoint=self.endpoint)
+        self.dc = DirectoryContext(self.mapping_list, self.template, path=self.dir, file_type=self.file_type, delimiter=self.delimiter, endpoint=self.endpoint)
         self.source_reader = DirectoryReader(self.dc)
 
     def test_init(self):
