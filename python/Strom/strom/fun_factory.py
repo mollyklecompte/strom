@@ -1,11 +1,38 @@
 from copy import deepcopy
-from strom.fun_factory_children import *
+
+from strom.data_map_builder import build_mapping
 from strom.dstream.dstream import DStream
 from strom.fun_update_guide import update_guide
+from strom.rules_dict_builder import event_builder
+
+__version__  = "0.1"
+__author__ = "Molly <molly@tura.io>"
 
 
+def build_rules_dicts(event: str, base_measure: tuple, **kwargs):
+    # event: str, event type (key in event_builder)
+    # base_measure: tuple, name + type i.e. ('location', 'geo')
+    base_event = event_builder[event]
+    if base_measure[1] != base_event['base_measure_type']:
+        raise ValueError (f"Event {base_event} requires base measure type {base_event['base_measure_type']} Provided base measure type {base_measure[1]}")
+    missing_inputs = []
+    for i in base_event['required_input_settings'] + base_event['required_event_inputs']:
+        if i not in kwargs.keys():
+            missing_inputs.append(i)
+    if len(missing_inputs):
+        raise ValueError (f"Missing required inputs {missing_inputs}")
+    else:
+        inputs = kwargs
+        partition_list = inputs.pop('partition_list')
+        stream_id = inputs.pop('stream_id')
+        fn = base_event['callback']
+        rules = fn(base_measure[0], partition_list, stream_id, **inputs)
 
-def create_template(strm_nm, src_key, measures: list, uids: list, events: list, dparam_rules: list, usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, filters=None, tags=None, fields=None):
+        return rules
+
+
+def create_template_dstream(strm_nm, src_key, measures: list, uids: list, events: list, dparam_rules: list, usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, filters=None, tags=None, fields=None):
+    # measures: list of tuples (measure_name, dtype)
 
     template = DStream()
     template['stream_name'] = strm_nm
@@ -44,13 +71,33 @@ def create_template(strm_nm, src_key, measures: list, uids: list, events: list, 
     return template
 
 
-class Update(dict):
-    def __init__(self, field, type, *args, **kwargs):
-        super().__init__()
-        self['field']: field
-        self['type']: type
-        self['args']: args
-        self['kwargs']: kwargs
+def build_template(strm_nm, src_key, measure_rules: list, uids: list,  usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, tags=None, fields=None, source_mapping_list=None, dstream_mapping_list = None):
+    # measure_rules is list of tuples of form
+    # (measure name, measure type, [filtered measures], [event_tups]
+    # event_tups are tuples of form (event name, {kwargs})
+    # for example:
+    # ('location', 'geo', ['buttery_location'], [('turn', {kwargs})])
+
+    measure_list = []
+    event_list = []
+    dparam_list = []
+
+    for m in measure_rules:
+        if type(m) is tuple and len(m) == 4:
+            measure_list.append((m[0], m[1]))
+            all_rules = [build_rules_dicts(
+                e[0], (m[0], m[1]), **e[1]) for e in m[3]]
+            for rules in all_rules:
+                event_list.append(rules['event_rules'])
+                dparam_list.extend(rules['dparam_rules'])
+        else:
+            raise TypeError('Measure rules must be len 4 tuple')
+
+    template = create_template_dstream(strm_nm, src_key, measure_list, uids, event_list, dparam_list, usr_dsc, storage_rules, ingest_rules, engine_rules, foreign_keys, tags, fields)
+    map_list = build_mapping(source_mapping_list, dstream_mapping_list)
+    template.add_mapping(map_list)
+    return template
+
 
 # update wrapper
 def update_template(template_json, updates_list: list):
