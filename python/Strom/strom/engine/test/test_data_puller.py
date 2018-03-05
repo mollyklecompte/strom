@@ -3,7 +3,7 @@ from strom.engine.data_puller import DataPuller
 from strom.data_puller.source_reader import *
 from strom.data_puller.context import *
 from strom.dstream.dstream import DStream
-from queue import Queue
+from queue import Queue, Empty
 from time import sleep
 from threading import Thread
 
@@ -44,9 +44,17 @@ class TestDataPuller(unittest.TestCase):
         self.puller.start()
         alist = []
         while True:
-            x = self.puller.source_reader.queue.get(timeout=5)
-            if x is not None:
-                alist.append(x)
-            else:
+            print("len", len(alist))
+            try:
+                x = self.q.get(timeout=2)
+                if x is not None:
+                    alist.append(x)
+            except Empty:
                 break
-        print(alist)
+        self.assertEqual(len(alist), 20)
+        self.puller.pulling = False
+        # print(alist)
+
+    def test_export_context(self):
+        c = self.puller.export_context()
+        self.assertIsInstance(c, Context)
