@@ -9,78 +9,19 @@ manages buffer, moves data from buffer to processing queue
 - class Processor:
 loads json from data messages to python, runs data transformation + storage process
 """
-import json
-import os
+
 from multiprocessing import Process, JoinableQueue
 from queue import Queue
 from threading import Thread
 from time import time
-
 import numpy as np
-
-from strom.coordinator.coordinator import Coordinator
+from .processor import Processor
+from .data_puller import DataPuller
+from strom.dstream.dstream import DStream
 from strom.utils.logger.logger import logger
 
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"
-
-
-class Processor(Process):
-    """
-    Based off `multiprocessing.Process`
-    Instantiated by `EngineThread`
-
-    Process is started to aggregate + transform data.
-    """
-
-    def __init__(self, queue, engine_test_mode):
-        """
-        Initializes Processor with queue from EngineThread.
-        :param queue: Queue instance where data will come from.
-        :type queue: Queue object
-        """
-        super().__init__()
-        self.daemon = True
-        self.q = queue
-        self.is_running = None
-        self.test_run = engine_test_mode
-
-    def _write_test_data(self, data, outfile):
-
-        if os.path.exists(outfile):
-            append_write = 'a'  # append if already exists
-        else:
-            append_write = 'w'  # make a new file if not
-
-        test_output = open(outfile, append_write)
-        test_output.write(data)
-        test_output.close()
-
-    def run(self):
-        """
-        Retrieves list of dstreams with queue, runs process to aggregate + transform dstreams.
-        Poison Pill: if item pulled from queue is string, "666_kIlL_thE_pROCess_666",
-        while loop will break. Do this intentionally.
-        """
-        coordinator = Coordinator()
-        self.is_running = True
-        while self.is_running:
-            queued = self.q.get()
-            if type(queued) is str:
-                if queued == "666_kIlL_thE_pROCess_666":
-                    # self.is_running = False
-                    break
-            else:
-
-                if self.test_run:
-                    data = queued[0].tolist()
-                    self._write_test_data(f"{json.dumps(data)}\n", outfile=queued[1])
-                else:
-                    data = queued.tolist()
-                    coordinator.process_data(data, data[0]["stream_token"])
-
-            self.q.task_done()
-
 
 
 class Engine(Process):
@@ -104,15 +45,16 @@ class Engine(Process):
         self.test_outfile = test_outfile
         self.test_batches = {}
         self.pipe_conn = engine_conn
-        self.message_q = JoinableQueue()
+        self.buffers_out_q = JoinableQueue()
         self.number_of_processors = processors
         self.processors = []
         self.run_engine = False
         self.buffer_record_limit = int(buffer_max_batch)
         self.buffer_time_limit_s = float(buffer_max_seconds)
         self.buffers = {}
-        self.partition_qs = {}
+        self.buffer_in_qs = {}
         self.buffer_workers = {}
+        self.data_pullers = {}
         self.buffer_roll = -buffer_roll
         if buffer_roll > 0:
             self.buffer_roll_index = -buffer_roll
@@ -122,10 +64,41 @@ class Engine(Process):
     def _init_processors(self):
         """Initializes + starts set number of processors"""
         for n in range(self.number_of_processors):
-            processor = Processor(self.message_q, self.test_run)
+            processor = Processor(self.buffers_out_q, self.test_run)
             processor.start()
             self.processors.append(processor)
 
+    def _new_buffer(self, partition_key):
+        if partition_key not in self.buffers:
+            self.buffers[partition_key] = np.array(
+                [{0: 0}] * (self.buffer_record_limit * self.number_of_processors)).reshape(
+                self.number_of_processors, self.buffer_record_limit)
+            if self.test_run:
+                self.test_batches[partition_key] = 1
+            if partition_key not in self.buffer_in_qs:
+                self.buffer_in_qs[partition_key] = Queue()
+            else:
+                logger.warn(f"New buffer, existing buffer_in_q for stream {partition_key}")
+            if partition_key not in self.buffer_workers:
+                self.buffer_workers[partition_key] = Thread(target=self.run_buffer,
+                                                            args=[partition_key])
+                self.buffer_workers[partition_key].start()
+            else:
+                logger.warn(f"New buffer, existing buffer_worker for stream {partition_key}")
+            return True
+        else:
+            return False
+
+    def _new_data_puller(self, partition_key, template):
+        if partition_key not in self.data_pullers:
+            if partition_key in self.buffer_in_qs:
+                self.data_pullers[partition_key] = DataPuller(template, self.buffer_in_qs[partition_key])
+                self.data_pullers[partition_key].start()
+            else:
+                raise ValueError(f"Attempting to init data_puller for stream {partition_key}, buffer input queue for stream does not exist")
+            return True
+        else:
+            return False
 
     def run(self):
         """
@@ -139,29 +112,32 @@ class Engine(Process):
                 item = self.pipe_conn.recv()
                 # branch 2 - stop engine
                 if item == "stop_poison_pill":
-                    for q in self.partition_qs.keys():
-                        self.partition_qs[q].put("stop_buffer_worker")
+                    for q in self.buffer_in_qs.keys():
+                        self.buffer_in_qs[q].put("stop_buffer_worker")
                     self.run_engine = False
                     break
                 # branch 1 - engine running, good data
-                elif type(item) is dict:
-                    partition_key = item['stream_token']
-
-                    if partition_key not in self.buffers:
-                        self.buffers[partition_key] = np.array([{0: 0}] * (self.buffer_record_limit * self.number_of_processors)).reshape(self.number_of_processors, self.buffer_record_limit)
-                        if self.test_run:
-                            self.test_batches[partition_key] = 1
-                    if partition_key not in self.partition_qs:
-                        self.partition_qs[partition_key] = Queue()
-                    if partition_key not in self.buffer_workers:
-                        self.buffer_workers[partition_key] = Thread(target=self.run_buffer, args=[partition_key])
-                        self.buffer_workers[partition_key].start()
-                    self.partition_qs[partition_key].put(item)
+                elif type(item) is tuple:
+                    partition_key = item[0]['stream_token']
+                    new_buffer = self._new_buffer(partition_key)
+                    if new_buffer:
+                        logger.info(f"Initialized buffer for stream {partition_key}")
+                    if item[1] == "new":
+                        if item[0]["data_rules"]["pull"] is True:
+                            new_puller = self._new_data_puller(partition_key, item[0])
+                            if new_puller:
+                                print(f"Initialized data puller for stream {partition_key}")
+                            else:
+                                logger.warn(
+                                    f"Attempting to initialize data puller for stream {partition_key} - puller already exists")
+                    elif item[1] == "load":
+                        self.buffer_in_qs[partition_key].put(item[0])
+                    else:
+                        raise TypeError("Invalid tuple in pipe")
                 else:
-                    raise TypeError("Queued item is not valid dictionary.")
+                    raise TypeError("Invalid item in pipe")
         logger.info("Terminating Engine Thread")
         self.stop_engine()
-
 
     def run_buffer(self, partition_key):
         last_col = self.buffer_record_limit - 1
@@ -172,12 +148,12 @@ class Engine(Process):
 
         while self.run_engine:
             try:
-                item = self.partition_qs[partition_key].get(timeout=self.buffer_time_limit_s)
+                item = self.buffer_in_qs[partition_key].get(timeout=self.buffer_time_limit_s)
                 # branch 2 - stop engine
                 if item == "stop_buffer_worker":
                     break
                 # branch 1 - engine running, good data
-                elif type(item) is dict:
+                elif isinstance(item, DStream) or (type(item) is dict and "stream_token" in item.keys()):
                     # branch 1.1 - not last row
                     if cur_row < last_row:
                         # branch 1.1a - not last column, continue row
@@ -189,10 +165,10 @@ class Engine(Process):
                         else:
                             self.buffers[partition_key][cur_row, cur_col] = item
                             if self.test_run:
-                                self.message_q.put((self.buffers[partition_key][cur_row].copy(), f"{self.test_outfile}_{partition_key}_{self.test_batches[partition_key]}.txt"))
+                                self.buffers_out_q.put((self.buffers[partition_key][cur_row].copy(), f"{self.test_outfile}_{partition_key}_{self.test_batches[partition_key]}.txt"))
                                 self.test_batches[partition_key] += 1
                             else:
-                                self.message_q.put(self.buffers[partition_key][cur_row].copy())
+                                self.buffers_out_q.put(self.buffers[partition_key][cur_row].copy())
                             logger.info("New batch queued")
                             roll_window = self.buffers[partition_key][cur_row, self.buffer_roll_index:]
                             cur_row += 1
@@ -212,10 +188,10 @@ class Engine(Process):
                         else:
                             self.buffers[partition_key][cur_row, cur_col] = item
                             if self.test_run:
-                                self.message_q.put((self.buffers[partition_key][cur_row].copy(), f"{self.test_outfile}_{partition_key}_{self.test_batches[partition_key]}.txt"))
+                                self.buffers_out_q.put((self.buffers[partition_key][cur_row].copy(), f"{self.test_outfile}_{partition_key}_{self.test_batches[partition_key]}.txt"))
                                 self.test_batches[partition_key] += 1
                             else:
-                                self.message_q.put(self.buffers[partition_key][cur_row].copy())
+                                self.buffers_out_q.put(self.buffers[partition_key][cur_row].copy())
 
                             roll_window = self.buffers[partition_key][cur_row, self.buffer_roll_index:]
                             cur_row -= cur_row
@@ -237,10 +213,10 @@ class Engine(Process):
                         logger.info(
                             "Collecting leftovers- pushing partial batch to queue after batch timeout")
                         if self.test_run:
-                            self.message_q.put((self.buffers[partition_key][cur_row, :cur_col].copy(), f"{self.test_outfile}_{partition_key}_{self.test_batches[partition_key]}.txt"))
+                            self.buffers_out_q.put((self.buffers[partition_key][cur_row, :cur_col].copy(), f"{self.test_outfile}_{partition_key}_{self.test_batches[partition_key]}.txt"))
                             self.test_batches[partition_key] += 1
                         else:
-                            self.message_q.put(self.buffers[partition_key][cur_row, :cur_col].copy())
+                            self.buffers_out_q.put(self.buffers[partition_key][cur_row, :cur_col].copy())
                         if cur_row < last_row:
                             cur_row += 1
                         else:
@@ -254,19 +230,18 @@ class Engine(Process):
                         logger.info("No new data- resetting batch timer")
                         batch_tracker['start_time'] = time()
 
-        logger.info("Terminating Engine Thread")
-        self.stop_engine()
-
     def stop_engine(self):
         self.pipe_conn.close()
         if self.run_engine is True:
             self.run_engine = False
-        logger.info(self.message_q.qsize())
-        self.message_q.join()
+        for p in self.data_pullers.keys():
+            self.data_pullers[p].pulling = False
+        logger.info(self.buffers_out_q.qsize())
+        self.buffers_out_q.join()
         logger.info("Queue joined")
         for p in self.processors:
             logger.info("Putting poison pills in Q")
-            self.message_q.put("666_kIlL_thE_pROCess_666")
+            self.buffers_out_q.put("666_kIlL_thE_pROCess_666")
         logger.info("Poison pills done")
         for p in self.processors:
             p.join()

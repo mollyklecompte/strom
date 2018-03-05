@@ -137,7 +137,7 @@ class Coordinator(object):
         logger.fatal(event_data)
         r = requests.post(endpoint, json=event_data)
 
-        return 'request status: ' + str(r.status_code)
+        return {'request_status': r.status_code}
 
     @staticmethod
     def _post_template(template):

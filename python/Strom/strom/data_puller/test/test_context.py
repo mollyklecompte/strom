@@ -9,7 +9,7 @@ class TestDirectoryContext(unittest.TestCase):
         self.file_type = "csv"
         self.mapping_list = [(0,["timestamp"])]
         self.fake_template = {"fake":"template"}
-        self.dc = DirectoryContext(self.path, self.file_type, self.mapping_list, self.fake_template)
+        self.dc = DirectoryContext(self.mapping_list, self.fake_template, path=self.path, file_type=self.file_type)
 
     def test_init(self):
         self.assertEqual(self.path, self.dc["dir"])
@@ -55,7 +55,7 @@ class TestKafkaContext(unittest.TestCase):
         self.data_format = "list"
         self.mapping_list = [(0,["timestamp"])]
         self.fake_template = {"fake":"template"}
-        self.kc = KafkaContext(self.topic, self.offset, self.url, self.data_format, self.mapping_list, self.fake_template)
+        self.kc = KafkaContext(self.mapping_list, self.fake_template,topic=self.topic, offset=self.offset, url=self.url, data_format=self.data_format)
 
     def test_init(self):
         self.assertEqual(self.topic, self.kc["topic"])
