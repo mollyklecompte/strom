@@ -52,11 +52,7 @@ class DataPuller(Thread):
         self.pulling_start = datetime.now()
         while self.pulling:
             self.source_reader.read_input()
-            # if not self.queue.empty():
-            #     print(self.queue.qsize())
         logger.info("Quitting puller")
-        print("quitting")
-        print(self.export_context())
 
     def stats(self):
         # not used rn

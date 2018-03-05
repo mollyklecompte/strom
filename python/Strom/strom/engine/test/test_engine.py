@@ -1,10 +1,12 @@
 import json
+import glob
 import os
 import unittest
 from multiprocessing import Pipe
 from time import sleep
 
 from strom.engine.engine import Engine
+from strom.dstream.dstream import DStream
 
 demo_data_dir = "demo_data/"
 # dstreams_str = open(demo_data_dir + "demo_trip26.txt").readline().rstrip()
@@ -41,6 +43,7 @@ class TestEngineThread(unittest.TestCase):
                               buffer_max_seconds=5, test_mode=True, test_outfile='engine_test_output/engine_test5')
         self.engine6 = Engine(self.con6b, processors=2, buffer_roll=1, buffer_max_batch=4,
                               buffer_max_seconds=5, test_mode=True, test_outfile='engine_test_output/engine_test6')
+
         self.test_batch1 = [{"stream_token": "abc123", "message": "hi1"}, {"stream_token": "abc123", "message": "hi2"}, {"stream_token": "abc123", "message": "hi3"}, {"stream_token": "abc123", "message": "hi4"}]
         self.test_batch2 = [{"stream_token": "abc1234", "message": "hello1"}, {"stream_token": "abc1234", "message": "hello2"}, {"stream_token": "abc1234", "message": "hello3"}, {"stream_token": "abc1234", "message": "hello4"}]
         self.test_batch3 = [{"stream_token": "abc123", "message": "hi5"}, {"stream_token": "abc123", "message": "hi6"}, {"stream_token": "abc123", "message": "hi7"}, {"stream_token": "abc123", "message": "hi8"}]
@@ -55,6 +58,13 @@ class TestEngineThread(unittest.TestCase):
         self.test_batch_mix = [{"stream_token": "abc123", "message": "hi1"}, {"stream_token": "abc1234", "message": "hello1"}, {"stream_token": "abc123", "message": "hi2"}, {"stream_token": "abc1234", "message": "hello2"}, {"stream_token": "abc123", "message": "hi3"}, {"stream_token": "abc1234", "message": "hello3"}, {"stream_token": "abc123", "message": "hi4"}, {"stream_token": "abc1234", "message": "hello4"}]
         self.test_batch_1to4 = self.test_batch1 + self.test_batch2 + self.test_batch3 + self.test_batch4
         self.outfiles = []
+        self.abalone_con, self.abalone_conb = Pipe()
+        self.abalone = json.load(open(demo_data_dir + "demo_template_dir.txt"))
+        self.abalone_temp = DStream()
+        self.abalone_temp.load_from_json(self.abalone)
+        self.abalone_engine = Engine(self.abalone_conb, processors=2, buffer_max_batch=10, buffer_max_seconds=5,
+                                     test_mode=True,
+                                     test_outfile='engine_test_output/engine_test_abalone')
 
     def tearDown(self):
         print("Tear it all down")
@@ -73,7 +83,7 @@ class TestEngineThread(unittest.TestCase):
         # sleep(5)
         # test all sent to processor in batches of 4
         for i in self.test_batch_1to4:
-            self.con1.send(i)
+            self.con1.send((i, 'load'))
         sleep(5)
         result = []
         for o in outfiles:
@@ -94,7 +104,7 @@ class TestEngineThread(unittest.TestCase):
         self.engine2.start()
         sleep(5)
         for i in self.test_batch_mix:
-            self.con2.send(i)
+            self.con2.send((i, 'load'))
         sleep(5)
         result2 = []
         for o in outfiles:
@@ -113,9 +123,9 @@ class TestEngineThread(unittest.TestCase):
         self.engine3.start()
         sleep(5)
         for i in self.test_batch1[:2]:
-            self.con3.send(i)
+            self.con3.send((i, 'load'))
         for i in self.test_batch2[:2]:
-            self.con3.send(i)
+            self.con3.send((i, 'load'))
         sleep(7)
         result3 = []
         for o in outfiles:
@@ -134,7 +144,7 @@ class TestEngineThread(unittest.TestCase):
         sleep(5)
 
         for i in self.test_batch1 + self.test_batch3:
-            self.con4.send(i)
+            self.con4.send((i, 'load'))
         sleep(7)
         result4 = []
         for o in outfiles:
@@ -156,7 +166,7 @@ class TestEngineThread(unittest.TestCase):
         self.engine5.start()
         sleep(5)
         for i in self.test_batch1:
-            self.con5.send(i)
+            self.con5.send((i, 'load'))
         sleep(7)
         result5 = []
         for o in outfiles:
@@ -175,14 +185,14 @@ class TestEngineThread(unittest.TestCase):
         self.engine6.start()
         sleep(5)
         for i in self.test_batch1:
-            self.con6.send(i)
+            self.con6.send((i, 'load'))
         for i in self.test_batch3:
-            self.con6.send(i)
+            self.con6.send((i, 'load'))
         sleep(7)
         for i in self.test_batch6:
-            self.con6.send(i)
+            self.con6.send((i, 'load'))
         for i in self.test_batch7:
-            self.con6.send(i)
+            self.con6.send((i, 'load'))
         sleep(7)
         result6 = []
         for o in outfiles:
@@ -200,6 +210,19 @@ class TestEngineThread(unittest.TestCase):
 
         self.outfiles.extend(outfiles)
         self.con6.send("stop_poison_pill")
+        
+    def test_new_with_puller(self):
+        self.abalone_engine.start()
+        sleep(3)
+        self.abalone_con.send((self.abalone_temp, 'new'))
+        sleep(5)
+        outfiles = glob.glob('engine_test_output/engine_test_abalone*')
+        result = []
+        for o in outfiles:
+            result.extend(read_outfile(o))
+        self.assertEqual(len(result), 2)
+        self.outfiles.extend(outfiles)
+        self.abalone_con.send("stop_poison_pill")
 
 
 

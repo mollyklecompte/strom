@@ -4,7 +4,8 @@
             "type": "dir",
             "inputs": {
                 "path": "strom/data_puller/test/",
-                "file_type": "csv"
+                "file_type": "csv",
+                "delimiter": ","
             }
         },
         "mapping_list": [

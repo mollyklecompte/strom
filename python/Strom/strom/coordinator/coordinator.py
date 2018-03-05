@@ -134,7 +134,7 @@ class Coordinator(object):
         """
         endpoint = 'http://{}:{}/new_event'.format(config['server_host'],
                                                    config['server_port'])
-        logger.debug(event_data)
+        logger.fatal(event_data)
         r = requests.post(endpoint, json=event_data)
 
         return {'request_status': r.status_code}

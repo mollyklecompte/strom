@@ -44,7 +44,6 @@ class TestDataPuller(unittest.TestCase):
         self.puller.start()
         alist = []
         while True:
-            print("len", len(alist))
             try:
                 x = self.q.get(timeout=2)
                 if x is not None:
@@ -53,7 +52,7 @@ class TestDataPuller(unittest.TestCase):
                 break
         self.assertEqual(len(alist), 20)
         self.puller.pulling = False
-        # print(alist)
+        # print(type(alist[0]), alist[0])
 
     def test_export_context(self):
         c = self.puller.export_context()
