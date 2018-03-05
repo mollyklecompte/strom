@@ -73,21 +73,3 @@ def build_param_dict(function_name, param_tuples=[], set_defaults=False):
         return defaults
 
     return defaults
-
-built_dict = build_param_dict("DeriveScaled", [(["func_params","scalar"],69)])
-print(built_dict)
-
-func_list = ["ButterLowpass",
-        "WindowAverage",
-        "DeriveSlope",
-        "DeriveChange",
-        "DeriveCumSum",
-        "DeriveDistance",
-        "DeriveHeading",
-        "DeriveWindowedSum",
-        "DeriveScaled",
-        "DeriveInBox",
-        ]
-for fun in func_list:
-    print(fun)
-    print(build_param_dict(fun, set_defaults=False))
