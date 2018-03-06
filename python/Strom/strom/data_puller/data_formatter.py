@@ -14,7 +14,7 @@ def get_from_dict(data_dict, mapList):
 def set_in_dict(data_dict, mapList, value):
     get_from_dict(data_dict, mapList[:-1])[mapList[-1]] = value
 
-class DataFromatter(object, metaclass=ABCMeta):
+class DataFormatter(object, metaclass=ABCMeta):
     def __init__(self, mapping_list, template):
         """
 
@@ -29,7 +29,7 @@ class DataFromatter(object, metaclass=ABCMeta):
         """This method will transform a single raw record into a DStream"""
         raise NotImplementedError("subclass must implement this abstract method.")
 
-class CSVFormatter(DataFromatter):
+class CSVFormatter(DataFormatter):
     def __init__(self, mapping_list, template):
         """
 
