@@ -20,14 +20,14 @@ config = {
 class MQTTClient(ABC, mqtt.Client):
     # NOTE TODO look at TLS options
 
-    def __init__(self, uid=None, userdata=None, transport="tcp", logger=None, async=False, **kws):
+    def __init__(self, uid=None, userdata=None, transport="tcp", logger=None, asynch=False, **kws):
         """ use reinitialise() for changing instance properties
         :param uid: str: unique idenitifier for this client
         :param userdata: data to be passed through callbacks
         :param transport: str: 'tcp' or 'websockets'
-        :param async: bool: flag for non-blocking usage
+        :param asynch: bool: flag for non-blocking usage
         """
-        self.async=async
+        self.async=asynch
         super().__init__(
             client_id=uid,
             clean_session=False,
