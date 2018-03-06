@@ -133,7 +133,8 @@ class Engine(Process):
                     elif item[1] == "load":
                         self.buffer_in_qs[partition_key].put(item[0])
                     else:
-                        raise TypeError("Invalid tuple in pipe")
+                        raise TypeError(
+                            "Invalid tuple in pipe - index 1 must be str 'load' or str 'new'")
                 else:
                     raise TypeError("Invalid item in pipe")
         logger.info("Terminating Engine Thread")
