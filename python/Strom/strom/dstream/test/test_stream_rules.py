@@ -1,5 +1,7 @@
 import unittest
+
 from strom.dstream.stream_rules import *
+
 
 class TestRuleDict(unittest.TestCase):
     def setUp(self):
@@ -23,28 +25,28 @@ class TestFilterRules(unittest.TestCase):
         self.filter = FilterRules()
 
     def test_init(self):
-        self.assertEqual(self.filter.get_expected_keys(), ["func_type", "func_name","filter_name", "func_params", "measures", "filter_measures", "derived_measures",])
+        self.assertEqual(self.filter.get_expected_keys(), ['transform_id', 'partition_list', 'measure_list', 'transform_type', 'transform_name', 'param_dict', 'logical_comparison', ])
 
 class TestDParamRules(unittest.TestCase):
     def setUp(self):
         self.dpr = DParamRules()
 
     def test_init(self):
-        self.assertEqual(self.dpr.get_expected_keys(), ["func_type", "func_name", "func_params", "measure_rules", "measures", "filter_measures", "derived_measures", ])
+        self.assertEqual(self.dpr.get_expected_keys(), ['transform_id', 'partition_list', 'measure_list', 'transform_type', 'transform_name', 'param_dict', 'logical_comparison', ])
 
 class TestEventRules(unittest.TestCase):
     def setUp(self):
         self.er = EventRules()
 
     def test_init(self):
-        self.assertEqual(self.er.get_expected_keys(),["func_type", "func_name", "event_rules", "measures", "filter_measures", "derived_measures", "event_name", "stream_token", "callback_rules"])
+        self.assertEqual(self.er.get_expected_keys(), ['event_id', 'partition_list', 'measure_list', 'transform_type', 'transform_name', 'param_dict', 'logical_comparison', ])
 
 class TestCallbackRules(unittest.TestCase):
     def setUp(self):
         self.cr = CallbackRules()
 
     def test_init(self):
-        self.assertEqual(self.cr.get_expected_keys(), ["callback_name", "callback_measures", "callback_filter_measures", "callback_derived_measures"])
+        self.assertEqual(self.cr.get_expected_keys(),["callback_name", "callback_measures", "callback_filter_measures", "callback_derived_measures"])
 
 class TestStorageRules(unittest.TestCase):
     def setUp(self):

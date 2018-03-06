@@ -1,53 +1,52 @@
+import json
 import unittest
-import numpy as np
-from strom.transform.filter_data import Filter, ButterLowpass, WindowAverage
+
+from strom.dstream.bstream import BStream
+from strom.transform.filter_data import *
 
 
 class TestFilter(unittest.TestCase):
     def setUp(self):
-        self.filter = Filter()
+        demo_data_dir = "demo_data/"
+        self.dstream_template = json.load(open(demo_data_dir + "demo_template_unit_test.txt"))
+        self.dstream_template["_id"] = "crowley666"
+        self.dstreams = json.load(open(demo_data_dir+"demo_trip26.txt"))
+        self.bstream = BStream(self.dstream_template, self.dstreams)
+        self.bstream.aggregate
 
-    def test_init(self):
-        self.assertIsInstance(self.filter.data, dict)
-        self.assertIsInstance(self.filter.params, dict)
-    def test_params(self):
-        param_dict = {"func_params":{"order":"out of order"}, "filter_name":"test_params"}
-        self.filter.load_params(param_dict)
-        self.assertIsInstance(self.filter.params["func_params"], dict)
-        self.assertIn("order", self.filter.params["func_params"])
-        self.assertEqual(self.filter.get_params(), param_dict["func_params"])
 
-class TestButter(unittest.TestCase):
-    def setUp(self):
-        self.butter = ButterLowpass()
+    def test_butter(self):
+        butter_rules = {"partition_list":[],
+         "measure_list":["timestamp"],
+         "transform_type":"filter_data",
+         "transform_name": "ButterLowpass",
+         "param_dict":{
+             "order":2,
+             "nyquist": 0.01,
+             "filter_name": "_buttery"
+         },
+         "logical_comparision": "AND"
+         }
 
-    def test_defaults(self):
-        self.assertEqual(self.butter.get_params(), {"order":3, "nyquist":0.05})
+        butter_df = ButterLowpass(self.bstream["measures"][butter_rules["measure_list"]], butter_rules["param_dict"])
+        for measure_name in butter_rules["measure_list"]:
+            self.assertIn(measure_name+butter_rules["param_dict"]["filter_name"], butter_df.columns)
+        self.assertEqual(self.bstream["measures"].shape[0], butter_df.shape[0])
 
-    def test_butter_data(self):
-        measure = {"viscosity":{"val":range(25), "dtype":"int"}}
-        self.butter.load_measures(measure)
-        buttered_data = self.butter.transform_data()
-        self.assertIsInstance(buttered_data, dict)
-        self.assertIn("buttered", buttered_data)
-        self.assertEqual(len(measure["viscosity"]["val"]), buttered_data["buttered"].shape[0])
-
-class TestWindow(unittest.TestCase):
-    def setUp(self):
-        self.wa = WindowAverage()
 
     def test_window(self):
-        test_data_len = 200
-        test_data = np.random.randint(0,15,(test_data_len,))
-        test_measure = {"viscosity":{"val":test_data, "dtype":"int"}}
-        self.wa.load_measures(test_measure)
-        for test_window in range(1, int(np.floor(test_data_len/2))):
-            params = {"func_params":{"window_len":test_window}, "filter_name":"viscosity_windowed"}
-            self.wa.load_params(params)
-            windowed_data = self.wa.transform_data()
-            self.assertIsInstance(windowed_data, dict)
-            self.assertIn("viscosity_windowed", windowed_data)
-            self.assertEqual(len(test_measure["viscosity"]["val"]), windowed_data["viscosity_windowed"].shape[0], "window len "+str(test_window))
+        window_rule = {"partition_list":[],
+         "measure_list":["timestamp"],
+         "transform_type":"filter_data",
+         "transform_name": "WindowAverage",
+         "param_dict":{"window_len":3, "filter_name":"_winning"},
+         "logical_comparision": "AND"}
+
+        window_df = WindowAverage(self.bstream["measures"][window_rule["measure_list"]], window_rule["param_dict"])
+        for measure_name in window_rule["measure_list"]:
+            self.assertIn(measure_name+window_rule["param_dict"]["filter_name"], window_df.columns)
+        self.assertEqual(self.bstream["measures"].shape[0], window_df.shape[0])
+
 
 
 if __name__ == "__main__":

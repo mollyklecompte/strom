@@ -1,6 +1,8 @@
 import unittest
-from strom.kafka.producer.producer import Producer
+
 from strom.kafka.consumer.consumer import Consumer
+from strom.kafka.producer.producer import Producer
+
 
 class TestKafka(unittest.TestCase):
     def setUp(self):

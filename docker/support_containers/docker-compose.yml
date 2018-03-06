@@ -17,20 +17,18 @@ services:
     environment:
       HOSTNAME_COMMAND: "getent hosts `hostname` | cut -d' ' -f1"
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-  jenky-mongo:
-    image: mongo
-    network_mode: "bridge"
-    ports:
-      - "27017:27017"
-  mariadb:
-    image: mariadb:latest
-    network_mode: "bridge"
-    ports:
-      - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: test
-      MYSQL_USER: user
-      MYSQL_PASSWORD: 123
-
-
+#  jenky-mongo:
+#    image: mongo
+#    network_mode: "bridge"
+#    ports:
+#      - "27017:27017"
+#  mariadb:
+#    image: mariadb:latest
+#    network_mode: "bridge"
+#    ports:
+#      - "3306:3306"
+#    environment:
+#      MYSQL_ROOT_PASSWORD: root
+#      MYSQL_DATABASE: test
+#      MYSQL_USER: user
+#      MYSQL_PASSWORD: 123

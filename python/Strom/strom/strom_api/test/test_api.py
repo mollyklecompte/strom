@@ -1,6 +1,8 @@
-import unittest
-import requests
 import json
+import time
+import unittest
+
+import requests
 
 
 class TestServer(unittest.TestCase):
@@ -18,7 +20,7 @@ class TestServer(unittest.TestCase):
 
     def test_define(self):
         if self.server_up:
-            tf = open(self.dir + "demo_template.txt", 'r')
+            tf = open(self.dir + "demo_template_unit_test.txt", 'r')
             template = tf.read()
             tf.close()
             ret = requests.post(self.url + '/api/define', data={'template': template})
@@ -45,9 +47,9 @@ class TestServer(unittest.TestCase):
 
     def test_load(self):
         if self.server_up:
-            df = open(self.dir + "demo_trip26.txt", 'r')
+            df = open(self.dir + "demo_data_new.txt", 'r')
             data = df.read()
-            tf = open(self.dir + "demo_template.txt", 'r')
+            tf = open(self.dir + "demo_template_new_new.txt", 'r')
             tmpl = tf.read()
             ret = requests.post(self.url + '/api/define', data={'template': tmpl})
             json_data = json.loads(data)
@@ -58,6 +60,7 @@ class TestServer(unittest.TestCase):
             df.close()
             tf.close()
             self.assertEqual(ret.status_code, 202)
+            time.sleep(3)
         else:
             self.fail("!! SERVER NOT FOUND !!")
 
@@ -78,38 +81,27 @@ class TestServer(unittest.TestCase):
         else:
             self.fail("!! SERVER NOT FOUND !!")
 
-    def test_load_kafka(self):
+    def test_get_all(self):
         if self.server_up:
-            msg = "Hello !%&^!"
-            data = msg.encode()
-            ret = requests.post(self.url + '/kafka/load', data={'stream_data': data, 'topic': 'test'})
-            self.assertEqual(ret.status_code, 202)
-        else:
-            self.fail("!! SERVER NOT FOUND !!")
-
-    def test_load_kafka_get_fail(self):
-        if self.server_up:
-            ret = requests.get(self.url + '/kafka/load')
-            self.assertEqual(ret.status_code, 405)
-        else:
-            self.fail("!! SERVER NOT FOUND !!")
-
-    def test_get_events_all(self):
-        if self.server_up:
-            tf = open(self.dir + "demo_template.txt", 'r')
+            tf = open(self.dir + "demo_template_new_new.txt", 'r')
             tmpl = tf.read()
+            ujtmpl = json.loads(tmpl)
             tf.close()
-            define_r = requests.post(self.url + '/api/define', data={'template': tmpl})
-            df = open(self.dir + "demo_trip26.txt", 'r')
+            define_r = requests.post(self.url + '/api/define', data={'template': ujtmpl})
+            df = open(self.dir + "demo_data_new.txt", 'r')
             data = df.read()
             df.close()
             json_data = json.loads(data)
             for obj in json_data:
                 obj['stream_token'] = define_r.text
+                obj['stream_name'] = "Parham"
             json_dump = json.dumps(json_data)
             load_r = requests.post(self.url + '/api/load', data={'data': json_dump})
-            get_r = requests.get(self.url + '/api/get/events?range=ALL&token=' + define_r.text)
+            time.sleep(2)
+            print(define_r.text)
+            get_r = requests.get(self.url + '/api/get/all?token=' + define_r.text)
             self.assertEqual(get_r.status_code, 200)
-            self.assertGreater(len(get_r.text), 3)
+            time.sleep(3)
+            # self.assertGreater(len(get_r.text), 3)
         else:
             self.fail("!! SERVER NOT FOUND !!")

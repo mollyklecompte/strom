@@ -21,12 +21,12 @@ class RuleDict(dict):
         for key in self.keys():
             if not key in self.expected_keys:
                 bad_keys.append(key)
-                logger.debug("non expected key found: %s" % (key))
+                logger.warning("non expected key found: %s" % (key))
         for key in bad_keys:
             del self[key]
         for key in self.expected_keys:
             if key not in self:
-                logger.debug("No value supplied for %s, setting to None" % (key))
+                logger.info("No value supplied for %s, setting to None" % (key))
                 self[key] = None
 
     def get_expected_keys(self):
@@ -36,51 +36,49 @@ class FilterRules(RuleDict):
     def __init__(self, *args, **kwargs):
         """
         Format for each expected key:
-        func_type: str, "filter_data" is the expected value
-        func_name: str, name of function in filter_data module
-        filter_name: str, name of output filtered measure
-        func_params: dict, parameters for the filter to use, defaults given by filter_data
-        measure: list of str, list of the measure names to be filtered
-        filter_measures: list of str, list of the filtered measures to be filtered
-        derived_measures: list of str, list of the derived measures to be filtered
+        partition_list: list of tuples, tuple contains (column name, value, comparison_operator) for partition rows
+        measure_list: list, column names of measures to be filtered
+        transform_type: str, "filter_data" is the expected value
+        transform_name: str, name of function in filter_data module
+        param_dict: dict, parameters for the filter to use
+        logical_comparison: str, supported values: "AND" and "OR". Dictates how partition_list is combined.
         """
         self.update(*args, **kwargs)
-        expected_keys = ["func_type", "func_name","filter_name", "func_params", "measures", "filter_measures", "derived_measures",]
+        expected_keys = ['transform_id', 'partition_list', 'measure_list', 'transform_type', 'transform_name', 'param_dict', 'logical_comparison', ]
         super().__init__(expected_keys=expected_keys)
 
 
 class DParamRules(RuleDict):
     def __init__(self, *args, **kwargs):
         """
-         Format for each expected key:
-         func_type: str, "derive_param" is the expected value
-         func_name: str, name of function in derive_param module
-         func_params: dict, parameters for the derive_param function to use
-         measure_rules: dict, contains "output_name" key, which names the output derived measure
-         measure: list of str, list of the measure names to be derived from
-         filter_measures: list of str, list of the filtered measures to be derived from
-         derived_measures: list of str, list of the derived measures to be derived from
-         """
+        Format for each expected key:
+        partition_list: list of tuples, tuple contains (column name, value, comparison_operator) for partition rows
+        measure_list: list, column names of measures to be filtered
+        transform_type: str, "filter_data" is the expected value
+        transform_name: str, name of function in filter_data module
+        param_dict: dict, parameters for the filter to use
+        logical_comparison: str, supported values: "AND" and "OR". Dictates how partition_list is combined.
+        """
         self.update(*args, **kwargs)
-        expected_keys = ["func_type", "func_name", "func_params", "measure_rules", "measures", "filter_measures", "derived_measures", ]
+
+        expected_keys = ['transform_id', 'partition_list', 'measure_list', 'transform_type', 'transform_name', 'param_dict', 'logical_comparison', ]
         super().__init__(expected_keys=expected_keys)
 
 class EventRules(RuleDict):
     def __init__(self, *args, **kwargs):
         """
-         Format for each expected key:
-         func_type: str, "detect_event" is the expected value
-         func_name: str, name of function in detect_event module
-         event_rules: dict, parameters for the detect_event function to use
-         measure: list of str, list of the measure names to find events in
-         filter_measures: list of str, list of the filtered measures to find events in
-         derived_measures: list of str, list of the derived measures to find events in
-         event_name: str, name of event
-         stream_token: str, dstream identifying stream token
-         callback_rules: CallbackRules()
+        Format for each expected key:
+        partition_list: list of tuples, tuple contains (column name, value, comparison_operator) for partition rows
+        measure_list: list, column names of measures to be filtered
+        transform_type: str, "filter_data" is the expected value
+        transform_name: str, name of function in filter_data module
+        param_dict: dict, parameters for the filter to use
+        logical_comparison: str, supported values: "AND" and "OR". Dictates how partition_list is combined.
+        callback_rules: CallbackRules()
          """
         self.update(*args, **kwargs)
-        expected_keys = ["func_type", "func_name", "event_rules", "measures", "filter_measures", "derived_measures", "event_name", "stream_token", "callback_rules"]
+        expected_keys = ['event_id', 'partition_list', 'measure_list', 'transform_type', 'transform_name', 'param_dict', 'logical_comparison', ]
+        # REMOVED callback_rules for now since not yet used -molly 2/22/17
         super().__init__(expected_keys=expected_keys)
 
 class CallbackRules(RuleDict):

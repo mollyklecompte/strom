@@ -1,13 +1,20 @@
 """ Flask server for coordination of processes: device registration, ingestion/processing of data, and retrieval of found events. """
+import datetime
 import json
-import time
+import pickle
+from multiprocessing import Pipe
+from queue import Queue
 
 from flask import Flask, request, Response, jsonify
 from flask_restful import reqparse
 from flask_socketio import SocketIO
+
 from strom.coordinator.coordinator import Coordinator
 from strom.dstream.dstream import DStream
-from strom.kafka.producer.producer import Producer
+from strom.engine.engine import Engine
+from strom.storage.sqlite_interface import SqliteInterface
+from strom.storage.storage_worker import StorageWorker, storage_config
+from strom.utils.configer import configer as config
 from strom.utils.logger.logger import logger
 from strom.utils.stopwatch import stopwatch as tk
 
@@ -23,27 +30,33 @@ class Server():
         ]
         self.parser = reqparse.RequestParser()
         self.coordinator = Coordinator()
-        self.kafka_url = '127.0.0.1:9092'
-        self.load_producer = Producer(self.kafka_url, b'load')
-        # self.producers = {}
         self.dstream = None
         for word in self.expected_args:
             self.parser.add_argument(word)
+
+        # ENGINE
+        self.server_conn, self.engine_conn = Pipe()
+        self.engine = Engine(self.engine_conn, buffer_max_batch=10, buffer_max_seconds=1)
+        self.engine.start()# NOTE  POSSIBLE ISSUE WHEN MODIFYING BUFFER PROPS FROM TEST
+        self.engine_start = datetime.datetime.now()
+        self.engine_stopped = None
+        # STORAGE QUEUE, WORKER AND INTERFACE
+        self.storage_queue = Queue()
+        self.storage_worker = StorageWorker(self.storage_queue, storage_config, config['storage_type'])
+        self.storage_worker.start()
+
+        # NOTE TODO MAKE MORE FLEXIBLE?
+        self.storage_interface = SqliteInterface(storage_config['local']['args'][0])
+        try:
+            self.storage_interface.seed_template_table()
+        except:
+            pass
 
     def _dstream_new(self):
         tk['Server._dstream_new'].start()
         dstream = DStream()
         tk['Server._dstream_new'].stop()
         return dstream
-
-    def producer_new(self, topic):
-        """
-        :param topic: Name of topic to produce to
-        :type topic: byte string
-        """
-        tk['Server.producer_new'].start()
-        self.producers[topic] = Producer(self.kafka_url, topic.encode())
-        tk['Server.producer_new'].stop()
 
     def parse(self):
         """ Wrapper function for reqparse.parse_args """
@@ -71,9 +84,11 @@ def define():
         json_template = json.loads(template)
         logger.debug("define: json.loads done")
         cur_dstream.load_from_json(json_template)
+        # sends template to engine to init buffer stuff + data puller, if applicable
+        srv.server_conn.send((cur_dstream, "new"))
         logger.debug("define: dstream.load_from_json done")
-        srv.coordinator.process_template(cur_dstream)
-        # srv.producer_new(cur_dstream["engine_rules"]["kafka"])
+        template_df = srv.coordinator.process_template(cur_dstream)
+        srv.storage_queue.put(('template', template_df))
         logger.debug("define: coordinator.process-template done")
         tk['define : try (template loading/processing)'].stop()
     except Exception as ex:
@@ -94,49 +109,26 @@ def load():
     """
     args = srv.parse()
     data = args['data'] #   data with token
+    # with open("demo_data/demo_data_new.txt", "w") as doc:
+    #     doc.write(data)
+    # doc.close()
     try:
-        json_data = json.loads(data)
+        unjson_data = json.loads(data)
         logger.debug("load: json.loads done")
-        token = json_data[0]['stream_token']
         logger.debug("load: got token")
-        srv.coordinator.process_data_sync(json_data, token)
-        logger.debug("load: coordinator.process_data_sync done")
+        if type(unjson_data) is dict:
+            srv.server_conn.send((unjson_data,"load"))# NOTE CHECK DATA FORMATS COMPARED TO LOAD_KAFKA
+        elif type(unjson_data) is list:
+            for d in unjson_data:
+                srv.server_conn.send((d, "load"))
+        logger.debug("load: data piped to engine buffer")
     except Exception as ex:
         logger.warning("Server Error in load: Data loading/processing - {}".format(ex))
         return '{}'.format(ex), 400
     else:
-        return 'Success.', 202
-
-def load_kafka():
-    """ Collect data and produce to kafka topic.
-    Expects 'stream_data' argument containing user dataset to process.
-    """
-    # logger.fatal("data hit server load")
-    start_load = time.time()
-    tk['load_kafka'].start()
-    args = srv.parse()
-    try:
-        tk['load_kafka : try (encoding/producing data)'].start()
-        data = args['stream_data'].encode()
-        logger.debug("load_kafka: encode stream_data done")
-        # kafka_topic = args['topic']
-        logger.debug("load_kafka: encode topic done")
-        srv.load_producer.produce(data)
-        # srv.producers[kafka_topic].produce(data)
-        logger.debug("load_kafka: producer.produce done")
-        tk['load_kafka : try (encoding/producing data)'].stop()
-        logger.fatal("Load kafka route took {:.5f} seconds".format(time.time() - start_load))
-    except Exception as ex:
-        logger.fatal("Server Error in kafka_load: Encoding/producing data - {}".format(ex))
-        # bad_resp = Response(ex, 400)
-        # bad_resp.headers['Access-Control-Allow-Origin']='*'
-        # return bad_resp
-        return '{}'.format(ex), 400
-    else:
-        resp = Response('Success.', 202)
-        resp.headers['Access-Control-Allow-Origin']='*'
-        tk['load_kafka'].stop()
-        return resp
+         resp = Response('Success.', 202)
+         resp.headers['Access-Control-Allow-Origin']='*'
+         return resp
 
 
 def index():
@@ -144,29 +136,18 @@ def index():
     resp.headers['Access-Control-Allow-Origin']='*'
     return resp
 
+
 def get(this):
-    """ Returns data, specified by endpoint & URL params.
-    Expects multiple url arguments: range or time, and token.
-    """
-    tk['get'].start()
-    time_range = request.args.get('range', '')
-    time = request.args.get('time', '')
-    token = request.args.get('token', '')
-    print(this) #   endpoint: raw, filtered, derived_params, events
-    print(time)
-    print(time_range)
-    if time_range:
-        logger.debug("get: got time_range")
-        if time_range == 'ALL':
-            logger.debug("get: time_range is ALL")
-            tk['get : coordinator.get_events'].start()
-            result = srv.coordinator.get_events(token)
-            tk['get : coordinator.get_events'].stop()
-            logger.debug("get: coordinator.get_events done")
-            tk['get'].stop()
-            return ("\n" + str(result) + "\n"), 200
-        else:
-            return '', 403
+    token = request.args.get("token", "")
+    time_range = request.args.get("range", "")# kwargs containing 'start_ts' and 'end_ts'
+    if this == "all":
+        res = srv.storage_interface.retrieve_data(token, "*")# TODO figure out passing kwargs
+        print(res)
+        return res.to_json(), 200#TODO better format w/ params?
+    else:
+        res = srv.storage_interface.retrieve_data(token, this)
+        return res.to_json(), 200
+
 
 def handle_event_detection():
     tk['handle_event_detection'].start()
@@ -187,30 +168,88 @@ def handle_event_detection():
     tk['handle_event_detection'].stop()
     return jsonify(json_data)
 
-# def add_source():
-#     """ Collect data source and set in DStream field """
-#     args = srv.parse()
-#     if args['topic'] is not None:
-#         topic = args['topic']   #   kafka topic
-#         print(topic)
-#     source = args['source'] #   file/kafka
-#     token = args['token']   #   stream_token
-#     print(source)
-#     print(token)
-#     return 'Success.', 200
+
+def data_storage():
+    logger.debug("Starting data storage")
+
+    data = request.data
+
+    parsed = pickle.loads(data)
+
+    logger.debug("putting DataFrame in queue")
+    # error handling
+    srv.storage_queue.put(('bstream', parsed[0], parsed[1]))
+    logger.debug("Finished queuing")
+
+    return 'ok'
+
+
+def template_storage():
+    logger.debug("Starting template storage")
+    d = request.data
+    parsed = pickle.loads(d)
+    # error handling
+    logger.debug("putting template in queue")
+    srv.storage_queue.put(('template', parsed))
+    logger.debug("Finished queuing")
+
+    return 'ok'
+
+def retrieve_templates(which):
+    template_id = request.args.get("template_id", "")
+    stream_token = request.args.get("stream_token", "")
+    which = str(which).lower()
+    if which == "all":
+        if template_id:
+            return srv.storage_interface.retrieve_template_by_id(template_id)
+        elif stream_token:
+            return srv.storage_interface.retrieve_all_by_token(stream_token)
+        else:
+            return srv.storage_interface.retrieve_all_templates()
+    elif which == "latest" or which == "current":
+        if template_id:
+            return srv.storage_interface.retrieve_current_by_id(template_id)
+        elif stream_token:
+            return srv.storage_interface.retrieve_current_template(stream_token)
+    else:
+        return "Value Error", 403
+
+
+def engine_status():
+    status = srv.engine.is_alive()
+    if status is True:
+        started = srv.engine_start
+        stopped = None
+        delta_t = datetime.datetime.now() - srv.engine_start
+        delta_text = "time_running"
+    else:
+        started = None
+        stopped = srv.engine_stopped
+        delta_t = datetime.datetime.now() - srv.engine_stopped
+        delta_text = "time_stopped"
+    return jsonify({"running": status, "started": started, "stopped": stopped, delta_text: {"days": delta_t.days, "seconds": delta_t.seconds}})
+
+def stop_engine():
+    srv.server_conn.send("stop_poison_pill")
+    while srv.engine.is_alive():
+        pass
+    srv.engine_stopped = datetime.datetime.now()
+    return jsonify({"engine_stopped": True, "time": srv.engine_stopped})
+
 
 # POST
 app.add_url_rule('/api/define', 'define', define, methods=['POST'])
-# app.add_url_rule('/api/add-source', 'add_source', add_source, methods=['POST'])
 app.add_url_rule('/api/load', 'load', load, methods=['POST'])
 app.add_url_rule('/new_event', 'handle_event_detection', handle_event_detection, methods=['POST'])
-# KAFKA POST
-app.add_url_rule('/kafka/load', 'load_kafka', load_kafka, methods=['POST'])
-app.add_url_rule('/api/kafka/load', 'load_kafka', load_kafka, methods=['POST'])
+app.add_url_rule('/data_storage', 'data_storage', data_storage, methods=['POST'])
+app.add_url_rule('/template_storage', 'template_storage', template_storage, methods=['POST'])
+
 # GET
 app.add_url_rule('/', 'index', index, methods=['GET'])
+app.add_url_rule('/api/engine_status', 'engine_status', engine_status, methods=['GET'])
+app.add_url_rule('/api/stop_engine', 'stop_engine', stop_engine, methods=['GET'])
 app.add_url_rule('/api/get/<this>', 'get', get, methods=['GET'])
-
+app.add_url_rule('/api/retrieve/<which>', 'retrieve_templates', retrieve_templates, methods=['GET'])
 
 
 def start():

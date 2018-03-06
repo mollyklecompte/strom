@@ -5,14 +5,12 @@
 #
 numpy>=1.13.3
 scipy>=0.19.1K
-PyMySQL==0.7.11
-pymongo==3.5.1
 Werkzeug==0.12.2
-pykafka==2.6.0
 Flask==0.12.2
 flask_restful==0.3.6
 requests==2.18.4
 flask-socketio==2.9.3
+pandas==0.20.3
 #
 ###### Refer to other requirements files ######
 #

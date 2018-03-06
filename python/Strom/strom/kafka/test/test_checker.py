@@ -1,6 +1,8 @@
 import unittest
-from strom.kafka.topics.checker import TopicChecker
+
 from strom.kafka.producer.producer import Producer
+from strom.kafka.topics.checker import TopicChecker
+
 
 class TestTopicChecker(unittest.TestCase):
     def setUp(self):

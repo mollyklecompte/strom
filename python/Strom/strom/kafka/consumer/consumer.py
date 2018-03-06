@@ -1,7 +1,8 @@
 """ Kafka Consumer, used throughout project for ingestion of data stored in specific kafka topics. """
 from pykafka import KafkaClient
-from strom.utils.stopwatch import stopwatch as tk
+
 from strom.utils.logger.logger import logger
+from strom.utils.stopwatch import stopwatch as tk
 
 __version__ = '0.1.0'
 __author__ = 'Adrian Agnic <adrian@tura.io>'

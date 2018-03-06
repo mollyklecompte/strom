@@ -1,5 +1,6 @@
 """ Kafka Producer, used through out project for putting data in relevant topic, in order to be consumed. """
 from pykafka import KafkaClient
+
 from strom.utils.logger.logger import logger
 from strom.utils.stopwatch import stopwatch as tk
 

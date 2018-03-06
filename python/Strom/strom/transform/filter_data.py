@@ -7,13 +7,12 @@ as BStream["filtered_measures"]
 
 window_data is used as a filter but also has uses in other Transformer subclasses so it is a top
 level function for easier importing by those subclasses"""
-from abc import ABCMeta, abstractmethod
 
 import numpy as np
+import pandas as pd
 from scipy.signal import butter, filtfilt
-from strom.utils.logger.logger import logger
 
-from .transform import Transformer
+from strom.utils.logger.logger import logger
 
 
 def window_data(in_array, window_len):
@@ -26,120 +25,71 @@ def window_data(in_array, window_len):
     :return: windowed average of the data
     :rtype: numpy array
     """
-    logger.debug("Windowing data with window length %d" % (window_len))
-    w_data = np.convolve(in_array, np.ones(window_len), "valid") / window_len
-    # Dealing with the special case for endpoints of in_array
-    ends_divisor = np.arange(1, window_len, 2)
-    start = np.cumsum(in_array[:window_len - 1])[::2] / ends_divisor
-    stop = (np.cumsum(in_array[:-window_len:-1])[::2] / ends_divisor)[::-1]
-    if in_array.shape[0] - w_data.shape[0] - start.shape[0] < stop.shape[0]:
-        stop = stop[1:]
-    return np.concatenate((start, w_data, stop))
+    if in_array.shape[0] < window_len*2:
+        return in_array
+    else:
+        logger.debug("Windowing data with window length {:d}".format(window_len))
+        w_data = np.convolve(in_array, np.ones(window_len), "valid") / window_len
+        # Dealing with the special case for endpoints of in_array
+        ends_divisor = np.arange(1, window_len, 2)
+        start = np.cumsum(in_array[:window_len - 1])[::2] / ends_divisor
+        stop = (np.cumsum(in_array[:-window_len:-1])[::2] / ends_divisor)[::-1]
+        if in_array.shape[0] - w_data.shape[0] - start.shape[0] < stop.shape[0]:
+            stop = stop[1:]
+        return np.concatenate((start, w_data, stop))
 
-class Filter(Transformer):
-    __metaclass__ = ABCMeta
 
-    def __init__(self):
-        """
-        Meta class for all filters
-        """
-        super().__init__()
+def butter_data(data_array, order, nyquist):
+    """
+    Fuction for applying a butter lowpass filter to data
+    :param data_array: array of data to be filtered
+    :type data_array: numpy array
+    :param order: order of the filter
+    :type order: int
+    :param nyquist:
+    :type nyquist: float
+    :return: filtered data
+    :rtype: numpy array
+    """
+    logger.debug("buttering data")
+    b, a = butter(order, nyquist)
+    return filtfilt(b, a, data_array)
 
-    def load_params(self, params):
-        """Load func_params dict into filter.params
-        :param params: all the parameters needed for the filter
-        :type params: dict containing keys "func_params" and "filter_name"
-        """
-        logger.debug("loading func_params and filter_name")
-        self.params["func_params"] = params["func_params"]
-        self.params["filter_name"] = params["filter_name"]
 
-    def get_params(self):
-        """Method to return function default parameters
-        :return: dict of parameters
-        :rtype: dict
-        """
-        return self.params["func_params"]
 
-    @abstractmethod
-    def transform_data(self):
-        """Method to apply the transformation and return the transformed data"""
-        raise NotImplementedError("subclass must implement this abstract method.")
-
-class ButterLowpass(Filter):
+def ButterLowpass(data_frame, params=None):
     """Class to apply a Butterworth lowpass filter to data"""
-    def __init__(self):
-        """TODO follow DeriveParam example"""
-        super().__init__()
-        self.params["func_params"] ={"order":3, "nyquist":0.05}
-        self.params["filter_name"] =  "buttered"
-        logger.debug("initialized ButterLowpass. Use get_params() to see parameter values")
+    logger.debug("Calculating ButterLowpass.")
+    if params==None:
+        params ={"order":("order of the filter",2,True), "nyquist":("Wn parameter from scipy.signal.butter",0.05,True), "filter_name":("name to append to all filtered parameters","_buttered",False)}
+        return params
+    elif "filter_name" not in params:
+        params["filter_name"] = "_buttered"
 
-    @staticmethod
-    def butter_data(data_array, order, nyquist):
-        """
-        Fuction for applying a butter lowpass filter to data
-        :param data_array: array of data to be filtered
-        :type data_array: numpy array
-        :param order: order of the filter
-        :type order: int
-        :param nyquist: Wn parameter from scipy.signal.butter
-        :type nyquist: float
-        :return: filtered data
-        :rtype: numpy array
-        """
-        logger.debug("buttering data")
-        b, a = butter(order, nyquist)
-        return filtfilt(b, a, data_array)
+    logger.debug("transforming_data")
+    buttered_data = np.zeros(data_frame.shape)
+    output_names = []
+    for col_ind, df_col in enumerate(data_frame):
+        buttered_data[:, col_ind] = butter_data(data_frame[df_col].values, params["order"], params["nyquist"])
+        output_names.append(df_col+params["filter_name"])
 
-    def transform_data(self):
-        """
-        Apply butter_data and returns the transformed data
-        :return: dict of {"filter_name": numpy array of filtered data}
-        :rtype: dict
-        """
-        buttered_data = {}
-        logger.debug("transforming_data")
-        for key in self.data.keys():
-            key_array = np.array(self.data[key]["val"], dtype=float)
-            if len(key_array.shape) > 1:
-                buttered_data[self.params["filter_name"]] = np.zeros(key_array.shape)
-                for ind in range(key_array.shape[1]):
-                    buttered_data[self.params["filter_name"]][:,ind] = self.butter_data(key_array[:,ind],
-                                                                                        self.params["func_params"]["order"],
-                                                                                        self.params["func_params"]["nyquist"])
-            else:
-                buttered_data[self.params["filter_name"]] = self.butter_data(key_array,
-                                                                             self.params["func_params"]["order"],
-                                                                             self.params["func_params"]["nyquist"])
-        return buttered_data
+    return pd.DataFrame(data=buttered_data, columns=output_names, index=data_frame.index)
 
-class WindowAverage(Filter):
+
+def WindowAverage(data_frame, params=None):
     """Class for using a windowed average to smooth data"""
-    def __init__(self):
-        super().__init__()
-        self.params["func_params"] = {"window_len": 2}
-        self.params["filter_name"] = "windowed"
-        logger.debug("initialized WindowAverage. Use get_params() to see parameter values")
+    logger.debug("Calculating WindowAverage.")
+    if params == None:
+        params = {"window_len": ("length of window",2,True), "filter_name":("name to append to all filtered parameters","_windowed",False)}
+        return params
+    elif "filter_name" not in params:
+        params["filter_name"] = "_windowed"
 
+    logger.debug("transforming_data")
+    windowed_data = np.zeros(data_frame.shape)
+    output_names = []
+    for col_ind, df_col in enumerate(data_frame):
+        windowed_data[:, col_ind] = window_data(data_frame[df_col].values, params["window_len"])
+        output_names.append(df_col + params["filter_name"])
 
-    def transform_data(self):
-        """
-        Apply window_data to smooth the data and return the results
-        :return: dict of {"filter_name: numpy array of filtered data}
-        :rtype: dict
-        """
-        logger.debug("transforming_data")
-        windowed_data = {}
-        for key in self.data.keys():
-            key_array = np.array(self.data[key]["val"], dtype=float)
-            if len(key_array.shape) > 1:
-                windowed_data[self.params["filter_name"]] = np.zeros(key_array.shape)
-                for ind in range(key_array.shape[1]):
-                    windowed_data[self.params["filter_name"]][:,ind] = window_data(key_array[:,ind],
-                                                  self.params["func_params"]["window_len"])
-            else:
-                windowed_data[self.params["filter_name"]] = window_data(key_array,
-                                                                        self.params["func_params"]["window_len"])
-
-        return windowed_data
+    return pd.DataFrame(data=windowed_data, columns=output_names, index=data_frame.index)
