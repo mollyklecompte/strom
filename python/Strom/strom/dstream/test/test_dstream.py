@@ -9,10 +9,9 @@ class TestDStream(unittest.TestCase):
         self.dstream = DStream()
 
     def test_init(self):
-        init_keys = ['stream_name', 'version', 'stream_token', 'source_key', 'storage_rules',
-                     'ingest_rules', 'engine_rules', 'timestamp', 'measures', 'fields',
-                     'user_ids', 'tags', 'foreign_keys', 'filters', 'dparam_rules', 'event_rules', 'user_description', 'template_id', 'data_mapping']
+        init_keys = ['stream_name', 'user_description', 'version', 'stream_token', 'source_key', 'template_id', 'storage_rules', 'ingest_rules', 'engine_rules', 'timestamp', 'measures', 'fields', 'user_ids', 'tags', 'foreign_keys', 'filters', 'dparam_rules', 'event_rules', 'data_rules']
         for key in init_keys:
+            print(self.dstream.keys())
             self.assertIn(key, self.dstream.keys())
 
     def testadd_methods(self):
@@ -60,7 +59,7 @@ class TestDStream(unittest.TestCase):
 
         fake_mapping = ["fake","mapping","list"]
         self.dstream.add_data_rules(fake_mapping)
-        self.assertEqual(fake_mapping, self.dstream["data_mapping"])
+        self.assertEqual(fake_mapping, self.dstream["data_rules"])
 
     def test_load_from_json(self):
         test_dict = {"stream_token":"foo", "version":900}

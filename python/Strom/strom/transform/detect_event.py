@@ -58,7 +58,7 @@ def compare_threshold(data_array, comparison_operator, comparision_val, absolute
 
 
 def DetectThreshold(data_frame, params):
-    logger.fatal("staring DetectThreshold")
+    logger.debug("staring DetectThreshold")
     if params == None:
         params = {}
         params["event_rules"] = {
@@ -83,5 +83,5 @@ def DetectThreshold(data_frame, params):
     logger.debug(params["event_name"])
     event_times["stream_id"] =  params["stream_id"]
     event_times["event_name"] = params["event_name"]
-    logger.fatal(event_times.to_string())
+    logger.debug(event_times.to_string())
     return event_times
