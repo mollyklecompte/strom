@@ -134,7 +134,7 @@ class Coordinator(object):
         """
         endpoint = 'http://{}:{}/new_event'.format(config['server_host'],
                                                    config['server_port'])
-        logger.fatal(event_data)
+        logger.debug(event_data)
         r = requests.post(endpoint, json=event_data)
 
         return {'request_status': r.status_code}
@@ -168,7 +168,7 @@ class Coordinator(object):
         logger.debug("posting to "+endpoint)
         r = requests.post(endpoint, data=pickle.dumps(temp_pd))
         logger.debug("Finished post")
-        return 'request status: ' + str(r.status_code)
+        return {'request_status': r.status_code}
 
     @staticmethod
     def return_template_df(template):
@@ -197,4 +197,4 @@ class Coordinator(object):
         logger.debug(dataframe)
         r = requests.post(endpoint, data=pickle.dumps((stream_token, dataframe)))
 
-        return 'request status: ' + str(r.status_code)
+        return {'request_status': r.status_code}
