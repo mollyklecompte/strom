@@ -59,11 +59,21 @@ class MQTTClient(mqtt.Client):
             super().loop_start()
             pass# dont have to connect
         else:
+            super().connect(host=kws["host"], port=kws["port"], keepalive=kws["keepalive"])
             super().subscribe((kws["data"]["topic"], kws["data"]["qos"]))
             super().loop(timeout=kws["timeout"])
 
     def stop_async_loop(self):
         super().loop_stop()
 
-    def on_message(self):
+    def on_message(self, client, userdata, msg):
+        print(f"{msg.payload} from {msg.topic}: {msg.qos} {msg.retain}")
+
+    def on_log(self, client, userdata, lvl, buf):
+        print(f"{lvl}: {buf}")
+
+    def on_connect(self, client, userdata, flags, rc):
+        print(f"{flags}\n RESULT: {rc}")
+
+    def on_disconnect(self):
         pass
