@@ -7,7 +7,7 @@ from strom.route_wrappers import *
 class TestWrappers(unittest.TestCase):
     def setUp(self):
         self.data_dir = 'demo_data/'
-        self.dstream = json.load(open(self.data_dir + 'demo_template_dir.txt'))
+        self.dstream = json.load(open(self.data_dir + 'demo_template_unit_test.txt'))
 
     def test_post_template(self):
         resp = post_template(self.dstream)
