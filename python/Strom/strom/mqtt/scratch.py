@@ -1,6 +1,5 @@
 """ Non-blocking Python MQTT client with config """
 import paho.mqtt.client as mqtt
-from abc import ABC, abstractmethod
 
 __version__ = "0.0.2"
 __author__ = "Adrian Agnic"
@@ -12,12 +11,13 @@ config = {
     "timeout": 10,
     "data": [{
         "topic": "psuba/tura",
-        "payload": "test123"
+        "payload": "test123",
+        "qos": 0
     }]
 }
 
 
-class MQTTClient(ABC, mqtt.Client):
+class MQTTClient(mqtt.Client):
     # NOTE TODO look at TLS options
 
     def __init__(self, uid=None, userdata=None, transport="tcp", logger=None, asynch=False, **kws):
@@ -54,12 +54,16 @@ class MQTTClient(ABC, mqtt.Client):
         """
         super().ws_set_options(path=path, headers=headers)
 
-    def run(self):
+    def run(self, **kws):
         if self.async:
-            pass
+            super().loop_start()
+            pass# dont have to connect
         else:
-            pass
+            super().subscribe((kws["data"]["topic"], kws["data"]["qos"]))
+            super().loop(timeout=kws["timeout"])
 
-    @abstractmethod
+    def stop_async_loop(self):
+        super().loop_stop()
+
     def on_message(self):
         pass
