@@ -7,18 +7,18 @@ __author__ = "Adrian Agnic"
 config = {
     "host": "iot.eclipse.org",
     "port": 1883,
-    "keepalive": 30,
+    "keepalive": 60,
     "timeout": 10,
     "data": [{
         "topic": "psuba/tura",
         "payload": "test123",
-        "qos": 0
+        "qos": 0,
+        "retain": True
     }]
 }
 
 
 class MQTTClient(mqtt.Client):
-    # NOTE TODO look at TLS options
 
     def __init__(self, uid=None, userdata=None, transport="tcp", logger=None, asynch=False, **kws):
         """ use reinitialise() for changing instance properties
@@ -54,10 +54,19 @@ class MQTTClient(mqtt.Client):
         """
         super().ws_set_options(path=path, headers=headers)
 
+    def _generate_config(self, host, port, keepalive=60, timeout=10, data=None):
+        return config_dict = {
+            "host": host,
+            "port": port,
+            "keepalive": keepalive,
+            "timeout": timeout,
+            "data": data
+        }
+
     def run(self, **kws):
         if self.async:
             super().loop_start()
-            pass# dont have to connect
+            super().subscribe((kws["data"]["topic"], kws["data"]["qos"]))
         else:
             super().connect(host=kws["host"], port=kws["port"], keepalive=kws["keepalive"])
             super().subscribe((kws["data"]["topic"], kws["data"]["qos"]))
