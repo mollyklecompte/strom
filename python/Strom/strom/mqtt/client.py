@@ -1,5 +1,4 @@
 import paho.mqtt.client as mqtt
-import paho.mqtt.publish as publisher
 
 __version__ = "0.0.1"
 __author__ = "Adrian Agnic"
@@ -20,16 +19,7 @@ config = {
 
 
 class MQTTClient(mqtt.Client):
-    """ useful mqtt.Client methods inherited:
-    (un)subscribe(topic)
-    reinitialise(client_id, clean_session, userdata)
-    enable_logger(logger)
-    (re/dis)connect()
-    publish(topic, payload, qos, retain)
-    message_callback_add(filter, callback)
-    on_log(c, ud, lvl, buf)
-    callback(cb, topics, hostname, port, client_id, keepalive)
-    """
+    """  """
 
     def __init__(self, uid=None):
         """ uid generated if None """
