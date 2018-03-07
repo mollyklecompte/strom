@@ -12,36 +12,45 @@ config = {
     "keepalive": 60,
     "timeout": 10,
     "data": {
-        "topic": "psuba/tura",
+        "topic": "psuba",
         "qos": 0,
         "messages": [{
-            "topic": "psuba/tura",
+            "topic": "psuba",
             "payload": "test123",
             "qos": 0,
             "retain": True
-        }]
+        },
+        {
+            "topic": "psuba",
+            "payload": "test456",
+            "qos": 0,
+            "retain": False
+        }
+        ]
     }
 }
 
-def publish(self, msg_list, **kws):
+def publish(msg_list, payload=None, keep=False, **kws):
     """
     :param msg_list: list: containing dicts w/ fields 'topic', 'payload', 'qos', 'retain'
+    :param keep: bool: flag for retaining, used only with single message in list
     """
+    print(f"publishing {len(msg_list)} to {kws['data']['topic']}")
     if len(msg_list) > 1:
         pubber.multiple(
-            msgs=0,
-            hostname=0,
-            port=0,
-            keepalive=0,
-            protocol=0,
-            transport=0
+            msgs=msg_list,
+            hostname=kws["host"],
+            port=kws["port"],
+            keepalive=kws["keepalive"],
+            protocol=mqtt.MQTTv311,
+            transport="tcp"
         )
     else:
         pubber.single(
             topic=kws["data"]["topic"],
-            payload=msg_list[0]["payload"],
+            payload=payload,
             qos=kws["data"]["qos"],
-            retain=msg_list[0]["retain"],
+            retain=keep,
             hostname=kws["host"],
             port=kws["port"],
             keepalive=kws["keepalive"],
@@ -52,7 +61,7 @@ def publish(self, msg_list, **kws):
 
 class MQTTClient(mqtt.Client):
 
-    def __init__(self, uid=None, userdata=None, transport="tcp", logger=None, asynch=False, **kws):
+    def __init__(self, uid=None, userdata=config, transport="tcp", logger=None, asynch=False, **kws):
         """ use reinitialise() for changing instance properties
         :param uid: str: unique idenitifier for this client
         :param userdata: data to be passed through callbacks
@@ -87,9 +96,6 @@ class MQTTClient(mqtt.Client):
         super().ws_set_options(path=path, headers=headers)
 
     def _generate_config(self, host, port, topic, keepalive=60, timeout=10, qos=0):
-        """
-        :param data: list: dicts containing fields 'topic', 'payload', 'qos', 'retain'
-        """
         return {
             "host": host,
             "port": port,
@@ -105,24 +111,34 @@ class MQTTClient(mqtt.Client):
         if self.async:
             print("async")
             super().loop_start()
-            super().subscribe((kws["data"]["topic"], kws["data"]["qos"]))
+            # super().subscribe(kws["data"]["topic"], kws["data"]["qos"])
         else:
             super().connect(host=kws["host"], port=kws["port"], keepalive=kws["keepalive"])
-            super().subscribe((kws["data"]["topic"], kws["data"]["qos"]))
-            super().loop(timeout=kws["timeout"])
+            # super().subscribe(kws["data"]["topic"], kws["data"]["qos"])
+            rc = 0
+            while rc == 0:
+                rc = super().loop(timeout=kws["timeout"])
+                print(rc)
 
     def stop_async_loop(self):
         """ must be called when running asynchronously """
         super().loop_stop()
 
     def on_message(self, client, userdata, msg):
-        print(f"{msg.payload} from {msg.topic}: {msg.qos} {msg.retain}")
+        print(f"MESSAGE | {msg.payload} from {msg.topic}: {msg.qos} {msg.retain}")
 
     def on_log(self, client, userdata, lvl, buf):
-        print(f"{lvl}: {buf}")
+        print(f" LOG | {lvl}: {buf}")
 
     def on_connect(self, client, userdata, flags, rc):
-        print(f"{flags}\n RESULT: {rc}")
+        print(f"CONNECTION | {flags}\n RESULT: {rc}")
+        super().subscribe(userdata["data"]["topic"], userdata["data"]["qos"])
+
+    def on_subscribe(self, client, userdata, mid, granted_qos):
+        print(f"SUBSCRIPTION | {mid}: {granted_qos}")
+
+    def on_unsubscribe(self, client, userdata, mid):
+        print(f"UNSUBSCRIBED | {mid}")
 
     def __del__(self):
         super().disconnect()
