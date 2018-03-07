@@ -87,9 +87,6 @@ class MQTTClient(mqtt.Client):
         super().ws_set_options(path=path, headers=headers)
 
     def _generate_config(self, host, port, topic, keepalive=60, timeout=10, qos=0):
-        """
-        :param data: list: dicts containing fields 'topic', 'payload', 'qos', 'retain'
-        """
         return {
             "host": host,
             "port": port,
