@@ -100,5 +100,17 @@ class MQTTContext(Context):
     def __init__(self, mapping_list, template, *args, **kwargs):
         self.update(*args, **kwargs)
         super().__init__(mapping_list, template, *args, **kwargs)
+        if "uid" in kwargs:
+            self["uid"] = kwargs["uid"]
+        if "userdata" in  kwargs:
+            self["userdata"] = kwargs["userdata"]
+        if "transport" in kwargs:
+            self["transport"] = kwargs["transport"]
+        if "logger" in kwargs:
+            self["logger"] = kwargs["logger"]
+        if "asynch" in kwargs:
+            self["asynch"] = kwargs["asynch"]
 
+    def set_uid(self, uid):
+        self.set_value("uid", uid)
 
