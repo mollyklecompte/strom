@@ -1,8 +1,10 @@
 """ Non-blocking Python MQTT client with config """
 import paho.mqtt.client as mqtt
+import paho.mqtt.publish as pubber
 
 __version__ = "0.0.2"
 __author__ = "Adrian Agnic"
+
 
 config = {
     "host": "iot.eclipse.org",
@@ -20,6 +22,32 @@ config = {
         }]
     }
 }
+
+def publish(self, msg_list, **kws):
+    """
+    :param msg_list: list: containing dicts w/ fields 'topic', 'payload', 'qos', 'retain'
+    """
+    if len(msg_list) > 1:
+        pubber.multiple(
+            msgs=0,
+            hostname=0,
+            port=0,
+            keepalive=0,
+            protocol=0,
+            transport=0
+        )
+    else:
+        pubber.single(
+            topic=kws["data"]["topic"],
+            payload=msg_list[0]["payload"],
+            qos=kws["data"]["qos"],
+            retain=msg_list[0]["retain"],
+            hostname=kws["host"],
+            port=kws["port"],
+            keepalive=kws["keepalive"],
+            protocol=mqtt.MQTTv311,
+            transport="tcp"
+        )
 
 
 class MQTTClient(mqtt.Client):
@@ -58,7 +86,7 @@ class MQTTClient(mqtt.Client):
         """
         super().ws_set_options(path=path, headers=headers)
 
-    def _generate_config(self, host, port, keepalive=60, timeout=10, data=None):
+    def _generate_config(self, host, port, topic, keepalive=60, timeout=10, qos=0):
         """
         :param data: list: dicts containing fields 'topic', 'payload', 'qos', 'retain'
         """
@@ -67,7 +95,10 @@ class MQTTClient(mqtt.Client):
             "port": port,
             "keepalive": keepalive,
             "timeout": timeout,
-            "data": data
+            "data": {
+                "topic": topic,
+                "qos": qos
+            }
         }
 
     def run(self, **kws):
