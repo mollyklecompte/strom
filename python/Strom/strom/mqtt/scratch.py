@@ -55,6 +55,9 @@ class MQTTClient(mqtt.Client):
         super().ws_set_options(path=path, headers=headers)
 
     def _generate_config(self, host, port, keepalive=60, timeout=10, data=None):
+        """
+        :param data: dict: containing fields 'topic', 'payload', 'qos', 'retain'
+        """
         return config_dict = {
             "host": host,
             "port": port,
@@ -73,6 +76,7 @@ class MQTTClient(mqtt.Client):
             super().loop(timeout=kws["timeout"])
 
     def stop_async_loop(self):
+        """ must be called when running asynchronously """
         super().loop_stop()
 
     def on_message(self, client, userdata, msg):
@@ -83,6 +87,3 @@ class MQTTClient(mqtt.Client):
 
     def on_connect(self, client, userdata, flags, rc):
         print(f"{flags}\n RESULT: {rc}")
-
-    def on_disconnect(self):
-        pass
