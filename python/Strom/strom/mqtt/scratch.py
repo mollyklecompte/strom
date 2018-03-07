@@ -16,13 +16,13 @@ config = {
         "qos": 0,
         "messages": [{
             "topic": "psuba",
-            "payload": "test123",
+            "payload": "hello tura",
             "qos": 0,
             "retain": True
         },
         {
             "topic": "psuba",
-            "payload": "test456",
+            "payload": "test123",
             "qos": 0,
             "retain": False
         }
@@ -30,13 +30,13 @@ config = {
     }
 }
 
-def publish(msg_list, payload=None, keep=False, **kws):
+def publish(msg_list=[], payload=None, keep=False, **kws):
     """
     :param msg_list: list: containing dicts w/ fields 'topic', 'payload', 'qos', 'retain'
     :param keep: bool: flag for retaining, used only with single message in list
     """
-    print(f"publishing {len(msg_list)} to {kws['data']['topic']}")
-    if len(msg_list) > 1:
+    print(f"publishing {msg_list} to {kws['data']['topic']}")
+    if len(msg_list):
         pubber.multiple(
             msgs=msg_list,
             hostname=kws["host"],
