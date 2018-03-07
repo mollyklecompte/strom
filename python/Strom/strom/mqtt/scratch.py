@@ -9,12 +9,16 @@ config = {
     "port": 1883,
     "keepalive": 60,
     "timeout": 10,
-    "data": [{
+    "data": {
         "topic": "psuba/tura",
-        "payload": "test123",
         "qos": 0,
-        "retain": True
-    }]
+        "messages": [{
+            "topic": "psuba/tura",
+            "payload": "test123",
+            "qos": 0,
+            "retain": True
+        }]
+    }
 }
 
 
@@ -56,9 +60,9 @@ class MQTTClient(mqtt.Client):
 
     def _generate_config(self, host, port, keepalive=60, timeout=10, data=None):
         """
-        :param data: dict: containing fields 'topic', 'payload', 'qos', 'retain'
+        :param data: list: dicts containing fields 'topic', 'payload', 'qos', 'retain'
         """
-        return config_dict = {
+        return {
             "host": host,
             "port": port,
             "keepalive": keepalive,
@@ -68,6 +72,7 @@ class MQTTClient(mqtt.Client):
 
     def run(self, **kws):
         if self.async:
+            print("async")
             super().loop_start()
             super().subscribe((kws["data"]["topic"], kws["data"]["qos"]))
         else:
@@ -87,3 +92,6 @@ class MQTTClient(mqtt.Client):
 
     def on_connect(self, client, userdata, flags, rc):
         print(f"{flags}\n RESULT: {rc}")
+
+    def __del__(self):
+        super().disconnect()
