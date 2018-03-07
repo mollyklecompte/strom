@@ -124,7 +124,7 @@ class MQTTClient(mqtt.Client):
         print(f"MESSAGE | {msg.payload} from {msg.topic}: {msg.qos} {msg.retain}")
 
     def on_log(self, client, userdata, lvl, buf):
-        print(f" LOG | {lvl}: {buf}")
+        print(f"LOG | {lvl}: {buf}")
 
     def on_connect(self, client, userdata, flags, rc):
         print(f"CONNECTION | {flags}\n RESULT: {rc}")
@@ -133,8 +133,6 @@ class MQTTClient(mqtt.Client):
     def on_subscribe(self, client, userdata, mid, granted_qos):
         print(f"SUBSCRIPTION | {mid}: {granted_qos}")
 
-    def on_unsubscribe(self, client, userdata, mid):
-        print(f"UNSUBSCRIBED | {mid}")
 
     def __del__(self):
         super().disconnect()
