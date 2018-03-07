@@ -9,8 +9,8 @@ __version__  = "0.1"
 __author__ = "Molly <molly@tura.io>"
 
 
-def build_rules_dicts(event: str, base_measure: tuple, **kwargs):
-    # event: str, event type (key in event_builder)
+def build_rules_from_event(event: str, base_measure: tuple, **kwargs):
+    # event: str, event type (key in event_builder_rules)
     # base_measure: tuple, name + type i.e. ('location', 'geo')
     base_event = event_builder[event]
     if base_measure[1] != base_event['base_measure_type']:
@@ -89,7 +89,7 @@ def build_template(strm_nm, src_key, measure_rules: list, uids: list,  usr_dsc="
     for m in measure_rules:
         if type(m) is tuple and len(m) == 4:
             measure_list.append((m[0], m[1]))
-            all_rules = [build_rules_dicts(
+            all_rules = [build_rules_from_event(
                 e[0], (m[0], m[1]), **e[1]) for e in m[3]]
             for rules in all_rules:
                 event_list.append(rules['event_rules'])

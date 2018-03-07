@@ -1,6 +1,10 @@
 from strom.funner_factory import *
 
 
+__version__  = "0.1"
+__author__ = "Molly <molly@tura.io>"
+
+
 class Event(dict):
     def __init__(self, builder_callback, **kwargs):
         super().__init__()
@@ -22,7 +26,7 @@ class Event(dict):
         return {k: self[k] for k in keys}
 
 
-event_builder = {
+event_builder_rules = {
     'turn': Event(create_turn_rules,
                   base_measure_type='geo',
                   required_input_settings=['turn_value'],
