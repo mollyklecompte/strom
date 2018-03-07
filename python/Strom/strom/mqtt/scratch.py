@@ -111,14 +111,10 @@ class MQTTClient(mqtt.Client):
         if self.async:
             print("async")
             super().loop_start()
-            # super().subscribe(kws["data"]["topic"], kws["data"]["qos"])
         else:
             super().connect(host=kws["host"], port=kws["port"], keepalive=kws["keepalive"])
-            # super().subscribe(kws["data"]["topic"], kws["data"]["qos"])
-            rc = 0
-            while rc == 0:
-                rc = super().loop(timeout=kws["timeout"])
-                print(rc)
+            while True:
+                super().loop(0.1)
 
     def stop_async_loop(self):
         """ must be called when running asynchronously """
@@ -142,3 +138,4 @@ class MQTTClient(mqtt.Client):
 
     def __del__(self):
         super().disconnect()
+        super().loop_stop()
