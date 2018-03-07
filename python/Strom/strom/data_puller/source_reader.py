@@ -6,6 +6,7 @@ from abc import ABCMeta, abstractmethod
 import requests
 
 from strom.kafka.consumer.consumer import Consumer
+from strom.mqtt.scratch import MQTTPullingClient, config
 from .data_formatter import CSVFormatter
 
 __version__ = '0.0.1'
@@ -96,6 +97,19 @@ class KafkaReader(SourceReader):
                     r = requests.post(self.context["endpoint"], data=json.dumps(cur_dstream))
                 elif self.queue is not None:
                     self.queue.put(cur_dstream)
+
+
+
 class MQTTReader(SourceReader):
     def __init__(self, context, queue=None):
         super().__init__(context, queue)
+        self.mqtt_client = MQTTPullingClient(self.context["uid"], self.context["userdata"], self.context["transport"], self.context["logger"], self.context["asynch"],)
+
+    @staticmethod
+    def print_payload(msg_payload):
+        print(msg_payload)
+
+    def read_input(self):
+        if self.context["format"] == "csv" or self.context["format"] == "list" :
+            self.mqtt_client.set_format_function(self.print_payload)
+        self.mqtt_client.run(**config)

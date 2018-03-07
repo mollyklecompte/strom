@@ -9,11 +9,11 @@ config = {
     "port": 1883,
     "keepalive": 30,
     "timeout": 10,
-    "data": [{
+    "data": {
         "topic": "psuba/tura",
         "payload": "test123",
         "qos": 0
-    }]
+    }
 }
 
 
@@ -77,3 +77,11 @@ class MQTTClient(mqtt.Client):
 
     def on_disconnect(self):
         pass
+
+class MQTTPullingClient(MQTTClient):
+    def set_format_function(self, format_function):
+        self.format_function = format_function
+
+    def on_message(self, client, userdata, msg):
+        self.format_function(msg.payload)
+
