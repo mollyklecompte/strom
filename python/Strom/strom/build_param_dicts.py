@@ -37,7 +37,7 @@ def get_default_params(function_name):
         "DeriveCumSum":DeriveCumsum,
         "DeriveDistance":DeriveDistance,
         "DeriveHeading":DeriveHeading,
-        "DeriveWindowedSum":DeriveWindowSum,
+        "DeriveWindowSum":DeriveWindowSum,
         "DeriveScaled":DeriveScaled,
         "DeriveInBox":DeriveInBox,
         }

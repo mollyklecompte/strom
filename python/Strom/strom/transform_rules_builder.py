@@ -12,6 +12,7 @@ class TransformRulesBuilder(object):
         self.transform_type = None
         self.rules_class = None
         self.builder_rules = {}
+        self.subkeys = []
         self.base_inputs = [
             'partition_list',
             'measure_list',
@@ -24,14 +25,17 @@ class TransformRulesBuilder(object):
             'transform_type': self._get_transform_type,
         }
 
+    def _create_id(self):
+        return str(uuid.uuid1())
+
     def _gen_auto_sets(self, outer_keys: dict):
         for key, func in self.auto_sets.items():
             outer_keys[key] = func()
         return outer_keys
 
-    def _create_id(self):
-        return str(uuid.uuid1())
-
+    def _get_allowed_params(self, transform):
+        key_sets = [self.builder_rules[transform][b] for b in self.subkeys]
+        return [k for set in key_sets for k in set]
 
     def _get_transform_type(self):
         return self.transform_type
@@ -51,7 +55,8 @@ class TransformRulesBuilder(object):
             else:
                 outer_keys[k] = v
         for k, v in outer_keys.items():
-            inputs.pop(k)
+            if k in inputs.keys():
+                inputs.pop(k)
         return outer_keys, inputs
 
     def _validate_base_inputs(self, inputs: dict):
@@ -62,22 +67,22 @@ class TransformRulesBuilder(object):
         if len(missing_inputs):
             raise ValueError(f"Missing required inputs: {missing_inputs}")
 
-    def _validate_params(self, params: dict, allowed_params: list):
-        for k in params.keys():
-            if k not in allowed_params:
-                params.pop(k)
+    def _validate_params(self, params: dict, transform: str):
+        extras = [k for k in params.keys() if k not in self._get_allowed_params(transform)]
+        for k in extras:
+            params.pop(k)
         return params
 
-    def _build_param_dict(self, function_name, params):
-        return build_param_dict(function_name, params.items())
+    def _build_param_dict(self, transform, params):
+        param_tups = [([x, k], params[k]) for x in self.subkeys for k in self.builder_rules[transform][x] if k in params]
+        return build_param_dict(self._get_transform_name(transform), param_tups)
 
-    def build_rules_dict(self, transform, inputs):
+    def build_rules_dict(self, transform: str, inputs: dict):
         function_name = self._get_transform_name(transform)
         sorted_keys = self._sort_keys(inputs)
         outer_keys = sorted_keys[0]
-        params = self._validate_params(sorted_keys[1], self.builder_rules[function_name]['params'])
+        params = self._validate_params(sorted_keys[1], transform)
         outer_keys['param_dict'] = self._build_param_dict(function_name, params)
-        outer_keys['transform_name'] = function_name
         outer_keys = self._gen_auto_sets(outer_keys)
 
         return self.rules_class(**outer_keys)
@@ -88,6 +93,7 @@ class FilterBuilder(TransformRulesBuilder):
         super().__init__()
         self.rules_class = FilterRules
         self.transform_type = 'filter_data'
+        self.subkeys = ['params']
         self.builder_rules = {
             'butter_lowpass': {
                 'function_name': 'ButterLowpass',
@@ -106,16 +112,23 @@ class FilterBuilder(TransformRulesBuilder):
             }
         }
 
+    def _build_param_dict(self, transform, params):
+        param_tups = [([k], params[k]) for x in self.subkeys for k in
+                      self.builder_rules[transform][x] if k in params]
+        return build_param_dict(self._get_transform_name(transform), param_tups)
+
+
 
 class DParamBuilder(TransformRulesBuilder):
     def __init__(self):
         super().__init__()
         self.rules_class = DParamRules
         self.transform_type = 'derive_param'
+        self.subkeys = ['func_params', 'measure_rules']
         self.builder_rules = {
             'heading': {
                 'function_name': 'DeriveHeading',
-                'params': [
+                'func_params': [
                     'window_len',
                     'units',
                     'heading_type',
@@ -133,7 +146,7 @@ class DParamBuilder(TransformRulesBuilder):
             },
             'slope': {
                 'function_name': 'DeriveSlope',
-                'params': [
+                'func_params': [
                     'window_len',
                 ],
                 'measure_rules': [
@@ -145,7 +158,7 @@ class DParamBuilder(TransformRulesBuilder):
             },
             'change': {
                 'function_name': 'DeriveChange',
-                'params': [
+                'func_params': [
                     'window_len',
                     'angle_change',
                 ],
@@ -157,7 +170,7 @@ class DParamBuilder(TransformRulesBuilder):
             },
             'cumsum': {
                 'function_name': 'DeriveCumsum',
-                'params': [
+                'func_params': [
                     'offset',
                 ],
                 'measure_rules': [
@@ -168,7 +181,7 @@ class DParamBuilder(TransformRulesBuilder):
             },
             'distance':  {
                 'function_name': 'DeriveDistance',
-                'params': [
+                'func_params': [
                     'window_len',
                     'distance_func',
                     'swap_lon_lat',
@@ -185,7 +198,7 @@ class DParamBuilder(TransformRulesBuilder):
             },
             'windowsum': {
                 'function_name': 'DeriveWindowSum',
-                'params': [
+                'func_params': [
                     'window_len',
                 ],
                 'measure_rules': [
@@ -196,7 +209,7 @@ class DParamBuilder(TransformRulesBuilder):
             },
             'scaled': {
                 'function_name': 'DeriveScaled',
-                'params': [
+                'func_params': [
                     'scalar',
                 ],
                 'measure_rules': [
@@ -207,7 +220,7 @@ class DParamBuilder(TransformRulesBuilder):
             },
             'inbox':  {
                 'function_name': 'DeriveInBox',
-                'params': [
+                'func_params': [
                     'upper_left_corner',
                     'lower_right_corner',
                 ],
@@ -222,3 +235,4 @@ class DParamBuilder(TransformRulesBuilder):
                 }
             },
         }
+
