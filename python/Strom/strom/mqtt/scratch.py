@@ -25,7 +25,7 @@ config = {
             "topic": "psuba",
             "payload": "test123",
             "qos": 0,
-            "retain": False
+            "retain": True
         }
         ]
     }
