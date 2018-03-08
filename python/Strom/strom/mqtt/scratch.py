@@ -1,26 +1,78 @@
 """ Non-blocking Python MQTT client with config """
+import json
+import time
+
 import paho.mqtt.client as mqtt
+import paho.mqtt.publish as pubber
 
 __version__ = "0.0.2"
 __author__ = "Adrian Agnic"
 
+
 config = {
     "host": "iot.eclipse.org",
     "port": 1883,
-    "keepalive": 30,
+    "keepalive": 60,
     "timeout": 10,
     "data": {
-        "topic": "psuba/tura",
-        "payload": "test123",
-        "qos": 0
+        "topic": "psuba",
+        "qos": 0,
+        "messages": [{
+            "topic": "psuba",
+            "payload": "hello tura",
+            "qos": 0,
+            "retain": True
+        },
+        {
+            "topic": "psuba",
+            "payload": "test123",
+            "qos": 0,
+            "retain": True
+        }
+        ]
     }
 }
 
+def generate_message(message, **kws):
+    return {
+        "topic": kws["data"]["topic"],
+        "payload": json.dumps(message),
+        "qos": kws["data"]["qos"],
+        "retain": True
+    }
+
+def publish(msg_list=[], payload=None, keep=False, **kws):
+    """
+    :param msg_list: list: containing dicts w/ fields 'topic', 'payload', 'qos', 'retain'
+    :param keep: bool: flag for retaining, used only with single message in list
+    """
+    print(f"publishing {len(msg_list)} to {kws['data']['topic']}")
+    if len(msg_list):
+        pubber.multiple(
+            msgs=msg_list,
+            hostname=kws["host"],
+            port=kws["port"],
+            keepalive=kws["keepalive"],
+            protocol=mqtt.MQTTv311,
+            transport="tcp"
+        )
+    else:
+        pubber.single(
+            topic=kws["data"]["topic"],
+            payload=payload,
+            qos=kws["data"]["qos"],
+            retain=keep,
+            hostname=kws["host"],
+            port=kws["port"],
+            keepalive=kws["keepalive"],
+            protocol=mqtt.MQTTv311,
+            transport="tcp"
+        )
+
 
 class MQTTClient(mqtt.Client):
-    # NOTE TODO look at TLS options
 
-    def __init__(self, uid=None, userdata=None, transport="tcp", logger=None, asynch=False, **kws):
+    def __init__(self, uid=None, userdata=config, transport="tcp", logger=None, asynch=False, **kws):
         """ use reinitialise() for changing instance properties
         :param uid: str: unique idenitifier for this client
         :param userdata: data to be passed through callbacks
@@ -54,29 +106,48 @@ class MQTTClient(mqtt.Client):
         """
         super().ws_set_options(path=path, headers=headers)
 
+    def _generate_config(self, host, port, topic, keepalive=60, timeout=10, qos=0):
+        return {
+            "host": host,
+            "port": port,
+            "keepalive": keepalive,
+            "timeout": timeout,
+            "data": {
+                "topic": topic,
+                "qos": qos
+            }
+        }
+
     def run(self, **kws):
         if self.async:
+            print("async")
             super().loop_start()
-            pass# dont have to connect
         else:
             super().connect(host=kws["host"], port=kws["port"], keepalive=kws["keepalive"])
-            super().subscribe((kws["data"]["topic"], kws["data"]["qos"]))
-            super().loop(timeout=kws["timeout"])
+            while True:
+                super().loop(0.1)
 
     def stop_async_loop(self):
+        """ must be called when running asynchronously """
         super().loop_stop()
 
     def on_message(self, client, userdata, msg):
-        print(f"{msg.payload} from {msg.topic}: {msg.qos} {msg.retain}")
+        print(f"MESSAGE | {msg.payload} from {msg.topic}: {msg.qos} {msg.retain}")
 
     def on_log(self, client, userdata, lvl, buf):
-        print(f"{lvl}: {buf}")
+        print(f"LOG | {lvl}: {buf}")
 
     def on_connect(self, client, userdata, flags, rc):
-        print(f"{flags}\n RESULT: {rc}")
+        print(f"CONNECTION | {flags}\n RESULT: {rc}")
+        super().subscribe(userdata["data"]["topic"], userdata["data"]["qos"])
 
-    def on_disconnect(self):
-        pass
+    def on_subscribe(self, client, userdata, mid, granted_qos):
+        print(f"SUBSCRIPTION | {mid}: {granted_qos}")
+
+
+    def __del__(self):
+        super().disconnect()
+        super().loop_stop()
 
 class MQTTPullingClient(MQTTClient):
     def set_format_function(self, format_function):
@@ -85,3 +156,13 @@ class MQTTPullingClient(MQTTClient):
     def on_message(self, client, userdata, msg):
         self.format_function(msg)
 
+    def run(self, **kws):
+        if "walltime" not in kws:
+            super().run(**kws)
+        else:
+            super().connect(host=kws["host"], port=kws["port"], keepalive=kws["keepalive"])
+            n = 0
+            while n < kws["walltime"]:
+                super().loop()
+                time.sleep(1)
+                n+=1

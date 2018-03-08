@@ -6,7 +6,7 @@ from abc import ABCMeta, abstractmethod
 import requests
 
 from strom.kafka.consumer.consumer import Consumer
-from strom.mqtt.scratch import MQTTPullingClient, config
+from strom.mqtt.scratch import MQTTPullingClient
 from .data_formatter import CSVFormatter
 
 __version__ = '0.0.1'
@@ -95,6 +95,7 @@ class KafkaReader(SourceReader):
                         cur_dstream[key] = str(val)
                 if self.context["endpoint"] is not None:
                     r = requests.post(self.context["endpoint"], data=json.dumps(cur_dstream))
+                    print(r)
                 elif self.queue is not None:
                     self.queue.put(cur_dstream)
 
@@ -115,8 +116,10 @@ class MQTTReader(SourceReader):
         for key, val in cur_dstream.items():
             if type(val) == uuid.UUID:
                 cur_dstream[key] = str(val)
+        print(cur_dstream)
         if self.context["endpoint"] is not None:
             r = requests.post(self.context["endpoint"], data=json.dumps(cur_dstream))
+            print(r)
         elif self.queue is not None:
             self.queue.put(cur_dstream)
 
@@ -124,6 +127,6 @@ class MQTTReader(SourceReader):
         if self.context["format"] == "csv" or self.context["format"] == "list" :
             self.data_formatter = CSVFormatter(self.context["mapping_list"],
                                                self.context["template"])
-            self.mqtt_client.set_format_function(self.print_payload)
+            self.mqtt_client.set_format_function(self.list_payload)
 
-        self.mqtt_client.run(**config)
+        self.mqtt_client.run(**self.context["userdata"])
