@@ -44,7 +44,7 @@ def publish(msg_list=[], payload=None, keep=False, **kws):
     :param msg_list: list: containing dicts w/ fields 'topic', 'payload', 'qos', 'retain'
     :param keep: bool: flag for retaining, used only with single message in list
     """
-    print(f"publishing {msg_list} to {kws['data']['topic']}")
+    print(f"publishing {len(msg_list)} to {kws['data']['topic']}")
     if len(msg_list):
         pubber.multiple(
             msgs=msg_list,
