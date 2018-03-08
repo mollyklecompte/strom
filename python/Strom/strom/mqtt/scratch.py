@@ -83,5 +83,5 @@ class MQTTPullingClient(MQTTClient):
         self.format_function = format_function
 
     def on_message(self, client, userdata, msg):
-        self.format_function(msg.payload)
+        self.format_function(msg)
 

@@ -106,10 +106,24 @@ class MQTTReader(SourceReader):
         self.mqtt_client = MQTTPullingClient(self.context["uid"], self.context["userdata"], self.context["transport"], self.context["logger"], self.context["asynch"],)
 
     @staticmethod
-    def print_payload(msg_payload):
-        print(msg_payload)
+    def print_payload(msg):
+        print(msg.payload)
+
+    def list_payload(self, msg):
+        list_payload = json.loads(msg.payload)
+        cur_dstream = self.data_formatter.format_record(list_payload)
+        for key, val in cur_dstream.items():
+            if type(val) == uuid.UUID:
+                cur_dstream[key] = str(val)
+        if self.context["endpoint"] is not None:
+            r = requests.post(self.context["endpoint"], data=json.dumps(cur_dstream))
+        elif self.queue is not None:
+            self.queue.put(cur_dstream)
 
     def read_input(self):
         if self.context["format"] == "csv" or self.context["format"] == "list" :
+            self.data_formatter = CSVFormatter(self.context["mapping_list"],
+                                               self.context["template"])
             self.mqtt_client.set_format_function(self.print_payload)
+
         self.mqtt_client.run(**config)
