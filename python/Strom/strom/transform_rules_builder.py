@@ -1,7 +1,7 @@
 import uuid
-from strom.dstream.stream_rules import DParamRules, FilterRules
-from strom.build_param_dicts import build_param_dict
 
+from strom.build_param_dicts import build_param_dict
+from strom.dstream.stream_rules import DParamRules, FilterRules
 
 __version__  = "0.1"
 __author__ = "Molly <molly@tura.io>"
@@ -233,6 +233,31 @@ class DParamBuilder(TransformRulesBuilder):
                         'geo',
                     ]
                 }
+            },
+            'threshold':{
+                'function_name': 'DeriveThreshold',
+                'func_params': [
+                    'threshold_value',
+                    'comparison_operator',
+                    'absolute_compare',
+                ],
+                'measure_rules': [
+                    'output_name',
+                    'target_measure',
+                ],
+                'measure_restrictions': {}
+            },
+            'logicalcombination': {
+                'function_name': 'DeriveLogicalCombination',
+                'func_params': [
+                    'combiner',
+                ],
+                'measure_rules': [
+                    'output_name',
+                    'first_measure',
+                    'second_measure',
+                ],
+                'measure_restrictions': {}
             },
         }
 
