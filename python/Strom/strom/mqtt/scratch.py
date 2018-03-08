@@ -34,7 +34,7 @@ config = {
 def generate_message(message, **kws):
     return {
         "topic": kws["data"]["topic"],
-        "payload": json.dumps([message]),
+        "payload": json.dumps(message),
         "qos": kws["data"]["qos"],
         "retain": True
     }
