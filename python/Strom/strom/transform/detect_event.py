@@ -7,8 +7,7 @@ apply_transformers calls the DetectEvent class on BStreams and stores output lis
 BStream["events"]
 """
 
-import numpy as np
-
+from strom.transform.derive_param import compare_threshold
 from strom.utils.logger.logger import logger
 
 
@@ -31,30 +30,6 @@ from strom.utils.logger.logger import logger
 #
 #     for e_ind in event_inds:
 #
-#
-
-
-def compare_threshold(data_array, comparison_operator, comparision_val, absolute_compare=False):
-    """
-    Fucntion for comparing an array to a values with a binary operator
-    :param data_array: input data
-    :type data_array: numpy array
-    :param comparison_operator: string representation of the binary operator for comparison
-    :type comparison_operator: str
-    :param comparision_val: The value to be compared against
-    :type comparision_val: float
-    :param absolute_compare: specifying whether to compare raw value or absolute value
-    :type absolute_compare: Boolean
-    :return: the indices where the binary operator is true
-    :rtype: numpy array
-    """
-    logger.debug("comparing: %s %d" %(comparison_operator, comparision_val))
-    if absolute_compare:
-        data_array = np.abs(data_array)
-    comparisons= {"==":np.equal, "!=":np.not_equal, ">=":np.greater_equal, "<=":np.less_equal, ">":np.greater, "<":np.less}
-    cur_comp = comparisons[comparison_operator]
-    match_inds = cur_comp(np.nan_to_num(data_array), comparision_val)
-    return match_inds
 
 
 def DetectThreshold(data_frame, params):

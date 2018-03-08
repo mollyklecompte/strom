@@ -137,6 +137,8 @@ class BStream(DStream):
                                                 "DeriveWindowSum":DeriveWindowSum,
                                                 "DeriveScaled":DeriveScaled,
                                                 "DeriveInBox":DeriveInBox,
+                                                "DeriveThreshold":DeriveThreshold,
+                                                "DeriveLogicalCombination":DeriveLogicalCombination,
                                                 }
         available_transforms["detect_event"] = {"DetectThreshold":DetectThreshold}
         return available_transforms[transform_type][transform_name]

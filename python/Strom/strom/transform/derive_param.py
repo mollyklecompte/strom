@@ -411,5 +411,84 @@ def DeriveInBox(data_frame, params=None):
     box_bool = in_box(position_array, params["func_params"]["upper_left_corner"], params["func_params"]["lower_right_corner"])
     return pd.DataFrame(data=box_bool, columns=[params["measure_rules"]["output_name"]], index=data_frame.index)
 
+#
+
+
+def compare_threshold(data_array, comparison_operator, comparision_val, absolute_compare=False):
+    """
+    Fucntion for comparing an array to a values with a binary operator
+    :param data_array: input data
+    :type data_array: numpy array
+    :param comparison_operator: string representation of the binary operator for comparison
+    :type comparison_operator: str
+    :param comparision_val: The value to be compared against
+    :type comparision_val: float
+    :param absolute_compare: specifying whether to compare raw value or absolute value
+    :type absolute_compare: Boolean
+    :return: the indices where the binary operator is true
+    :rtype: numpy array
+    """
+    logger.debug("comparing: %s %d" %(comparison_operator, comparision_val))
+    if absolute_compare:
+        data_array = np.abs(data_array)
+    comparisons= {"==":np.equal, "!=":np.not_equal, ">=":np.greater_equal, "<=":np.less_equal, ">":np.greater, "<":np.less}
+    cur_comp = comparisons[comparison_operator]
+    match_inds = cur_comp(np.nan_to_num(data_array), comparision_val)
+    return match_inds
+
+
+def DeriveThreshold(data_frame, params=None):
+    logger.debug("Starting DeriveThreshold")
+    if params == None:
+        params = {}
+        params["func_params"] = {
+            "threshold_value":("value to compare against",0,True),
+            "comparison_operator":("one of == != >= <= > <", "==",True),
+            "absolute_compare":("whether to compare against absolute value instead of raw value",False,False)}
+        params["measure_rules"] = {
+                                    "target_measure": ("name of the target measure", "measure_name", True),
+                                    "output_name": ("name of returned measure", "output_name", True)
+                                }
+    logger.debug("transforming data to %s" % (params["measure_rules"]["output_name"]))
+    target_array = data_frame[params["measure_rules"]["target_measure"]].values
+    threshold_bool = compare_threshold(target_array, params["func_params"]["comparison_operator"],params["func_params"]["threshold_value"],params["func_params"]["absolute_compare"])
+    return pd.DataFrame(data=threshold_bool, columns=[params["measure_rules"]["output_name"]], index=data_frame.index)
+
+
+def logical_combine(array1, array2, combiner):
+    """
+    Function for creating elementwise AND or OR of two vectors
+    :param array1: First array for combination
+    :type array1: (n,1) numpy array
+    :param array2: Second array for combination
+    :type array2: (n,1) numpy array
+    :param combiner: "AND" or "OR" specifying which method to combine
+    :type combiner: str
+    :return: Boolean array combining the two inputs
+    :rtype: (n,1) boolean numpy array
+    """
+    logger.debug(f"Combining with{combiner}")
+    combining_func = {"AND":np.logical_and, "OR":np.logical_or}
+    return combining_func[combiner](array1, array2)
+
+def DeriveLogicalCombination(data_frame, params=None):
+    logger.debug("Starting DeriveLogicalCombination")
+    if params == None:
+        params = {}
+        params["func_params"] = {"combiner":("Either AND or OR string specifying which operator to use","AND",True)}
+        params["measure_rules"] = {
+                                    "first_measure": ("name of first measure to be combined", "measure_name", True),
+                                    "second_measure": ("name of second measure to be combined", "measure_name", True),
+                                    "output_name": ("name of returned measure", "output_name", True)
+                                }
+
+    logger.debug("Combining {} and {} data to {}".format(params["measure_rules"]["first_measure"],params["measure_rules"]["second_measure"],params["measure_rules"]["output_name"]))
+    first_array = data_frame[params["measure_rules"]["first_measure"]].values
+    second_array = data_frame[params["measure_rules"]["second_measure"]].values
+    print(first_array, second_array)
+    combined = logical_combine(first_array, second_array, params["func_params"]["combiner"])
+    return pd.DataFrame(data=combined, columns=[params["measure_rules"]["output_name"]],
+                            index=data_frame.index)
+
 
 
