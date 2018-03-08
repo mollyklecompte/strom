@@ -1,4 +1,5 @@
 """ Non-blocking Python MQTT client with config """
+import json
 import paho.mqtt.client as mqtt
 import paho.mqtt.publish as pubber
 
@@ -29,6 +30,14 @@ config = {
         ]
     }
 }
+
+def generate_message(message, **kws):
+    return {
+        "topic": kws["data"]["topic"],
+        "payload": json.dumps([message]),
+        "qos": kws["data"]["qos"],
+        "retain": True
+    }
 
 def publish(msg_list=[], payload=None, keep=False, **kws):
     """
