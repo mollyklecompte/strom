@@ -4,6 +4,7 @@ from strom.data_puller.context import *
 from strom.data_puller.source_reader import *
 from strom.dstream.dstream import DStream
 from strom.kafka.consumer.consumer import Consumer
+from strom.kafka.producer.producer import Producer
 from strom.mqtt.scratch import generate_message, config, publish, MQTTPullingClient
 
 
@@ -105,6 +106,8 @@ class TestKafkaReader(unittest.TestCase):
         self.offset = 28
         self.data_format = "csv"
         self.timeout = 1000
+        self.test_data = "strom/data_puller/test/abalone0.csv"
+
         self.kc = KafkaContext(self.mapping_list, self.template, url=self.url, topic=self.topic, offset=self.offset, data_format=self.data_format, timeout=self.timeout)
         self.kafka_reader = KafkaReader(self.kc)
 
@@ -113,6 +116,19 @@ class TestKafkaReader(unittest.TestCase):
         self.assertIsInstance(self.kafka_reader.consumer, Consumer)
 
     def test_read_input(self):
-        pass
+        kafka_producer = Producer(self.url, self.topic)
+        ab_file = open(self.test_data)
+        for ab_row in ab_file.readlines():
+            kafka_producer.produce(json.dumps(ab_row.rstrip().split(",")).encode())
+        ab_file.close()
+
+        self.kafka_reader.read_input()
+        kc2 = self.kafka_reader.return_context()
+        self.kafka_reader = KafkaReader(kc2)
+        ab_file = open(self.test_data)
+        for ab_row in ab_file.readlines():
+            kafka_producer.produce(json.dumps(ab_row.rstrip().split(",")).encode())
+        ab_file.close()
+        self.kafka_reader.read_input()
 
 
