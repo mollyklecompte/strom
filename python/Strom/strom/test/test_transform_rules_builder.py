@@ -69,3 +69,11 @@ class TestTransformRulesBuilder(unittest.TestCase):
         pd_2 = self.test_dparam_builder._build_param_dict("windowsum", window_ps)
         self.assertDictEqual(pd_2, {'func_params': {'window_len': 4}, 'measure_rules': {'target_measure': 'timestamp', 'output_name': 'time_window_sum'}}
 )
+
+    def test_builder_rules_dict(self):
+        r = self.test_filter_builder.build_rules_dict('butter_lowpass', self.test_filter_inputs_butter_1)
+        print(r)
+
+        r2 = self.test_dparam_builder.build_rules_dict('windowsum', self.test_param_inputs_windowsum_1)
+
+        print("\n PARAM ", r2)

@@ -16,7 +16,7 @@ class Event(dict):
 
     def _validate_keys(self):
         missing = []
-        for i in ['base_measure_type', 'required_input_settings', 'default_settings']:
+        for i in ['base_measure_types', 'required_input_settings', 'default_settings']:
             if i not in self.keys():
                 missing.append(i)
             if len(missing) > 0:
@@ -28,7 +28,7 @@ class Event(dict):
 
 event_builder_rules = {
     'turn': Event(create_turn_rules,
-                  base_measure_type='geo',
+                  base_measure_types=['geo'],
                   required_input_settings=['turn_value'],
                   default_settings={
                       'units': "deg",

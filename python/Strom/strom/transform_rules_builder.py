@@ -78,11 +78,13 @@ class TransformRulesBuilder(object):
         return build_param_dict(self._get_transform_name(transform), param_tups)
 
     def build_rules_dict(self, transform: str, inputs: dict):
-        function_name = self._get_transform_name(transform)
         sorted_keys = self._sort_keys(inputs)
         outer_keys = sorted_keys[0]
         params = self._validate_params(sorted_keys[1], transform)
-        outer_keys['param_dict'] = self._build_param_dict(function_name, params)
+        print('PARAMS', params)
+        param_dict = self._build_param_dict(transform, params)
+        outer_keys['param_dict'] = param_dict
+        print('PARAM DICT', param_dict)
         outer_keys = self._gen_auto_sets(outer_keys)
 
         return self.rules_class(**outer_keys)
