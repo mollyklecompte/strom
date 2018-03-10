@@ -184,53 +184,71 @@ class TestFunFactory(unittest.TestCase):
         with self.assertRaises(ValueError):
             build_rules_from_event('turn', [('location', 'geo')], **k4)
 
-    def test_build_temp_filters(self):
+    def test_build_temp_event_filters(self):
         skey = 'driver_id'
         uids = ['driver-id', 'idd']
         k1 = {'partition_list': [], 'turn_value': 45, 'stream_id': 'abc123'}
         f1 = ('butter_lowpass', {"partition_list": [], "measure_list": ["location"]})
-        m = [([('location', 'geo')], [], [], [('turn', k1, ['location']),])]
-        m2 = [([('location', 'geo')], [], [], [('turn', k1, ['location_buttery']),])]
+        f2 = ('butter_lowpass', {"partition_list": [], "measure_list": ["location"]})
+        m = [([('location', 'geo')], [], [], [('turn', k1, ['location'])])]
+        m2 = [([('location', 'geo')], [], [], [('turn', k1, ['location_buttered']),])]
 
 
         t = build_template('test', skey, m, uids, [f1])
         print("TEMPLATE 1 \n", t)
-        t2 = build_template('test', skey, m2, uids, [f1])
+        self.assertIn('turn_45.000000_location', t['event_rules'])
+        t2 = build_template('test', skey, m2, uids, [f2])
         print("TEMPLATE 2 \n", t2)
+        self.assertIn('turn_45.000000_location_buttered', t2['event_rules'])
 
-    def test_build_template(self):
+    def test_build_temp_dparam(self):
+        f = ('butter_lowpass', {"partition_list": [], "measure_list": ["location"]})
+        m = [([('location', 'geo')], [], [('heading', {'partition_list': [], 'measure_list': ['location'], }, {'spatial_measure': 'location'})], [])]
+        t = build_template('test','driver_id', m, ['driver-id', 'idd'], [])
+        self.assertEqual(len(t['dparam_rules']), 1)
+        print(t)
+        self.assertEqual(t['dparam_rules'][0]['transform_name'], 'DeriveHeading')
+
+        m2 = [([('location', 'geo')], [], [('heading', {'partition_list': [], 'measure_list': ['location_buttered'], }, {'spatial_measure': 'location_buttered'})], [])]
+        t2 = build_template('test','driver_id', m2, ['driver-id', 'idd'], [f])
+
+    def test_build_template_event(self):
         skey = 'driver_id'
         uids = ['driver-id', 'idd']
         k1 = {'partition_list': [], 'turn_value': 45, 'stream_id': 'abc123'}
         k2 = {'partition_list': [], 'turn_value': 66, 'stream_id': 'abc123'}
         k3 = {'partition_list': [], 'turn_value': 30, 'stream_id': 'abc123'}
         k4 = {'partition_list': [], 'turn_value': 57, 'stream_id': 'abc123'}
-        m = [([('location', 'geo')], [], [('turn', k1), ('turn', k2)])]
-        m2 = [([('location', 'geo')], [], [('turn', k1), ]), ('smokeation', 'geo', [], [('turn', k2)])]
-        m3 = [([('location', 'geo')], [], [('turn', k1), ('turn', k2)]), ('smokeation', 'geo', [], [('turn', k3), ('turn', k4)])]
+        m = [([('location', 'geo')], [], [], [('turn', k1, ['location']), ('turn', k2, ['location'])])]
+        m2 = [([('location', 'geo'), ('smokeation', 'geo')], [], [], [('turn', k1, ['location']),  ('turn', k2, ['smokeation'])])]
+        m3 = [([('location', 'geo')], [], [], [('turn', k1, ['location']), ('turn', k2, ['location'])]), ([('smokeation', 'geo')], [], [], [('turn', k3, ['smokeation']), ('turn', k4, ['smokeation'])])]
+        m4 = [([('location', 'geo')], [], [], [('turn', k1, ['smokeation'])])]
 
-        # t = build_template('test', skey, m, uids, [])
-        # self.assertEqual(len(t['event_rules']), 2)
-        # self.assertEqual(len(t['measures']), 1)
-        # self.assertEqual(len(t['dparam_rules']), 4)
-        # for i in ['turn_45.000000_location', 'turn_66.000000_location']:
-        #     self.assertIn(i, t['event_rules'])
-        #
-        # t2 = build_template('test', skey, m2, uids, [])
-        # self.assertEqual(len(t2['event_rules']), 2)
-        # self.assertEqual(len(t2['measures']), 2)
-        # self.assertEqual(len(t2['dparam_rules']), 4)
-        # for i in ['turn_45.000000_location', 'turn_66.000000_smokeation']:
-        #     self.assertIn(i, t2['event_rules'])
-        #
-        #
-        # t3 = build_template('test', skey, m3, uids, [])
-        # self.assertEqual(len(t3['event_rules']), 4)
-        # self.assertEqual(len(t3['measures']), 2)
-        # self.assertEqual(len(t3['dparam_rules']), 8)
-        # for i in ['turn_45.000000_location', 'turn_66.000000_location', 'turn_30.000000_smokeation', 'turn_57.000000_smokeation']:
-        #     self.assertIn(i, t3['event_rules'])
-        #
+        t = build_template('test', skey, m, uids, [])
+        self.assertEqual(len(t['event_rules']), 2)
+        self.assertEqual(len(t['measures']), 1)
+        self.assertEqual(len(t['dparam_rules']), 4)
+        for i in ['turn_45.000000_location', 'turn_66.000000_location']:
+            self.assertIn(i, t['event_rules'])
+
+        t2 = build_template('test', skey, m2, uids, [])
+        self.assertEqual(len(t2['event_rules']), 2)
+        self.assertEqual(len(t2['measures']), 2)
+        self.assertEqual(len(t2['dparam_rules']), 4)
+        for i in ['turn_45.000000_location', 'turn_66.000000_smokeation']:
+            self.assertIn(i, t2['event_rules'])
+
+
+        t3 = build_template('test', skey, m3, uids, [])
+        self.assertEqual(len(t3['event_rules']), 4)
+        self.assertEqual(len(t3['measures']), 2)
+        self.assertEqual(len(t3['dparam_rules']), 8)
+        for i in ['turn_45.000000_location', 'turn_66.000000_location', 'turn_30.000000_smokeation', 'turn_57.000000_smokeation']:
+            self.assertIn(i, t3['event_rules'])
+
+        with self.assertRaises(ValueError):
+            build_template('test', skey, m4, uids, [])
+    #
         # with self.assertRaises(TypeError):
         #     build_template('test', skey, [1,2,3,4], uids, [])
         #

@@ -35,6 +35,9 @@ def build_rules_from_event(event: str, base_measures: list, **kwargs):
         partition_list = inputs.pop('partition_list')
         stream_id = inputs.pop('stream_id')
         fn = base_event['callback']
+        print("INPUTS \n", inputs)
+        print("base meas", base_measures)
+        print("ARGS", *[m[0] for m in base_measures], partition_list, stream_id, inputs)
         rules = fn(*[m[0] for m in base_measures], partition_list, stream_id, **inputs)
 
         return rules
@@ -99,7 +102,7 @@ def build_template(strm_nm, src_key, measure_rules: list, uids: list, filters: l
     print('FILTERED LIST: ', filter_list)
 
     # all filtered measures
-    filtered_measures = [f"{m}{f['param_dict']['filter_name'][2]}" for f in filter_list for m in f['measure_list']]
+    filtered_measures = [f"{m}{f['param_dict']['filter_name']}" for f in filter_list for m in f['measure_list']]
 
     event_list = []
     dparam_list = []
@@ -110,30 +113,53 @@ def build_template(strm_nm, src_key, measure_rules: list, uids: list, filters: l
         rule = list(rule)
         rule[1] = [(f, m[1]) for f in filtered_measures for m in rule[0] if m[0] in f]
 
-        print("Rule: ", rule)
-
+        # print('RULE', rule)
         if len(rule[3]):
             for event in rule[3]:
-                event_build_measures = [msr if m == msr[0] else f if m ==f[0] else None for m in event[2] for msr in rule[0] for f in rule[1]]
+                event_build_measures = []
+                for m in event[2]:
+                    if m in [msr[0] for msr in rule[0]]:
+                        for msr in rule[0]:
+                            if m == msr[0]:
+                                event_build_measures.append(msr)
+                    elif m in [f[0] for f in rule[1]]:
+                        for f in rule[1]:
+                            if m == f[0]:
+                                event_build_measures.append(f)
+                    else:
+                        raise ValueError(f"Event build missing measure {m}")
+
+
+                # event_build_measures = [msr if m == msr[0] else f if m ==f[0] else None for m in event[2] for f in rule[1] for msr in rule[0] ]
                 print("BUILD MEASURES \n", event_build_measures )
 
-                if not None in event_build_measures:
-                    rule_set = build_rules_from_event(event[0], *event_build_measures, **event[1])
-                    event_list.append(rule_set['event_rules'])
-                    dparam_list.extend(rule_set['dparam_rules'])
-                else:
-                    raise ValueError("ya goofed")
+
+                rule_set = build_rules_from_event(event[0], event_build_measures, **event[1])
+                event_list.append(rule_set['event_rules'])
+                dparam_list.extend(rule_set['dparam_rules'])
+
 
         if len(rule[2]):
             for dp in rule[2]:
-                dp_build_measures = [(m, msr) if v == msr[0] else (m, f) if v == f[0] else None for m, v in dp[2].items() for msr in rule[0] for f in rule[1]]
+                dp_build_measures = []
+                for measure, val in dp[2].items():
+                    if val in [msr[0] for msr in rule[0]]:
+                        for msr in rule[0]:
+                            if val == msr[0]:
+                                dp_build_measures.append((measure, val))
+                    elif val in [f[0] for f in rule[1]]:
+                        for f in rule[1]:
+                            if val == f[0]:
+                                dp_build_measures.append((f, val))
+                    else:
+                        raise ValueError(f"Derived param build missing measure {measure}")
 
-                if not None in dp_build_measures:
-                    for bm in dp_build_measures:
-                        dp[1][bm[0]] = bm[1]
-                    dparam_list.append(dp_builder(dp[0], **dp[1]))
-                else:
-                    raise ValueError("ya goofed i say")
+                # dp_build_measures = [(m, msr) if v == msr[0] else (m, f) if v == f[0] else None for m, v in dp[2].items() for msr in rule[0] for f in rule[1]]
+
+                for bm in dp_build_measures:
+                    dp[1][bm[0]] = bm[1]
+                dparam_list.append(dp_builder.build_rules_dict(dp[0], dp[1]))
+
 
 
             # all_rules = [build_rules_from_event(
