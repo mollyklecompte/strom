@@ -255,7 +255,7 @@ class TestFunFactory(unittest.TestCase):
         # with self.assertRaises(TypeError):
         #     build_template('test', skey,(1,2,3), uids, [])
 
-    def test_update(self):
+    def test_update_template(self):
         name_update = {'field': 'stream_name', 'type': 'new', 'args': ['shit'], 'kwargs': {}}
         desc_update = {'field': 'user_description', 'type': 'new', 'args': ['i hate this shit'], 'kwargs': {}}
         source_key_update = {'field': 'source_key', 'type': 'new', 'args': ['vom_id'], 'kwargs': {}}
