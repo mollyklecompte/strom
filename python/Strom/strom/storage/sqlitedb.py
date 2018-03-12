@@ -48,7 +48,14 @@ class SqliteDB(PandaDB):
         return super().retrieve(table, col, val, latest)
 
     def delete(self, table, col=None, val=None):
-        super().delete(table, col, val)
+        """ pandadb override, delete using query method """
+        stmnt = "DELETE FROM {0}".format(str(table))
+        if col:
+            if val:
+                stmnt += "WHERE {0} = {1};".format(str(col), str(val))
+            stmnt = "DELETE {0} FROM {1};".format(str(col), str(table))
+            print(stmnt)
+        self.query(stmnt)
 
     def rowcount(self, table):
         return super().rowcount(table)

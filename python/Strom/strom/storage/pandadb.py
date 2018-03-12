@@ -160,7 +160,7 @@ class PandaDB(metaclass=ABCMeta):
 
     @abstractmethod
     def delete(self, table, col, val):
-        """
+        """ override this
         :param table: name of table
         :type table: str
         :param col: name of column in table
@@ -168,13 +168,14 @@ class PandaDB(metaclass=ABCMeta):
         :param val: value of column to target
         :type val: any, enclosing quotes if str (eg. "'stringValue'")
         """
-        stmnt = "DELETE FROM {0}".format(table)
-        if col:
-            if val:
-                stmnt += f"WHERE {col} = {val};"
-            stmnt = f"DELETE {col} FROM {table};"
-        self.select(query=stmnt)
+        pass
 
     @abstractmethod
     def rowcount(self, table):
-        pass
+        """ returns amount of row's for given table
+        :param table: name of table
+        :type table: str
+        :return: int
+        """
+        qry = "SELECT COUNT(*) FROM {0};".format(table)
+        return self.select(query=qry)
