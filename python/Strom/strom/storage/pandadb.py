@@ -160,7 +160,7 @@ class PandaDB(metaclass=ABCMeta):
 
     @abstractmethod
     def delete(self, table, col, val):
-        """ override this
+        """ override this to use overridden query method
         :param table: name of table
         :type table: str
         :param col: name of column in table
@@ -177,5 +177,5 @@ class PandaDB(metaclass=ABCMeta):
         :type table: str
         :return: int
         """
-        qry = "SELECT COUNT(*) FROM {0};".format(table)
+        qry = "SELECT COUNT(*) FROM {0};".format(str(table))
         return self.select(query=qry)

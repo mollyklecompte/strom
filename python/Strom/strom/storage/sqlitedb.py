@@ -52,10 +52,13 @@ class SqliteDB(PandaDB):
         stmnt = "DELETE FROM {0}".format(str(table))
         if col:
             if val:
-                stmnt += "WHERE {0} = {1};".format(str(col), str(val))
-            stmnt = "DELETE {0} FROM {1};".format(str(col), str(table))
-            print(stmnt)
-        self.query(stmnt)
+                stmnt += " WHERE {0} = {1};".format(str(col), str(val))
+                print(stmnt)
+                self.query(stmnt)
+                return True
+            df = self.select(table=str(table))
+            del df[col]
+            self.table(df, table, "replace")
 
     def rowcount(self, table):
         return super().rowcount(table)
