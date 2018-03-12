@@ -174,3 +174,7 @@ class PandaDB(metaclass=ABCMeta):
                 stmnt += f"WHERE {col} = {val};"
             stmnt = f"DELETE {col} FROM {table};"
         self.select(query=stmnt)
+
+    @abstractmethod
+    def rowcount(self, table):
+        pass

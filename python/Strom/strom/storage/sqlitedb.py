@@ -49,3 +49,6 @@ class SqliteDB(PandaDB):
 
     def delete(self, table, col=None, val=None):
         super().delete(table, col, val)
+
+    def rowcount(self, table):
+        return super().rowcount(table)
