@@ -46,3 +46,6 @@ class SqliteDB(PandaDB):
 
     def retrieve(self, table, col, val, latest=False):
         return super().retrieve(table, col, val, latest)
+
+    def delete(self, table, col=None, val=None):
+        super().delete(table, col, val)

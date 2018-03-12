@@ -157,3 +157,20 @@ class PandaDB(metaclass=ABCMeta):
         stmnt = "SELECT * FROM {0} WHERE {1}={2};".format(str(table), str(col), str(val))
         dfres = self.select(query=stmnt)
         return dfres
+
+    @abstractmethod
+    def delete(self, table, col, val):
+        """
+        :param table: name of table
+        :type table: str
+        :param col: name of column in table
+        :type col: str
+        :param val: value of column to target
+        :type val: any, enclosing quotes if str (eg. "'stringValue'")
+        """
+        stmnt = "DELETE FROM {0}".format(table)
+        if col:
+            if val:
+                stmnt += f"WHERE {col} = {val};"
+            stmnt = f"DELETE {col} FROM {table};"
+        self.select(query=stmnt)
