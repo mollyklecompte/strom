@@ -32,7 +32,7 @@ class TestCoordinator(unittest.TestCase):
         parsed_events = self.coordinator._parse_events(self.bstream)
         self.assertIsInstance(parsed_events, list)
         for event_dict in parsed_events:
-            self.assertIn(event_dict["event"], [event_names.replace(" ","") for event_names in self.bstream["event_rules"].keys()])
+            self.assertIn(event_dict["event"], [event_names.replace(" ","")+"_"+str(self.bstream["stream_token"]) for event_names in self.bstream["event_rules"].keys()])
             self.assertIsInstance(event_dict["data"], str)
 
     def test_post_events(self):
