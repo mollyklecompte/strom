@@ -48,7 +48,7 @@ class SqliteDB(PandaDB):
         return super().retrieve(table, col, val, latest)
 
     def delete(self, table, col=None, val=None):
-        """ pandadb override, delete using query method """
+        """ pandadb override, delete using sqlite query method """
         stmnt = "DELETE FROM {0}".format(str(table))
         if col:
             if val:
@@ -58,8 +58,11 @@ class SqliteDB(PandaDB):
                 return True
             df = self.select(table=str(table))
             del df[col]
-            del df['level_0']#NOTE TODO CHECK
-            self.table(df, table, "replace")
+            try:
+                self.table(df, table, "replace")
+            except:
+                del df['index']
+                del df['level_0'] 
 
     def rowcount(self, table):
         return super().rowcount(table)
