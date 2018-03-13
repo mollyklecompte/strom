@@ -178,4 +178,6 @@ class PandaDB(metaclass=ABCMeta):
         :return: int
         """
         qry = "SELECT COUNT(*) FROM {0};".format(str(table))
-        return self.select(query=qry)
+        res = self.select(query=qry)
+        return res.iloc[0]["COUNT(*)"]
+
