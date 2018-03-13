@@ -58,6 +58,7 @@ class SqliteDB(PandaDB):
                 return True
             df = self.select(table=str(table))
             del df[col]
+            del df['level_0']#NOTE TODO CHECK
             self.table(df, table, "replace")
 
     def rowcount(self, table):
