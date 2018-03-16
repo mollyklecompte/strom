@@ -6,7 +6,7 @@ from abc import ABCMeta, abstractmethod
 import requests
 
 from strom.kafka.consumer.consumer import Consumer
-from strom.mqtt.scratch import MQTTPullingClient
+from strom.mqtt.client import MQTTPullingClient
 from .data_formatter import CSVFormatter
 
 __version__ = '0.0.1'

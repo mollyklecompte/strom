@@ -1,5 +1,7 @@
 import unittest
+
 from .scratch import MQTTClient, publish, config
+
 
 class TestMQTTClient(unittest.TestCase):
 
