@@ -61,11 +61,13 @@ def DetectThreshold(data_frame, params):
     logger.fatal("staring DetectThreshold")
     if params == None:
         params = {}
-        params["event_rules"] = {"measure":"measure_name", "threshold_value":"value to compare against",
-                                    "comparison_operator":["==", "!=", ">=", "<=", ">", "<"],
-                                    "absolute_compare":False}
-        params["event_name"] = "threshold_event"
-        params["stream_id"] = "foo"
+        params["event_rules"] = {
+                                    "measure":("name of measure to be thresholded","measure_name", True),
+                                    "threshold_value":("value to compare against",0,True),
+                                    "comparison_operator":("one of == != >= <= > <", "==",True),
+                                    "absolute_compare":("whether to compare against absolute value instead of raw value",False,False)}
+        params["event_name"] = ("name of event","threshold_event",True)
+        params["stream_id"] = ("stream_token that this event was found in","UUID",True)
         return params
 
     logger.debug("Finding events")
