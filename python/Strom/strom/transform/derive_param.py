@@ -5,6 +5,7 @@ such as finding distance from a positional measure or the slope of an input meas
 measures may be of difference dimension than their inputs.
 These DeriveParam functions are called by apply_transformer on BStream data and the results are
 stored as BStream["derived_measures"]
+TODO: add datetime conversion param and location combiner param
 """
 
 import numpy as np
