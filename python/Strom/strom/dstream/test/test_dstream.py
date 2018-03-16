@@ -67,6 +67,9 @@ class TestDStream(unittest.TestCase):
         self.assertEqual(test_dict["version"], self.dstream["version"])
         self.assertIsInstance(self.dstream["stream_token"], uuid.UUID)
 
+    def test_filter(self):
+        self.dstream.add_filter()
+
 
 
 if __name__ == "__main__":

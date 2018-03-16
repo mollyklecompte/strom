@@ -61,12 +61,23 @@ class DStream(dict):
         self["foreign_keys"].append({foreign_key: None})
         logger.debug("added key %s" % (foreign_key))
 
+    def add_data_rules(self, data_rules_dict):
+        self['data_rules'] = data_rules_dict
+
     def add_filter(self, filter_dict):
         """Add filter to our storage.
          filter_dict: dict of parameters for filter class object"""
-        filter_dict["filter_id"] = uuid.uuid1()
-        self["filters"].append(filter_dict)
-        logger.debug("added filter")
+        if len(self["filters"]):
+            fkeys_noid = [k for k in self["filters"][0].keys() if k != "transform_id"]
+            filters_noid = [{k: f[k] for k in fkeys_noid} for f in self["filters"]]
+            if filter_dict not in filters_noid:
+                filter_dict["filter_id"] = uuid.uuid1()
+                self["filters"].append(filter_dict)
+                logger.debug("added filter")
+        else:
+            filter_dict["filter_id"] = uuid.uuid1()
+            self["filters"].append(filter_dict)
+            logger.debug("added filter")
 
     def add_derived_param(self, dparam_dict):
         """Add dparam_dict to our dparam_rules
@@ -117,9 +128,6 @@ class DStream(dict):
     def add_foreign_keys(self, fks):
         for fk in fks:
             self.add_fk(fk)
-
-    def add_data_rules(self, rules_dict):
-        self["data_rules"] = rules_dict
 
     def load_from_json(self, json_file):
         """

@@ -1,5 +1,6 @@
 import unittest
 import json
+from copy import deepcopy
 from strom.fun_factory import *
 from strom.dstream.dstream import DStream
 
@@ -148,7 +149,7 @@ class TestFunFactory(unittest.TestCase):
     ]
 
     def test_create_template(self):
-        t1 = create_template_dstream('tester', 'driver_id',[('location', 'geo')], ['driver-id', 'idd'], [('test_event', self.test_event_rules)], self.test_dparam_rules_list, [])
+        t1 = create_template_dstream('tester', 'driver_id',[('location', 'geo')], ['driver-id', 'idd'], [('test_event', self.test_event_rules)], self.test_dparam_rules_list, [], {})
 
         self.assertEqual(t1['stream_name'], 'tester')
         self.assertEqual(t1['source_key'], 'driver_id')
@@ -195,10 +196,8 @@ class TestFunFactory(unittest.TestCase):
 
 
         t = build_template('test', skey, m, uids, [f1])
-        print("TEMPLATE 1 \n", t)
         self.assertIn('turn_45.000000_location', t['event_rules'])
         t2 = build_template('test', skey, m2, uids, [f2])
-        print("TEMPLATE 2 \n", t2)
         self.assertIn('turn_45.000000_location_buttered', t2['event_rules'])
 
     def test_build_temp_dparam(self):
@@ -206,7 +205,6 @@ class TestFunFactory(unittest.TestCase):
         m = [([('location', 'geo')], [], [('heading', {'partition_list': [], 'measure_list': ['location'], }, {'spatial_measure': 'location'})], [])]
         t = build_template('test','driver_id', m, ['driver-id', 'idd'], [])
         self.assertEqual(len(t['dparam_rules']), 1)
-        print(t)
         self.assertEqual(t['dparam_rules'][0]['transform_name'], 'DeriveHeading')
 
         m2 = [([('location', 'geo')], [], [('heading', {'partition_list': [], 'measure_list': ['location_buttered'], }, {'spatial_measure': 'location_buttered'})], [])]
@@ -386,6 +384,89 @@ class TestFunFactory(unittest.TestCase):
         self.assertIn(('derived param', 'DeriveInBox', 'measure', 'location'), bad_guys)
         self.assertIn(('event', 'test_event', 'derived param', 'head1'), bad_guys)
         self.assertIn(('event', 'fuck_this_event', 'derived param', 'head1'), bad_guys)
+    #
+    def test_build_data_rules(self):
+        source_inds = [0,1,2,4,6,8,3]
+        t_keys = [["user_ids","sex"],["measures","length", "val"],["measures","diameter", "val"],["measures","whole_weight", "val"],["measures","viscera_weight", "val"],["fields","rings"],["timestamp"]]
+        d = build_data_rules(source_inds, t_keys)
+        self.assertDictEqual(d,{'pull': False, 'puller': {}, 'mapping_list': [
+            (0,["user_ids","sex"]),
+            (1,["measures","length", "val"]),
+            (2,["measures","diameter", "val"]),
+            (4,["measures","whole_weight", "val"]),
+            (6,["measures","viscera_weight", "val"]),
+            (8,["fields","rings"]),
+            (3,["timestamp"])
+        ]})
+    #
+        d2 = build_data_rules(source_inds, t_keys, puller=['dir', [['path', 'strom/data_puller/test/'], ['file_type', 'csv']]])
+
+        self.assertDictEqual(d2, {'pull': True, 'puller': {
+            "type": "dir",
+            "inputs": {
+                "path": "strom/data_puller/test/",
+                "file_type": "csv"
+            }
+        }, 'mapping_list': [
+            (0, ["user_ids", "sex"]),
+            (1, ["measures", "length", "val"]),
+            (2, ["measures", "diameter", "val"]),
+            (4, ["measures", "whole_weight", "val"]),
+            (6, ["measures", "viscera_weight", "val"]),
+            (8, ["fields", "rings"]),
+            (3, ["timestamp"])
+        ]})
+
+        d3 = build_data_rules(source_inds, t_keys, puller=['dir', [['path', 'strom/data_puller/test/'], ['file_type', 'csv'], ['delimiter', ',']]])
+        self.assertDictEqual(d3, {'pull': True, 'puller': {
+            "type": "dir",
+            "inputs": {
+                "path": "strom/data_puller/test/",
+                "file_type": "csv",
+                "delimiter": ","
+            }
+        }, 'mapping_list': [
+            (0, ["user_ids", "sex"]),
+            (1, ["measures", "length", "val"]),
+            (2, ["measures", "diameter", "val"]),
+            (4, ["measures", "whole_weight", "val"]),
+            (6, ["measures", "viscera_weight", "val"]),
+            (8, ["fields", "rings"]),
+            (3, ["timestamp"])
+        ]})
+
+    def test_build_new_rules_updates(self):
+        k = {'partition_list': [], 'turn_value': 99, 'stream_id': 'abc123'}
+        f = ('butter_lowpass', {"partition_list": [], "measure_list": ["where"]})
+        m = [([('location', 'geo')], [], [], [('turn', k, ['location'])])]
+        m2 = [([('where', 'geo')], [], [], [('turn', k, ['where'])])]
+        f2 = ('butter_lowpass', {"partition_list": [], "measure_list": ["location"]})
+
+        ff = ('butter_lowpass', {"partition_list": [], "measure_list": ["where"]})
+
+        r = update(self.dstream, [{'field': 'user_description', 'type': 'new', 'args': ['new shit'], 'kwargs': {}}], m, [])
+        self.assertEqual(len(r), 2)
+        self.assertEqual(r[0], 'ok')
+        self.assertEqual(len(r[1]['measures']), 1)
+        self.assertIn('turn_99.000000_location', r[1]['event_rules'])
+
+        rawr = deepcopy(r[1])
+        r2 = update(rawr, [], m2, [ff])
+        self.assertEqual(len(r2), 2)
+        self.assertEqual(r[0], 'ok')
+        self.assertEqual(len(r2[1]['measures']), 2)
+        self.assertEqual(len(r2[1]['filters']), 3)
+        self.assertIn('turn_99.000000_location', r2[1]['event_rules'])
+        self.assertIn('turn_99.000000_where', r2[1]['event_rules'])
+
+
+        d = DStream()
+        d['measures'] = {'location': {'val': None, 'dtype': 'geo'}}
+        t = update(d, [], [], [f2])
+        t2 = update(d, [], [], [f])
+        self.assertEqual(t[0], 'ok')
+        self.assertEqual(t2[0], 'invalid update')
+
 
 
 
