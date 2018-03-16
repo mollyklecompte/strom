@@ -72,3 +72,25 @@ class TestKafkaContext(unittest.TestCase):
         endpoint = "This is the end, my only friend, the end"
         self.kc.set_endpoint(endpoint)
         self.assertEqual(endpoint, self.kc["endpoint"])
+
+class TestMQTTContext(unittest.TestCase):
+    def setUp(self):
+        self.mapping_list = [(0,["timestamp"])]
+        self.fake_template = {"fake":"template"}
+        self.uid="abaloneID"
+        self.data_format="csv"
+        self.endpoint="http://localhost:5000/api/load"
+        self.mqtt_context = MQTTContext(self.mapping_list, self.fake_template, uid=self.uid, data_format=self.data_format, endpoint=self.endpoint)
+
+    def test_init(self):
+        self.assertEqual(self.mapping_list, self.mqtt_context["mapping_list"])
+        self.assertEqual(self.fake_template, self.mqtt_context["template"])
+        self.assertEqual(self.uid, self.mqtt_context["uid"])
+        self.assertEqual(self.data_format, self.mqtt_context["format"])
+        self.assertEqual(self.endpoint, self.mqtt_context["endpoint"])
+        self.assertIsNone(self.mqtt_context["userdata"])
+        self.assertIsNone(self.mqtt_context["transport"])
+        self.assertIsNone(self.mqtt_context["logger"])
+        self.assertIsNone(self.mqtt_context["asynch"])
+
+
