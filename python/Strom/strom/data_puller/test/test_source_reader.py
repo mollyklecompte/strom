@@ -5,7 +5,7 @@ from strom.data_puller.source_reader import *
 from strom.dstream.dstream import DStream
 from strom.kafka.consumer.consumer import Consumer
 from strom.kafka.producer.producer import Producer
-from strom.mqtt.scratch import generate_message, config, publish, MQTTPullingClient
+from strom.mqtt.client import generate_message, config, publish, MQTTPullingClient
 
 
 class TestDirectoryReader(unittest.TestCase):

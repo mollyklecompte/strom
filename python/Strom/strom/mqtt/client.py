@@ -1,5 +1,7 @@
 """ Non-blocking Python MQTT client with config """
 import json
+import time
+
 import paho.mqtt.client as mqtt
 import paho.mqtt.publish as pubber
 
@@ -146,3 +148,21 @@ class MQTTClient(mqtt.Client):
     def __del__(self):
         super().disconnect()
         super().loop_stop()
+
+class MQTTPullingClient(MQTTClient):
+    def set_format_function(self, format_function):
+        self.format_function = format_function
+
+    def on_message(self, client, userdata, msg):
+        self.format_function(msg)
+
+    def run(self, **kws):
+        if "walltime" not in kws:
+            super().run(**kws)
+        else:
+            super().connect(host=kws["host"], port=kws["port"], keepalive=kws["keepalive"])
+            n = 0
+            while n < kws["walltime"]:
+                super().loop()
+                time.sleep(1)
+                n+=1
