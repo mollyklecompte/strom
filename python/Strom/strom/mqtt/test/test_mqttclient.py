@@ -44,10 +44,9 @@ class TestMQTTClient(unittest.TestCase):
         self.msg_arr.append(msg.payload.decode())
 
     def test_run(self):
-        sleep(2)
         self.client.run(**conf)
         sleep(5)
-        self.assertEqual(self.msg_arr[0], "hello from testy0")
+        self.assertEqual(self.msg_arr[0], f"hello from testy{self.c-1}")
 
 
     def tearDown(self):
