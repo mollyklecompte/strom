@@ -111,8 +111,10 @@ class MQTTReader(SourceReader):
         print(msg.payload)
 
     def list_payload(self, msg):
-        list_payload = json.loads(msg.payload)
-        cur_dstream = self.data_formatter.format_record(list_payload)
+        payload = json.loads(msg.payload)
+        print("\n PAYLOAD\n", msg.payload)
+        print("\n LIST PAYLOAD\n", payload)
+        cur_dstream = self.data_formatter.format_record(payload)
         for key, val in cur_dstream.items():
             if type(val) == uuid.UUID:
                 cur_dstream[key] = str(val)

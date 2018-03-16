@@ -13,16 +13,16 @@ config = {
     "keepalive": 60,
     "timeout": 10,
     "data": {
-        "topic": "psuba",
+        "topic": "test1",
         "qos": 0,
         "messages": [{
-            "topic": "psuba",
+            "topic": "test1",
             "payload": "hello tura",
             "qos": 0,
             "retain": True
         },
         {
-            "topic": "psuba",
+            "topic": "test1",
             "payload": "test123",
             "qos": 0,
             "retain": True

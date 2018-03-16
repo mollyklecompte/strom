@@ -22,9 +22,9 @@ class DStream(dict):
         self["stream_name"] = None
         self["user_description"] = None
         self["version"] = 0
-        self["stream_token"] = uuid.uuid1()
+        self["stream_token"] = str(uuid.uuid1())
         self["source_key"] = None
-        self["template_id"] = uuid.uuid1()
+        self["template_id"] = str(uuid.uuid1())
         self["storage_rules"] = {}
         self["ingest_rules"] = {}
         self["engine_rules"] = {}
@@ -71,24 +71,24 @@ class DStream(dict):
             fkeys_noid = [k for k in self["filters"][0].keys() if k != "transform_id"]
             filters_noid = [{k: f[k] for k in fkeys_noid} for f in self["filters"]]
             if filter_dict not in filters_noid:
-                filter_dict["filter_id"] = uuid.uuid1()
+                filter_dict["filter_id"] = str(uuid.uuid1())
                 self["filters"].append(filter_dict)
                 logger.debug("added filter")
         else:
-            filter_dict["filter_id"] = uuid.uuid1()
+            filter_dict["filter_id"] = str(uuid.uuid1())
             self["filters"].append(filter_dict)
             logger.debug("added filter")
 
     def add_derived_param(self, dparam_dict):
         """Add dparam_dict to our dparam_rules
         dparam_dict: dict of the parameters needed to create the derived parameter"""
-        dparam_dict["dparam_id"] = uuid.uuid1()
+        dparam_dict["dparam_id"] = str(uuid.uuid1())
         self["dparam_rules"].append(dparam_dict)
         logger.debug("added derived parameter")
 
     def add_event(self, event_name, event_dict):
         """Add rules for event definition to our storage"""
-        event_dict["event_id"] = uuid.uuid1()
+        event_dict["event_id"] = str(uuid.uuid1())
         self["event_rules"][event_name] = event_dict
         logger.debug("adding event %s" % (event_name))
 

@@ -40,13 +40,14 @@ def build_rules_from_event(event: str, base_measures: list, **kwargs):
         return rules
 
 
-def build_data_rules(source_mapping_list, dstream_mapping_list, puller=None):
+def build_data_rules(source_mapping_list, dstream_mapping_list, puller=None, date_format=None):
     # if puller, it should be a list of form [type, inputs: list of len2 k,v lists)
     if source_mapping_list is not None and dstream_mapping_list is not None:
         map_list = build_mapping(source_mapping_list, dstream_mapping_list)
     else:
         map_list = []
     data_rules = {"mapping_list": map_list}
+    data_rules["date_format"] = date_format
     data_rules["puller"] = {}
     if not puller:
         data_rules["pull"] = False
@@ -162,7 +163,7 @@ def build_events_dparams_from_measure_rules(measure_rules: list):
     return dparam_list, event_list
 
 
-def build_template(strm_nm, src_key, measure_rules: list, uids: list, filters: list, usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, tags=None, fields=None, source_mapping_list=None, dstream_mapping_list = None, puller=None):
+def build_template(strm_nm, src_key, measure_rules: list, uids: list, filters: list, usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, tags=None, fields=None, source_mapping_list=None, dstream_mapping_list = None, puller=None, date_format=None):
     # measure_rules is list of tuples of form
     # ([measure name, measure type], [filtered measures], [dparams], [event_tups])
     # filter tuples: ('name', {inputs})
@@ -186,7 +187,7 @@ def build_template(strm_nm, src_key, measure_rules: list, uids: list, filters: l
     dparam_list = rules[0]
     event_list = rules[1]
 
-    data_rules = build_data_rules(source_mapping_list, dstream_mapping_list, puller)
+    data_rules = build_data_rules(source_mapping_list, dstream_mapping_list, puller, date_format)
 
     template = create_template_dstream(strm_nm, src_key, measure_list, uids, event_list, dparam_list, filter_list, data_rules, usr_dsc, storage_rules, ingest_rules, engine_rules, foreign_keys, tags, fields)
     return template

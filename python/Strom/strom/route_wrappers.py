@@ -10,29 +10,28 @@ def temp():
     ret = requests.get("http://localhost:5000/api/retrieve/all?template_id=1")
 
 # TEMPLATE
-def post_template(template):
+def post_template(url, template):
     payload = {"template": json.dumps(template)}
     r = requests.post(f"{url}/define", data=payload)
 
     return r.status_code, r.text
 
 # DATA
-def send_data(dstream):
+def send_data(url, dstream):
     # assumes already in dstream format ;D
     r = requests.post(f"{url}/load", data={"data": json.dumps(dstream)})
 
     return r.status_code, r.text
 
 # ENGINE
-def engine_status():
+def engine_status(url):
     r = requests.get(f"{url}/engine_status")
     payload = r.json()
-    payload['host'] = host
-    payload['port'] = port
+    payload['url'] = url
 
     return r.status_code, payload
 
-def stop_engine():
+def stop_engine(url):
     r = requests.get(f"{url}/stop_engine")
 
     return r.status_code, r.json()
