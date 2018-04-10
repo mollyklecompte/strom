@@ -1,6 +1,6 @@
 import unittest
-from strom.transform_rules_builder import *
 
+from strom.transform_rules_builder import *
 
 __version__ = "0.1"
 __author__ = "Molly <molly@tura.io>"
@@ -73,17 +73,21 @@ class TestTransformRulesBuilder(unittest.TestCase):
     def test_builder_rules_dict(self):
         r = self.test_filter_builder.build_rules_dict('butter_lowpass', self.test_filter_inputs_butter_1)
         r['transform_id'] = "blep"
-        self.assertDictEqual(r,  {'partition_list': [], 'measure_list': ['timestamp'], 'logical_comparison': 'AND', 'param_dict': {'order': 2, 'nyquist': 0.05, 'filter_name': '_buttered'}, 'transform_id': 'blep', 'transform_type': 'filter_data', 'transform_name': None})
+        self.assertDictEqual(r,   {'partition_list': [], 'measure_list': ['timestamp'], 'logical_comparison': 'AND', 'param_dict': {'order': 2, 'nyquist': 0.05, 'filter_name': '_buttered'}, 'transform_name': 'ButterLowpass', 'transform_id': 'blep', 'transform_type': 'filter_data'})
 
         r2 = self.test_dparam_builder.build_rules_dict('windowsum', self.test_param_inputs_windowsum_1)
         r2['transform_id'] = "bloop"
-        self.assertDictEqual(r2, {'partition_list': [], 'measure_list': ['timestamp'], 'logical_comparison': 'AND', 'param_dict': {'func_params': {'window_len': 2}, 'measure_rules': {'target_measure': 'timestamp', 'output_name': 'time_window_sum'}}, 'transform_id': 'bloop', 'transform_type': 'derive_param', 'transform_name': None})
+        self.assertDictEqual(r2,{'partition_list': [], 'measure_list': ['timestamp'], 'logical_comparison': 'AND', 'param_dict': {'func_params': {'window_len': 2}, 'measure_rules': {'target_measure': 'timestamp', 'output_name': 'time_window_sum'}}, 'transform_name': 'DeriveWindowSum', 'transform_id': 'bloop', 'transform_type': 'derive_param'} )
 
         r3 = self.test_filter_builder.build_rules_dict('butter_lowpass', self.test_filter_inputs_butter_2)
         r3['transform_id'] = "meh"
-        self.assertDictEqual(r3, {'partition_list': [], 'measure_list': ['timestamp'], 'logical_comparison': 'AND', 'param_dict': {'order': 3, 'nyquist': 2, 'filter_name': '_buttered'}, 'transform_id': 'meh', 'transform_type': 'filter_data', 'transform_name': None})
+
+        self.assertDictEqual(r3,{'partition_list': [], 'measure_list': ['timestamp'], 'logical_comparison': 'AND', 'param_dict': {'order': 3, 'nyquist': 2, 'filter_name': '_buttered'}, 'transform_name': 'ButterLowpass', 'transform_id': 'meh', 'transform_type': 'filter_data'}
+
+)
 
         r4 = self.test_dparam_builder.build_rules_dict('windowsum', self.test_param_inputs_windowsum_2)
         r4['transform_id'] = "guh"
-        self.assertDictEqual(r4, {'partition_list': [], 'measure_list': ['timestamp'], 'logical_comparison': 'OR', 'param_dict': {'func_params': {'window_len': 4}, 'measure_rules': {'target_measure': 'timestamp', 'output_name': 'time_window_sum'}}, 'transform_id': 'guh', 'transform_type': 'derive_param', 'transform_name': None})
+
+        self.assertDictEqual(r4, {'partition_list': [], 'measure_list': ['timestamp'], 'logical_comparison': 'OR', 'param_dict': {'func_params': {'window_len': 4}, 'measure_rules': {'target_measure': 'timestamp', 'output_name': 'time_window_sum'}}, 'transform_name': 'DeriveWindowSum', 'transform_id': 'guh', 'transform_type': 'derive_param'}  )
 

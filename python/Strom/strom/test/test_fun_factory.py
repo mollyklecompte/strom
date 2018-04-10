@@ -1,8 +1,9 @@
-import unittest
 import json
-from copy import deepcopy
-from strom.fun_factory import *
+import unittest
+
 from strom.dstream.dstream import DStream
+from strom.fun_factory import *
+
 
 class TestFunFactory(unittest.TestCase):
     def setUp(self):
@@ -389,51 +390,15 @@ class TestFunFactory(unittest.TestCase):
         source_inds = [0,1,2,4,6,8,3]
         t_keys = [["user_ids","sex"],["measures","length", "val"],["measures","diameter", "val"],["measures","whole_weight", "val"],["measures","viscera_weight", "val"],["fields","rings"],["timestamp"]]
         d = build_data_rules(source_inds, t_keys)
-        self.assertDictEqual(d,{'pull': False, 'puller': {}, 'mapping_list': [
-            (0,["user_ids","sex"]),
-            (1,["measures","length", "val"]),
-            (2,["measures","diameter", "val"]),
-            (4,["measures","whole_weight", "val"]),
-            (6,["measures","viscera_weight", "val"]),
-            (8,["fields","rings"]),
-            (3,["timestamp"])
-        ]})
+        self.assertDictEqual(d, {'mapping_list': [(0, ['user_ids', 'sex']), (1, ['measures', 'length', 'val']), (2, ['measures', 'diameter', 'val']), (4, ['measures', 'whole_weight', 'val']), (6, ['measures', 'viscera_weight', 'val']), (8, ['fields', 'rings']), (3, ['timestamp'])], 'date_format': None, 'puller': {}, 'pull': False})
     #
         d2 = build_data_rules(source_inds, t_keys, puller=['dir', [['path', 'strom/data_puller/test/'], ['file_type', 'csv']]])
 
-        self.assertDictEqual(d2, {'pull': True, 'puller': {
-            "type": "dir",
-            "inputs": {
-                "path": "strom/data_puller/test/",
-                "file_type": "csv"
-            }
-        }, 'mapping_list': [
-            (0, ["user_ids", "sex"]),
-            (1, ["measures", "length", "val"]),
-            (2, ["measures", "diameter", "val"]),
-            (4, ["measures", "whole_weight", "val"]),
-            (6, ["measures", "viscera_weight", "val"]),
-            (8, ["fields", "rings"]),
-            (3, ["timestamp"])
-        ]})
+        self.assertDictEqual(d2,  {'mapping_list': [(0, ['user_ids', 'sex']), (1, ['measures', 'length', 'val']), (2, ['measures', 'diameter', 'val']), (4, ['measures', 'whole_weight', 'val']), (6, ['measures', 'viscera_weight', 'val']), (8, ['fields', 'rings']), (3, ['timestamp'])], 'date_format': None, 'puller': {'type': 'dir', 'inputs': {'path': 'strom/data_puller/test/', 'file_type': 'csv'}}, 'pull': True})
 
         d3 = build_data_rules(source_inds, t_keys, puller=['dir', [['path', 'strom/data_puller/test/'], ['file_type', 'csv'], ['delimiter', ',']]])
-        self.assertDictEqual(d3, {'pull': True, 'puller': {
-            "type": "dir",
-            "inputs": {
-                "path": "strom/data_puller/test/",
-                "file_type": "csv",
-                "delimiter": ","
-            }
-        }, 'mapping_list': [
-            (0, ["user_ids", "sex"]),
-            (1, ["measures", "length", "val"]),
-            (2, ["measures", "diameter", "val"]),
-            (4, ["measures", "whole_weight", "val"]),
-            (6, ["measures", "viscera_weight", "val"]),
-            (8, ["fields", "rings"]),
-            (3, ["timestamp"])
-        ]})
+
+        self.assertDictEqual(d3, {'mapping_list': [(0, ['user_ids', 'sex']), (1, ['measures', 'length', 'val']), (2, ['measures', 'diameter', 'val']), (4, ['measures', 'whole_weight', 'val']), (6, ['measures', 'viscera_weight', 'val']), (8, ['fields', 'rings']), (3, ['timestamp'])], 'date_format': None, 'puller': {'type': 'dir', 'inputs': {'path': 'strom/data_puller/test/', 'file_type': 'csv', 'delimiter': ','}}, 'pull': True} )
 
     def test_build_new_rules_updates(self):
         k = {'partition_list': [], 'turn_value': 99, 'stream_id': 'abc123'}
