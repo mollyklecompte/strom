@@ -3,6 +3,7 @@ from threading import Thread
 from strom.data_puller.source_reader import *
 from strom.data_puller.context import *
 from strom.utils.logger.logger import logger
+from strom.mqtt.client import config
 
 
 __version__ = "0.1"
@@ -20,8 +21,26 @@ puller_rules = {
         "defaults": {
             "header_lines": 0,
             "delimiter": None,
-        }
+        },
+        "autosets": {}
     },
+    "mqtt": {
+        "reader_class": MQTTReader,
+        "context_class": MQTTContext,
+        "required_inputs": [
+            "data_format",
+            "uid",
+        ],
+        "defaults": {
+            "transport": None,
+            "logger": None,
+            "asynch": None,
+            "endpoint": None,
+        },
+        "autosets": {
+            "userdata": config
+        }
+    }
 }
 
 class DataPuller(Thread):
@@ -38,6 +57,8 @@ class DataPuller(Thread):
         c_class = puller_rules[self.puller_type]['context_class']
         mapping_list = self.template['data_rules']['mapping_list']
         inputs = self.template['data_rules']['puller']['inputs']
+        for i in puller_rules[self.puller_type]['autosets']:
+            inputs[i] = puller_rules[self.puller_type]['autosets'][i]
         self.context = self._create_context(c_class, mapping_list, self.template, **inputs)
         self._validate_context()
         p_class = puller_rules[self.puller_type]['reader_class']

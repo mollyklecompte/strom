@@ -6,6 +6,7 @@ from abc import ABCMeta, abstractmethod
 import requests
 
 from strom.kafka.consumer.consumer import Consumer
+from strom.mqtt.scratch import MQTTPullingClient
 from .data_formatter import CSVFormatter
 
 __version__ = '0.0.1'
@@ -94,5 +95,40 @@ class KafkaReader(SourceReader):
                         cur_dstream[key] = str(val)
                 if self.context["endpoint"] is not None:
                     r = requests.post(self.context["endpoint"], data=json.dumps(cur_dstream))
+                    print(r)
                 elif self.queue is not None:
                     self.queue.put(cur_dstream)
+
+
+
+class MQTTReader(SourceReader):
+    def __init__(self, context, queue=None):
+        super().__init__(context, queue)
+        self.mqtt_client = MQTTPullingClient(self.context["uid"], self.context["userdata"], self.context["transport"], self.context["logger"], self.context["asynch"],)
+
+    @staticmethod
+    def print_payload(msg):
+        print(msg.payload)
+
+    def list_payload(self, msg):
+        payload = json.loads(msg.payload)
+        print("\n PAYLOAD\n", msg.payload)
+        print("\n LIST PAYLOAD\n", payload)
+        cur_dstream = self.data_formatter.format_record(payload)
+        for key, val in cur_dstream.items():
+            if type(val) == uuid.UUID:
+                cur_dstream[key] = str(val)
+        print(cur_dstream)
+        if self.context["endpoint"] is not None:
+            r = requests.post(self.context["endpoint"], data=json.dumps(cur_dstream))
+            print(r)
+        elif self.queue is not None:
+            self.queue.put(cur_dstream)
+
+    def read_input(self):
+        if self.context["format"] == "csv" or self.context["format"] == "list" :
+            self.data_formatter = CSVFormatter(self.context["mapping_list"],
+                                               self.context["template"])
+            self.mqtt_client.set_format_function(self.list_payload)
+
+        self.mqtt_client.run(**self.context["userdata"])

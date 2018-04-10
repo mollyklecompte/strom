@@ -161,5 +161,38 @@ class TestDeriveDataFrame(unittest.TestCase):
         self.assertIn(box_rules["param_dict"]["measure_rules"]["output_name"], box_df.columns)
         self.assertEqual(self.bstream["measures"].shape[0], box_df.shape[0])
 
+    def test_threshold(self):
+        thresh_rules = {
+            "partition_list":[],
+            "measure_list":["timestamp",],
+            "transform_type": "derive_param",
+            "transform_name": "DeriveThreshold",
+            "param_dict":{
+                "func_params":{"threshold_value":0, "comparison_operator":">=","absolute_compare":True},
+                "measure_rules":{"target_measure":"timestamp","output_name":"threshold_time"}
+                },
+            "logical_comparison":"AND"
+        }
+        thresh_df = DeriveThreshold(self.bstream["measures"][thresh_rules["measure_list"]], thresh_rules["param_dict"])
+        self.assertIn(thresh_rules["param_dict"]["measure_rules"]["output_name"], thresh_df.columns)
+        self.assertEqual(self.bstream["measures"].shape[0], thresh_df.shape[0])
+
+    def test_logical_combination(self):
+        combined_rules = {
+            "partition_list":[],
+            "measure_list":["timestamp",],
+            "transform_type": "derive_param",
+            "transform_name": "DeriveLogicalCombination",
+            "param_dict":{
+                "func_params":{"combiner":"AND"},
+                "measure_rules":{"first_measure":"timestamp","second_measure":"timestamp","output_name":"combined_time"}
+                },
+            "logical_comparison":"AND"
+        }
+        combined_df = DeriveLogicalCombination(self.bstream["measures"][combined_rules["measure_list"]], combined_rules["param_dict"])
+        print(self.bstream["measures"][combined_rules["measure_list"]])
+        self.assertIn(combined_rules["param_dict"]["measure_rules"]["output_name"], combined_df.columns)
+        self.assertEqual(self.bstream["measures"].shape[0], combined_df.shape[0])
+
 if __name__ == "__main__":
     unittest.main()

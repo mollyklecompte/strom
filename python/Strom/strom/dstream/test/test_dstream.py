@@ -1,5 +1,4 @@
 import unittest
-import uuid
 
 from strom.dstream.dstream import DStream
 
@@ -15,7 +14,7 @@ class TestDStream(unittest.TestCase):
             self.assertIn(key, self.dstream.keys())
 
     def testadd_methods(self):
-        self.assertIsInstance(self.dstream["stream_token"], uuid.UUID)
+        self.assertIsInstance(self.dstream["stream_token"], str)
 
         m_name = "viscosity"
         m_dtype = "float"
@@ -65,7 +64,10 @@ class TestDStream(unittest.TestCase):
         test_dict = {"stream_token":"foo", "version":900}
         self.dstream.load_from_json((test_dict))
         self.assertEqual(test_dict["version"], self.dstream["version"])
-        self.assertIsInstance(self.dstream["stream_token"], uuid.UUID)
+        self.assertIsInstance(self.dstream["stream_token"], str)
+
+    def test_filter(self):
+        self.dstream.add_filter({"test":"filterdict"})
 
 
 

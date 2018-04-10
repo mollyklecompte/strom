@@ -44,6 +44,7 @@ class FilterRules(RuleDict):
         logical_comparison: str, supported values: "AND" and "OR". Dictates how partition_list is combined.
         """
         self.update(*args, **kwargs)
+
         expected_keys = ['transform_id', 'partition_list', 'measure_list', 'transform_type', 'transform_name', 'param_dict', 'logical_comparison', ]
         super().__init__(expected_keys=expected_keys)
 

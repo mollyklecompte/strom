@@ -3,18 +3,27 @@ from copy import deepcopy
 from strom.data_map_builder import build_mapping
 from strom.dstream.dstream import DStream
 from strom.fun_update_guide import update_guide
-from strom.rules_dict_builder import event_builder
+from strom.event_dict_builder import event_builder_rules
+from strom.transform_rules_builder import FilterBuilder, DParamBuilder
 
 __version__  = "0.1"
 __author__ = "Molly <molly@tura.io>"
 
 
-def build_rules_dicts(event: str, base_measure: tuple, **kwargs):
-    # event: str, event type (key in event_builder)
+filter_builder = FilterBuilder()
+dp_builder = DParamBuilder()
+
+
+def build_rules_from_event(event: str, base_measures: list, **kwargs):
+    # event: str, event type (key in event_builder_rules)
     # base_measure: tuple, name + type i.e. ('location', 'geo')
-    base_event = event_builder[event]
-    if base_measure[1] != base_event['base_measure_type']:
-        raise ValueError (f"Event {base_event} requires base measure type {base_event['base_measure_type']} Provided base measure type {base_measure[1]}")
+    base_event = event_builder_rules[event]
+    # for t in base_event['base_measure_types']:
+    #     if t not in [m[1] for m in base_measures]:
+    #         raise ValueError(
+    #             f"Event {base_event} requires base measure type(s) {base_event['base_measure_types']}")
+
+
     missing_inputs = []
     for i in base_event['required_input_settings'] + base_event['required_event_inputs']:
         if i not in kwargs.keys():
@@ -26,12 +35,53 @@ def build_rules_dicts(event: str, base_measure: tuple, **kwargs):
         partition_list = inputs.pop('partition_list')
         stream_id = inputs.pop('stream_id')
         fn = base_event['callback']
-        rules = fn(base_measure[0], partition_list, stream_id, **inputs)
+        rules = fn(*[m[0] for m in base_measures], partition_list, stream_id, **inputs)
 
         return rules
 
 
-def create_template_dstream(strm_nm, src_key, measures: list, uids: list, events: list, dparam_rules: list, usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, filters=None, tags=None, fields=None):
+def build_data_rules(source_mapping_list, dstream_mapping_list, puller=None, date_format=None):
+    # if puller, it should be a list of form [type, inputs: list of len2 k,v lists)
+    if source_mapping_list is not None and dstream_mapping_list is not None:
+        map_list = build_mapping(source_mapping_list, dstream_mapping_list)
+    else:
+        map_list = []
+    data_rules = {"mapping_list": map_list}
+    data_rules["date_format"] = date_format
+    data_rules["puller"] = {}
+    if not puller:
+        data_rules["pull"] = False
+    elif type(puller) is list:
+        data_rules["pull"] = True
+        data_rules["puller"]["type"] = puller[0]
+        data_rules["puller"]["inputs"] = {i[0]: i[1] for i in puller[1]}
+    else:
+        raise TypeError("Invalid puller- must be list or None")
+
+    return data_rules
+
+
+def build_measure_list(measure_rules: list):
+    return [msr for rule in measure_rules if type(rule) is tuple and len(rule) == 4 for msr in rule[0]]
+
+
+def build_filter_list(measure_list, filters: list):
+    return [filter_builder.build_rules_dict(f[0], f[1]) for f in filters]
+
+
+def get_filtered_measures(filter_list):
+    return [f"{m}{f['param_dict']['filter_name']}" for f in filter_list for m in f['measure_list']]
+
+
+def add_filters_to_measure_rules(measure_rules: list, filtered_measures: list):
+    rules_filters = []
+    for rule in measure_rules:
+        rule = list(rule)
+        rule[1] = [(f, m[1]) for f in filtered_measures for m in rule[0] if m[0] in f]
+        rules_filters.append(rule)
+    return rules_filters
+
+def create_template_dstream(strm_nm, src_key, measures: list, uids: list, events: list, dparam_rules: list, filters: list, data_rules: dict, usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, tags=None, fields=None):
     # measures: list of tuples (measure_name, dtype)
 
     template = DStream()
@@ -40,12 +90,10 @@ def create_template_dstream(strm_nm, src_key, measures: list, uids: list, events
     template.add_measures(measures)  # expects list of tuples (measure, dtype)
     template.add_user_ids(uids)
     template['user_description'] = usr_dsc
-
     template.add_dparams(dparam_rules)
     template.add_events(events)
-
-    if filters is not None:
-        template.add_filters(filters)
+    template.add_filters(filters)
+    template.add_data_rules(data_rules)
 
     if storage_rules is not None:  # add else branch w default
         template['storage_rules'] = storage_rules
@@ -70,38 +118,117 @@ def create_template_dstream(strm_nm, src_key, measures: list, uids: list, events
 
     return template
 
-def build_data_rules(mapping_list, puller=None, pull_args=None, pull_kwargs=None):
-    # PUT STUFF HERE
-    pass
 
-
-def build_template(strm_nm, src_key, measure_rules: list, uids: list,  usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, tags=None, fields=None, source_mapping_list=None, dstream_mapping_list = None):
-    # measure_rules is list of tuples of form
-    # (measure name, measure type, [filtered measures], [event_tups]
-    # event_tups are tuples of form (event name, {kwargs})
-    # for example:
-    # ('location', 'geo', ['buttery_location'], [('turn', {kwargs})])
-
-    measure_list = []
+def build_events_dparams_from_measure_rules(measure_rules: list):
     event_list = []
     dparam_list = []
 
-    for m in measure_rules:
-        if type(m) is tuple and len(m) == 4:
-            measure_list.append((m[0], m[1]))
-            all_rules = [build_rules_dicts(
-                e[0], (m[0], m[1]), **e[1]) for e in m[3]]
-            for rules in all_rules:
-                event_list.append(rules['event_rules'])
-                dparam_list.extend(rules['dparam_rules'])
-        else:
-            raise TypeError('Measure rules must be len 4 tuple')
+    for rule in measure_rules:
+        if len(rule[3]):
+            for event in rule[3]:
+                event_build_measures = []
+                for m in event[2]:
+                    if m in [msr[0] for msr in rule[0]]:
+                        for msr in rule[0]:
+                            if m == msr[0]:
+                                event_build_measures.append(msr)
+                    elif m in [f[0] for f in rule[1]]:
+                        for f in rule[1]:
+                            if m == f[0]:
+                                event_build_measures.append(f)
+                    else:
+                        raise ValueError(f"Event build missing measure {m}")
+                rule_set = build_rules_from_event(event[0], event_build_measures, **event[1])
+                event_list.append(rule_set['event_rules'])
+                dparam_list.extend(rule_set['dparam_rules'])
+        if len(rule[2]):
+            for dp in rule[2]:
+                dp_build_measures = []
+                for measure, val in dp[2].items():
+                    if val in [msr[0] for msr in rule[0]]:
+                        for msr in rule[0]:
+                            if val == msr[0]:
+                                dp_build_measures.append((measure, val))
+                    elif val in [f[0] for f in rule[1]]:
+                        for f in rule[1]:
+                            if val == f[0]:
+                                dp_build_measures.append((f, val))
+                    else:
+                        raise ValueError(f"Derived param build missing measure {measure}")
 
-    template = create_template_dstream(strm_nm, src_key, measure_list, uids, event_list, dparam_list, usr_dsc, storage_rules, ingest_rules, engine_rules, foreign_keys, tags, fields)
-    map_list = build_mapping(source_mapping_list, dstream_mapping_list)
-    # NEED STUFF HERE
-    # template.add_data_rules(map_list)
+                for bm in dp_build_measures:
+                    dp[1][bm[0]] = bm[1]
+                dparam_list.append(dp_builder.build_rules_dict(dp[0], dp[1]))
+
+    return dparam_list, event_list
+
+
+def build_template(strm_nm, src_key, measure_rules: list, uids: list, filters: list, usr_dsc="", storage_rules=None, ingest_rules=None, engine_rules=None, foreign_keys=None, tags=None, fields=None, source_mapping_list=None, dstream_mapping_list = None, puller=None, date_format=None):
+    # measure_rules is list of tuples of form
+    # ([measure name, measure type], [filtered measures], [dparams], [event_tups])
+    # filter tuples: ('name', {inputs})
+    # dparam tuples: ('name', {inputs}, {'target_measure': 'measure'})
+    # event_tups are tuples of form (event name, {kwargs}, [measure1, filtered_measure2])
+    # for example:
+    # (['location', 'geo'], ['buttery_location'], [('turn', {kwargs})])
+
+    measure_list = build_measure_list(measure_rules)
+
+    # build filters
+    filter_list = build_filter_list(measure_list, filters)
+
+    # all filtered measures
+    filtered_measures = get_filtered_measures(filter_list)
+
+    # if measure in measure_rules is filtered, filtered measure added to list at index 1
+    measure_rules_filters = add_filters_to_measure_rules(measure_rules, filtered_measures)
+
+    rules = build_events_dparams_from_measure_rules(measure_rules_filters)
+    dparam_list = rules[0]
+    event_list = rules[1]
+
+    data_rules = build_data_rules(source_mapping_list, dstream_mapping_list, puller, date_format)
+
+    template = create_template_dstream(strm_nm, src_key, measure_list, uids, event_list, dparam_list, filter_list, data_rules, usr_dsc, storage_rules, ingest_rules, engine_rules, foreign_keys, tags, fields)
     return template
+
+
+def build_new_rule_updates(template_dstream, filter_tups: list, measure_tups: list):
+    if len(measure_tups):
+        measure_list = build_measure_list(measure_tups)
+    else:
+        measure_list = []
+    avail_measures = [(measure, measure_dict['dtype']) for measure, measure_dict in template_dstream['measures'].items()]
+    if len(measure_list):
+        new_measures = [m for m in measure_list if m not in avail_measures]
+    else:
+        new_measures = []
+    avail_measures.extend(new_measures)
+    filter_list = build_filter_list(avail_measures, filter_tups)
+    filtered_measures = get_filtered_measures(filter_list)
+    measure_rules_filters = add_filters_to_measure_rules(measure_tups, filtered_measures)
+
+    rules = build_events_dparams_from_measure_rules(measure_rules_filters)
+    new_dparams = rules[0] # list of dicts
+    new_events = rules[1] # list of dicts
+
+    new_measures_updates = [{'field': 'measures', 'type': 'new', 'args': [m], 'kwargs': {}} for m in new_measures]
+    new_filter_updates = [{'field': 'filters', 'type': 'new', 'args': [f], 'kwargs': {}} for f in filter_list]
+    new_dparam_updates = [{'field': 'dparam_rules', 'type': 'new', 'args': [d], 'kwargs': {}} for d in new_dparams]
+    new_event_updates = [{'field': 'event_rules', 'type': 'new', 'args': [e[0], e[1]], 'kwargs': {}} for e in new_events]
+
+    updates = []
+    for i in [new_measures_updates, new_filter_updates, new_dparam_updates, new_event_updates]:
+        updates.extend(i)
+    return updates
+
+
+def update(template, flat_updates: list, new_measure_tups: list, new_filter_tups: list):
+    updates = flat_updates
+    updates.extend(build_new_rule_updates(template, new_filter_tups, new_measure_tups))
+    update_result = update_template(template, updates)
+    return update_result
+
 
 
 # update wrapper
@@ -141,8 +268,10 @@ def valid_update(template: DStream):
     # measure required by filter missing
     bad_updates.extend([('filter', f['transform_name'], 'measure', m) for f in template['filters'] for m in f['measure_list'] if m not in template['measures'].keys() and m != 'timestamp'])
 
+    # print('MEASURE NAMES', possible_filtered_measures, template['measures'].keys(), [dp['param_dict']['measure_rules']['output_name'] for dp in template['dparam_rules']])
+
     # measure required by derived param missing
-    bad_updates.extend([('derived param', dp['transform_name'], 'measure', m) for dp in template['dparam_rules'] for m in dp['measure_list'] if m not in template['measures'].keys() and m not in possible_filtered_measures and m != 'timestamp'])
+    bad_updates.extend([('derived param', dp['transform_name'], 'measure', m) for dp in template['dparam_rules'] for m in dp['measure_list'] if m not in template['measures'].keys() and m not in possible_filtered_measures and m not in [dp['param_dict']['measure_rules']['output_name'] for dp in template['dparam_rules']] and m != 'timestamp'])
 
     bad_updates.extend([('event', event_key, 'derived param', m) for event_key, event_dict in template['event_rules'].items() for m in event_dict["measure_list"] if m not in [dp['param_dict']['measure_rules']['output_name'] for dp in template['dparam_rules']] and m not in possible_filtered_measures and m not in template['measures'].keys() and m != 'timestamp'])
 

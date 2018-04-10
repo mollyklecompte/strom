@@ -153,6 +153,6 @@ update_guide = {
             'function': prune_key,
             'field_key_arg': True,
             'args': ['type_key', 'remove_key'],
-        }
+        },
     }
 }

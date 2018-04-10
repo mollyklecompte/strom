@@ -65,7 +65,6 @@ class TestEngineThread(unittest.TestCase):
         self.abalone_engine = Engine(self.abalone_conb, processors=2, buffer_max_batch=10, buffer_max_seconds=5,
                                      test_mode=True,
                                      test_outfile='engine_test_output/engine_test_abalone')
-
     def tearDown(self):
         print("Tear it all down")
         sleep(1)
@@ -210,7 +209,7 @@ class TestEngineThread(unittest.TestCase):
 
         self.outfiles.extend(outfiles)
         self.con6.send("stop_poison_pill")
-        
+
     def test_new_with_puller(self):
         self.abalone_engine.start()
         sleep(3)
