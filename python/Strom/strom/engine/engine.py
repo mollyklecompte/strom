@@ -156,8 +156,10 @@ class Engine(Process):
                     break
                 # branch 1 - engine running, good data
                 elif isinstance(item, DStream) or (type(item) is dict and "stream_token" in item.keys()):
-                    if item["data_rules"]["date_format"] is not None:
-                        item["timestamp"] = datetime.strptime(item["timestamp"], item["data_rules"]["date_format"])
+                    if "data_rules" in item.keys(): # some unit test data doesnt have this field
+                        if "date_format" in item["data_rules"].keys():
+                            if item["data_rules"]["date_format"] is not None:
+                                item["timestamp"] = datetime.strptime(item["timestamp"], item["data_rules"]["date_format"]).timestamp()
                     # branch 1.1 - not last row
                     if cur_row < last_row:
                         # branch 1.1a - not last column, continue row
